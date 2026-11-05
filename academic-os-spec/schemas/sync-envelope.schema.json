@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/academic-os/schemas/sync-envelope.schema.json",
+  "title": "Academic OS Collector Sync Envelope v1",
+  "description": "Minimized collector-to-cloud metadata. The default contract intentionally excludes raw chat exports.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "batch_id", "source_id", "source_kind", "client_generated_at", "coverage", "items", "idempotency_key"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "batch_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source_kind": {"enum": ["manual", "moodle_ical", "moodle_browser", "whatsapp_export", "whatsapp_notification"]},
+    "client_generated_at": {"type": "string", "format": "date-time"},
+    "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 160},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["quality", "start_at", "end_at", "known_gaps"],
+      "properties": {
+        "quality": {"enum": ["complete_export", "partial_notification", "calendar_window", "manual", "unknown"]},
+        "start_at": {"type": ["string", "null"], "format": "date-time"},
+        "end_at": {"type": ["string", "null"], "format": "date-time"},
+        "known_gaps": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 200}}
+      }
+    },
+    "items": {
+      "type": "array", "maxItems": 100,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["external_key", "observed_at", "content_hash_sha256", "privacy_class", "candidate_json"],
+        "properties": {
+          "external_key": {"type": "string", "minLength": 1, "maxLength": 160},
+          "observed_at": {"type": ["string", "null"], "format": "date-time"},
+          "content_hash_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "privacy_class": {"enum": ["generic_derived", "private_derived", "sensitive_derived"]},
+          "minimal_excerpt": {"type": "string", "maxLength": 350},
+          "local_ref": {"type": ["string", "null"], "maxLength": 160},
+          "source_link": {"type": ["string", "null"], "maxLength": 1000},
+          "candidate_json": {"type": ["object", "null"]}
+        }
+      }
+    }
+  }
+}

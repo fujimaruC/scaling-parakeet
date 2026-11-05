@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/academic-os/schemas/ai-extraction.schema.json",
+  "title": "Academic OS AI Extraction Output v1",
+  "description": "A model suggestion envelope only. Valid output never authorizes direct canonical task writes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "batch_id", "summary", "candidates", "uncertainties"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "batch_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "summary": {"type": "string", "maxLength": 2000},
+    "candidates": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/candidate"}},
+    "uncertainties": {"type": "array", "maxItems": 100, "items": {"type": "string", "minLength": 1, "maxLength": 400}}
+  },
+  "$defs": {
+    "due": {
+      "type": "object", "additionalProperties": false,
+      "required": ["precision", "local_date", "local_datetime", "timezone", "original_expression"],
+      "properties": {
+        "precision": {"enum": ["datetime", "date_only", "approximate", "unknown"]},
+        "local_date": {"type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "local_datetime": {"type": ["string", "null"], "minLength": 1, "maxLength": 40},
+        "timezone": {"type": ["string", "null"], "maxLength": 100},
+        "original_expression": {"type": ["string", "null"], "maxLength": 200}
+      }
+    },
+    "candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "title", "course_or_group", "due", "assignee_scope", "decision_state", "priority_suggestion", "evidence_ids", "reason", "needs_review"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "kind": {"enum": ["assignment", "exam", "meeting", "announcement", "deadline_change", "decision", "personal_action"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 240},
+        "course_or_group": {"type": ["string", "null"], "maxLength": 200},
+        "due": {"$ref": "#/$defs/due"},
+        "assignee_scope": {"enum": ["owner", "group", "class", "other_person", "unknown"]},
+        "decision_state": {"enum": ["confirmed_in_source", "proposed", "disputed", "unclear"]},
+        "priority_suggestion": {"enum": ["low", "normal", "high", "urgent", "unknown"]},
+        "evidence_ids": {"type": "array", "minItems": 1, "maxItems": 24, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "needs_review": {"type": "boolean"}
+      }
+    }
+  }
+}

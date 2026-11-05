@@ -1,0 +1,9 @@
+# FICTIONAL fixture only. Never replace with private group chat data in the repo.
+05/11/26, 19.00 - Dosen A: Untuk tugas basis data, kumpulkan laporan tanggal 10 November pukul 23.59 WITA melalui LMS.
+05/11/26, 19.03 - Ketua Kelompok: Slide presentasi kelompok selesai besok ya.
+05/11/26, 19.05 - Mahasiswa B: Apakah deadline laporan diundur sampai 12 November?
+05/11/26, 19.07 - Ketua Kelompok: Agenda rapat:
+1) pembagian slide
+2) revisi referensi
+3) cek lampiran
+05/11/26, 19.10 - Mahasiswa C: Jangan lupa quiz minggu depan, tapi jadwalnya belum diumumkan.
