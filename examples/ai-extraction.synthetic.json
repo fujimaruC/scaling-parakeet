@@ -1,0 +1,31 @@
+{
+  "schema_version": "2.0",
+  "batch_id": "10000000-0000-4000-8000-000000000004",
+  "candidates": [
+    {
+      "fields": {
+        "kind": "organizational_duty",
+        "title": "Prepare event equipment list",
+        "description": null,
+        "context_id": null,
+        "context_type": "organization",
+        "due": {
+          "precision": "unknown",
+          "local_date": null,
+          "local_datetime": null,
+          "timezone": null
+        },
+        "assignee_scope": "owner",
+        "priority": "normal"
+      },
+      "evidence_ids": [
+        "10000000-0000-4000-8000-000000000002"
+      ],
+      "source_decision_state": "confirmed_in_source",
+      "confidence": "medium",
+      "issue_codes": [],
+      "needs_review": true,
+      "draft_id": "draft-1"
+    }
+  ]
+}

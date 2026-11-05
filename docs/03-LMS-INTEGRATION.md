@@ -1,5 +1,7 @@
 # 03 — ITK MOODLE INTEGRATION
 
+**Version 0.2.0 integration track:** M5, conditional on actual ITK evidence. All owner/AI approval and cloud-minimization rules in the current master PRD apply; source assertions are not canonical approval.
+
 **Target:** `https://kuliah.itk.ac.id` (ITK Moodle-based academic portal). **Institution-specific integration status: UNVERIFIED.** No administrator cooperation assumed, and no account credentials are required in the repository.
 
 ## 1. Outcome

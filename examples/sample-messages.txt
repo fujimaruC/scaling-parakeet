@@ -1,0 +1,14 @@
+# FICTIONAL synthetic fixtures. Never replace with real conversations.
+# Import harness selects source ACADEMIC; timezone Asia/Makassar, dd/mm/yy.
+05/11/26, 19.00 - Dosen A: Untuk tugas basis data, kumpulkan laporan tanggal 10 November pukul 23.59 WITA melalui LMS.
+05/11/26, 19.03 - Ketua Kelompok: Slide presentasi kelompok selesai besok ya.
+05/11/26, 19.05 - Mahasiswa B: Apakah deadline laporan diundur sampai 12 November?
+05/11/26, 19.07 - Ketua Kelompok: Agenda rapat:
+1) pembagian slide
+2) revisi referensi
+3) cek lampiran
+05/11/26, 19.10 - Mahasiswa C: Jangan lupa kuis minggu depan, jadwalnya belum diumumkan.
+# Separate fixture source ORGANIZATION; do not parse fixture comments as chat messages.
+05/11/26, 20.00 - Koordinator Himpunan: Rapat panitia tanggal 8 November pukul 16.00 WITA.
+05/11/26, 20.03 - Koordinator Himpunan: Kamu bertugas menyiapkan daftar kebutuhan acara. Batas waktunya belum ditetapkan.
+05/11/26, 20.05 - Anggota A: Bagaimana kalau rapat dipindah ke hari Senin?

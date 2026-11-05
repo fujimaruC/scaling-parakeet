@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://academic-os.invalid/schemas/common.schema.json",
+  "title": "Academic OS common v2 fields",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "due": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "precision",
+        "local_date",
+        "local_datetime",
+        "timezone"
+      ],
+      "properties": {
+        "precision": {
+          "enum": [
+            "datetime",
+            "date_only",
+            "approximate",
+            "unknown"
+          ]
+        },
+        "local_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "local_datetime": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
+        },
+        "timezone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 100
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "precision": {
+              "const": "datetime"
+            },
+            "local_date": {
+              "type": "null"
+            },
+            "local_datetime": {
+              "type": "string"
+            },
+            "timezone": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "properties": {
+            "precision": {
+              "const": "date_only"
+            },
+            "local_date": {
+              "type": "string"
+            },
+            "local_datetime": {
+              "type": "null"
+            },
+            "timezone": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "properties": {
+            "precision": {
+              "enum": [
+                "approximate",
+                "unknown"
+              ]
+            },
+            "local_date": {
+              "type": "null"
+            },
+            "local_datetime": {
+              "type": "null"
+            },
+            "timezone": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "issue_code": {
+      "enum": [
+        "ambiguous_date",
+        "missing_source_time",
+        "conflicting_due",
+        "possible_duplicate",
+        "uncertain_owner",
+        "proposed_in_source",
+        "missing_context",
+        "evidence_unavailable",
+        "unsupported_format",
+        "source_revision",
+        "sensitive_content"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "assignment",
+        "exam",
+        "meeting",
+        "announcement",
+        "deadline_change",
+        "decision",
+        "personal_action",
+        "organizational_duty"
+      ]
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "title",
+        "description",
+        "context_id",
+        "context_type",
+        "due",
+        "assignee_scope",
+        "priority"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "assignment",
+            "exam",
+            "meeting",
+            "announcement",
+            "deadline_change",
+            "decision",
+            "personal_action",
+            "organizational_duty"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "context_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "context_type": {
+          "enum": [
+            "academic",
+            "organization",
+            "personal",
+            "unknown"
+          ]
+        },
+        "due": {
+          "$ref": "common.schema.json#/$defs/due"
+        },
+        "assignee_scope": {
+          "enum": [
+            "owner",
+            "group",
+            "class",
+            "other_person",
+            "unknown"
+          ]
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent",
+            "unknown"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://academic-os.invalid/schemas/sync-envelope.schema.json",
+  "title": "Academic OS cloud sync v2",
+  "description": "Only minimized structured proposals and opaque source references. No raw message content, quotation, raw-content digest or untyped nested candidate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "source_id",
+    "source_generation",
+    "created_at",
+    "idempotency_key",
+    "coverage",
+    "items",
+    "candidates"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "batch_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source_generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality",
+        "start_at",
+        "end_at",
+        "known_gaps"
+      ],
+      "properties": {
+        "quality": {
+          "enum": [
+            "export_window",
+            "partial_notification",
+            "calendar_window",
+            "manual",
+            "unknown"
+          ]
+        },
+        "start_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_gaps": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "listener_disconnected",
+              "permission_revoked",
+              "hidden_preview",
+              "missing_metadata",
+              "ambiguous_conversation",
+              "queue_expired",
+              "queue_overflow",
+              "parse_failure",
+              "history_unavailable",
+              "network_unavailable",
+              "unknown"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "observed_at",
+          "source_message_at",
+          "local_evidence_available"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_message_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "local_evidence_available": {
+            "type": "boolean"
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 100
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "expected_version",
+          "fields",
+          "evidence_ids",
+          "source_decision_state",
+          "confidence",
+          "issue_codes",
+          "needs_review"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "fields": {
+            "$ref": "common.schema.json#/$defs/fields"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 24,
+            "uniqueItems": true
+          },
+          "source_decision_state": {
+            "enum": [
+              "confirmed_in_source",
+              "proposed",
+              "disputed",
+              "unclear"
+            ]
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "unknown"
+            ]
+          },
+          "issue_codes": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/issue_code"
+            },
+            "minItems": 0,
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "needs_review": {
+            "const": true
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 50
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://academic-os.invalid/schemas/ai-extraction.schema.json",
+  "title": "Academic OS local extraction v2",
+  "description": "Untrusted local-only proposals. Never sync this object wholesale. Unknown context IDs remain null; server validates all references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "candidates"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "batch_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "draft_id",
+          "fields",
+          "evidence_ids",
+          "source_decision_state",
+          "confidence",
+          "issue_codes",
+          "needs_review"
+        ],
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "fields": {
+            "$ref": "common.schema.json#/$defs/fields"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 24,
+            "uniqueItems": true
+          },
+          "source_decision_state": {
+            "enum": [
+              "confirmed_in_source",
+              "proposed",
+              "disputed",
+              "unclear"
+            ]
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "unknown"
+            ]
+          },
+          "issue_codes": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/issue_code"
+            },
+            "minItems": 0,
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "needs_review": {
+            "const": true
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 50
+    }
+  }
+}
