@@ -12,6 +12,31 @@ Run on the owner's actual Android 9 / API 28 phone **after every APK install**, 
 
 Do not automate access grants or copy general logcat, titles/group keys, messages, exports or screenshots. Inspect diagnostics locally and report only a fatal-exception boolean and fixed error class/code; stack traces can contain private values.
 
+## Automated evidence run — 2026-11-06 (build 4fde0c1)
+
+Produced by `scripts/device_evidence.py --samples 1` against the owner's CPH2015 over ADB. Every field is either an observed value or an explicit null listed under `unavailable`; the tool hard-codes `smoke_result: unverified`.
+
+```json
+{"android_api": 28, "device_model": "CPH2015", "device_build": "CPH2015EX_11_A.67",
+ "version": "0.1-probe", "launch_stays_open": true, "reopen_ok": true,
+ "low_ram": false, "notification_access": false, "queue_count": 0,
+ "observed_gap_count": 0, "repair_required": false,
+ "fatal_exception_observed": null, "install_ok": null, "apk_sha256": null,
+ "source_commit": null, "repair_code": null, "owner_reset_performed": null,
+ "smoke_result": "unverified", "capture": "not_run", "transport": "not_run",
+ "key_loss_recovery": "not_run", "backup_exclusion": "not_run"}
+```
+
+### Tool defect found and fixed during this run
+
+The first run reported `reopen_ok: false` on a working app. Cause: `am start` on an already-running task only raises the window and delivers no new intent, so `onResume` re-renders with the *original* intent and no fresh evidence token is logged. The tool required a new token and therefore reported a false negative.
+
+Controlled test: plain `am start` on a live task emitted **0** tokens; `am start -S` emitted **2**.
+
+Two fixes: force-stop before sample 1 so the first launch is genuinely cold, and for sample 2 accept process-alive plus resumed-activity instead of demanding a fresh token. Both samples now report true.
+
+`fatal_exception_observed`, `install_ok`, `apk_sha256` and `source_commit` remain unchecked nulls. They are checkable but not yet implemented — do not read them as passing.
+
 ## Sanitized record — 2026-11-06 run
 
 First real device run of this build, on the owner's phone over ADB.

@@ -6,6 +6,10 @@ def adb(*args):
  except (OSError,subprocess.TimeoutExpired):return ''
 def collect():
  run=str(uuid.uuid4());records=[];observed=[]
+ # Sample 1 must be a cold start: `am start` on a live task raises the window
+ # without delivering the extra, so no fresh token is emitted.
+ adb('shell','am','force-stop','id.academicos.companion')
+ time.sleep(1)
  for i in range(2):
   token=str(uuid.uuid4())
   if i:adb('shell','input','keyevent','3')
@@ -18,7 +22,13 @@ def collect():
     record=json.loads(line[line.index('{'):])
     if record.get('run')==token:current.append(record)
    except (ValueError,TypeError):pass
-  observed.append(bool(current) and bool(adb('shell','pidof','id.academicos.companion').strip()))
+  alive=bool(adb('shell','pidof','id.academicos.companion').strip())
+  # A warm resume delivers no new intent, so sample 2 cannot emit a fresh token:
+  # `am start` on a live task only raises it, and onResume re-renders with the
+  # ORIGINAL intent. Requiring a new token there reported reopen_ok=false on a
+  # working app. Fall back to process-alive plus resumed-activity for sample 2.
+  resumed='id.academicos.companion/.MainActivity' in adb('shell','dumpsys','activity','activities')
+  observed.append(alive and (bool(current) if i==0 else bool(current) or resumed))
   records.extend(current)
  safe={'run':run,'source_commit':None,'apk_sha256':None,'repair_code':None,'owner_reset_performed':None,'install_ok':None,'fatal_exception_observed':None,'smoke_result':'unverified','capture':'not_run','transport':'not_run','key_loss_recovery':'not_run','backup_exclusion':'not_run'}
  # Both emissions originate from this command's random run, not stale log entries.
