@@ -314,3 +314,47 @@ Archive cross-check found that git am normalizes CRLF in the upstream Pixelify
 license, causing a tree mismatch. Normalized that license to LF without changing
 its text; the owner-supplied reference/instruction files remain byte-identical.
 The final round-trip is rerun against 5ae9583 before delivery.
+
+---
+
+## 8. Hardware run against build `f68dec8`, and a defect in the crash monitor
+
+Ran `scripts/device_evidence.py` twice against the owner's CPH2015 (API 28) with the APK built from `f68dec8`.
+
+```json
+{"android_api": 28, "device_model": "CPH2015", "device_build": "CPH2015EX_11_A.67",
+ "install_ok": true, "launch_stays_open": true, "reopen_ok": true,
+ "low_ram": false, "notification_access": false, "queue_count": 0,
+ "observed_gap_count": 0, "repair_required": false,
+ "source_commit": "f68dec82f3f1246b651f8d07efd0a38fe177ab74",
+ "fatal_exception_observed": null,
+ "unavailable": ["repair_code", "owner_reset_performed", "fatal_exception_observed"]}
+```
+
+The APK was later rebuilt from `56d4e1e`, and its embedded provenance now declares `56d4e1ef0359b153a0bffc6815a94e6b304b6e07` with `source_dirty:false`. The earlier build's declared commit became unreachable from `main` after the verification branch was rebased, which is why the rebuild was necessary.
+
+### Defect: the crash monitor can never observe coverage on API 28
+
+`fatal_exception_observed` returned `null` on both runs, and it returned `false` only once — on a build before this tool version. A `null` here means the window never opened, so the field is silently useless on this device.
+
+Root cause, isolated by experiment:
+
+```bash
+adb shell log -t AOS-RUN "<token> START"   # marker is written, exit 0
+
+adb logcat -d -b main -b crash -v brief -T 1 'AOS-RUN:I' '*:S'   -> 0 matches
+adb logcat -d -b main -b crash -v brief      'AOS-RUN:I' '*:S'   -> 1 match
+adb logcat -d -b main -b crash               'AOS-RUN:I' '*:S'   -> 1 match
+adb logcat -d -v brief -T 1                  'AOS-RUN:I' '*:S'   -> 0 matches
+adb logcat -d -b main -b crash -v threadtime -T 1 'AOS-RUN:I' '*:S' -> 0 matches
+```
+
+`-T 1` is the culprit, independent of buffer selection and format. `CrashWindow.start()` uses exactly that flag combination, so the live stream never sees the START marker, `started` is never set, and `feed()` discards every subsequent line — including any fatal exception.
+
+Live-stream proof without `-T 1`: started a background `adb logcat -b main -b crash -v brief 'AOS-RUN:I' '*:S'`, then wrote START and END for a fresh token. Both markers were captured (`grep -c` → **2**).
+
+**Why this matters:** the monitor fails safe — it returns `null`, never a false `false` — so it never fabricates a clean run. But it also never reports a real crash, which is the one job it has. During the owner's capture-matrix run every case would record `fatal_exception_observed: null`, so a crash mid-matrix would be invisible.
+
+**Minimal fix:** drop `-T 1` from the `logcat` argument list in `CrashWindow.start()`. The monitor's own token already scopes the window, so `-T` is redundant as well as harmful.
+
+**Not fixed here.** This session's role is architecture and verification, not implementation; the fix belongs in the next cloud package. It is listed as a required item in [NEXT-SLICE](NEXT-SLICE.md).
