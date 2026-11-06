@@ -12,6 +12,7 @@ CASES=[
  ('edited-journal','scripts/capture_matrix.py',"not hmac.compare_digest(signature,hmac.new(key,canonical(row),hashlib.sha256).hexdigest())","False",'test_device_evidence.py'),
  ('replaced-installed-artifact','scripts/device_evidence.py','if before_digest and before_digest==after_digest:','if before_digest:','test_device_evidence.py'),
  ('leftover-warm-process','scripts/device_evidence.py','cold_pid==pid_text','True','test_device_evidence.py'),
+ ('stale-boot','scripts/device_evidence.py','if not boot or boot_end_code!=0 or boot_end.strip()!=boot:','if not boot:','test_device_evidence.py'),
 ]
 def main():
  lock=(ROOT/'.git/evidence-mutations.lock').open('w')

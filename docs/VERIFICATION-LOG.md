@@ -158,7 +158,7 @@ User's explicit base 43ddeea supersedes the c7c57c5 revision in NEXT-SLICE's blo
 | npm run test:e2e | 5 passed (rerun this slice) |
 | npm run test:pwa | 1 passed (rerun this slice) |
 | Python unittest discovery | 33 passed, synthetic only |
-| scripts/check_evidence_mutations.py --output-dir ... | 9 declared faults: baseline 0, broken 1, restored 0 for every case |
+| scripts/check_evidence_mutations.py --output-dir ... | 10 declared faults: baseline 0, broken 1, restored 0 for every case |
 | Gradle assembleDebug lint testDebugUnitTest --no-daemon | BUILD SUCCESSFUL, API-28 surface check and 6 JVM policy tests |
 | Dirty-build actual APK asset inspection | source_commit=null, source_dirty=true; assertion passed |
 | New adb collector / matrix harness on hardware | NOT RUN |
@@ -171,4 +171,6 @@ Existing defects found: resumed detection accepted component names anywhere in a
 
 Environment reused from the previous local toolchain: Java/compiler 17.0.20, Gradle 8.11.1, Kotlin 2.1.21, AGP 8.9.2; SDK platforms 28/35 and build-tools 35.0.0. Node 24.22.1, npm 11.9.0, Python 3.12.14. No new dependency or toolchain installation needed. Playwright's pinned Chromium headless shell was installed using npx playwright install chromium --only-shell. No device/emulator was started. No milestone complete.
 
-Clean-build provenance check: actual APK asset declared source_commit=e65775873cfcf80fcd6e12b327ee6b4d91e5170d with source_dirty=false, matching that clean checkout exactly. Assertion passed after native acceptance exit 0. Later report-only commit does not change implementation. This is a local build check, NOT an installed-device observation or independent binary-source attestation. Full actual output, including all nine broken/restored runs and their clean baselines, is pasted in [EVIDENCE-CHECKS](EVIDENCE-CHECKS.md). The shipped CASES list has exactly nine faults; no hand-run extra faults are included in that count.
+Clean-build provenance check: actual APK asset declared source_commit=e65775873cfcf80fcd6e12b327ee6b4d91e5170d with source_dirty=false, matching that clean checkout exactly. Assertion passed after native acceptance exit 0. Later observer/verification changes do not alter the Android provenance producer tested by that build. This is a local build check, NOT an installed-device observation or independent binary-source attestation. Full actual output, including all ten broken/restored runs and their clean baselines, is pasted in [EVIDENCE-CHECKS](EVIDENCE-CHECKS.md). The shipped CASES list has exactly ten faults; no hand-run extra faults are included in that count.
+
+Final observer hardening pins adb device selection and checks private in-memory boot identity. Missing identity refuses matrix collection, and stale boot cannot satisfy lifecycle evidence. Full Python discovery remains 33 tests; the shipped CASES list and final runner output now declare ten faults, each with baseline/pass, broken/fail and restored/pass. No new hardware observation was made.

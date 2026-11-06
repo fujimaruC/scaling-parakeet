@@ -63,6 +63,7 @@ def main():
  try:
   # Install/build smoke remains observations, never a substitute for capture.
   smoke=collect(a.apk);print(json.dumps(smoke,sort_keys=True))
+  if smoke.get('error_code')=='DEVICE_NOT_IDENTIFIED':raise ValueError('Device identity unavailable')
   for case in CASES:
    input('Case '+case+': Enter to begin; perform ONLY synthetic owner-controlled case. ')
    window=CrashWindow();window.start();before=passive();token=str(uuid.uuid4());start=time.monotonic_ns()

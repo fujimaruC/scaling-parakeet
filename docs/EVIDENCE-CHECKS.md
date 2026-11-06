@@ -1,6 +1,6 @@
 # Evidence slice — actual retained check output
 
-Base 43ddeea. Synthetic/local build checks only. No hardware capture, account, private peer/network, provider or push was tested. Terminal colors/trailing padding removed; output content otherwise preserved.
+Base 43ddeea. Synthetic/local build checks only. Capture/device/account/real network/provider/push unverified. Terminal colors/trailing padding normalized. Fault counts come from the shipped CASES list.
 
 ## npm-ci
 
@@ -216,7 +216,7 @@ test_loopback_login_and_import_while_cross_origin_is_rejected (test_server.Local
 test_private_https_pair_signed_receipt_retry_and_revocation (test_transport.TLSTransportTests.test_private_https_pair_signed_receipt_retry_and_revocation) ... ok
 
 ----------------------------------------------------------------------
-Ran 33 tests in 1.595s
+Ran 33 tests in 1.419s
 
 OK
 ```
@@ -226,7 +226,7 @@ OK
 Command: `.venv/bin/python scripts/validate_planning.py`
 
 ```text
-PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 71 local links; 30 features; 34 test IDs.
+PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 74 local links; 30 features; 34 test IDs.
 This validates planning artifacts only. No application/device/account tests ran.
 ```
 
@@ -362,12 +362,15 @@ replaced-installed-artifact restored exit 0
 leftover-warm-process baseline exit 0
 leftover-warm-process broken exit 1
 leftover-warm-process restored exit 0
-PASS: 9 faults failed and 9 restored runs passed; sources restored.
+stale-boot baseline exit 0
+stale-boot broken exit 1
+stale-boot restored exit 0
+PASS: 10 faults failed and 10 restored runs passed; sources restored.
 ```
 
 ## provenance
 
-Command: `Read assets/academic-os-build.json from actual built APK; assert clean Git HEAD match`
+Command: `Read actual built APK asset and assert clean Git HEAD match`
 
 ```text
 PASS: clean-build actual APK declaration matches clean Git HEAD e65775873cfcf80fcd6e12b327ee6b4d91e5170d
@@ -388,7 +391,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.012s
 
 OK
 ```
@@ -411,7 +414,7 @@ test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_
 FAIL: test_case_cannot_pass_without_real_permission_transition_and_complete_window (test_device_evidence.DeviceEvidenceTests.test_case_cannot_pass_without_real_permission_transition_and_complete_window)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 66, in test_case_cannot_pass_without_real_permission_transition_and_complete_window
+  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 69, in test_case_cannot_pass_without_real_permission_transition_and_complete_window
     self.assertEqual(m.verdict('grant',before,after,0),'UNVERIFIED')
 AssertionError: 'PASS' != 'UNVERIFIED'
 - PASS
@@ -419,7 +422,7 @@ AssertionError: 'PASS' != 'UNVERIFIED'
 
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.012s
+Ran 10 tests in 0.011s
 
 FAILED (failures=1)
 ```
@@ -439,7 +442,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.011s
+Ran 10 tests in 0.012s
 
 OK
 ```
@@ -488,7 +491,7 @@ Traceback (most recent call last):
 AssertionError: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' is not None
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.012s
 
 FAILED (failures=1)
 ```
@@ -508,7 +511,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.011s
 
 OK
 ```
@@ -528,7 +531,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.011s
+Ran 10 tests in 0.012s
 
 OK
 ```
@@ -551,7 +554,7 @@ test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_
 FAIL: test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 74, in test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning
+  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 77, in test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning
     with self.assertRaises(ValueError):m.verify(path)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: ValueError not raised
@@ -577,7 +580,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.025s
 
 OK
 ```
@@ -597,7 +600,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.011s
+Ran 10 tests in 0.013s
 
 OK
 ```
@@ -625,7 +628,7 @@ Traceback (most recent call last):
 AssertionError: True is not false
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.014s
 
 FAILED (failures=1)
 ```
@@ -665,7 +668,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.011s
 
 OK
 ```
@@ -694,7 +697,7 @@ Traceback (most recent call last):
 AssertionError: True is not False
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.011s
 
 FAILED (failures=1)
 ```
@@ -734,7 +737,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.015s
+Ran 10 tests in 0.010s
 
 OK
 ```
@@ -757,12 +760,12 @@ test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_
 FAIL: test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 59, in test_run_binds_cold_process_warm_resume_and_installed_identity
-    self.assertIs(record['reopen_ok'],None if changed_process else True)
+  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 62, in test_run_binds_cold_process_warm_resume_and_installed_identity
+    self.assertIs(record['reopen_ok'],None if changed_process or changed_boot else True)
 AssertionError: True is not None
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.013s
+Ran 10 tests in 0.010s
 
 FAILED (failures=1)
 ```
@@ -782,7 +785,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.016s
+Ran 10 tests in 0.011s
 
 OK
 ```
@@ -802,7 +805,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.010s
+Ran 10 tests in 0.011s
 
 OK
 ```
@@ -851,7 +854,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.009s
+Ran 10 tests in 0.013s
 
 OK
 ```
@@ -894,12 +897,12 @@ test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_
 FAIL: test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 60, in test_run_binds_cold_process_warm_resume_and_installed_identity
+  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 63, in test_run_binds_cold_process_warm_resume_and_installed_identity
     self.assertEqual(record['apk_sha256'],None if changed_apk else 'a'*64)
 AssertionError: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' != None
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.013s
+Ran 10 tests in 0.014s
 
 FAILED (failures=1)
 ```
@@ -919,7 +922,75 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
+Ran 10 tests in 0.011s
+
+OK
+```
+
+## stale-boot-baseline
+
+```text
+test_activity_history_cannot_satisfy_resumed (test_device_evidence.DeviceEvidenceTests.test_activity_history_cannot_satisfy_resumed) ... ok
+test_case_cannot_pass_without_real_permission_transition_and_complete_window (test_device_evidence.DeviceEvidenceTests.test_case_cannot_pass_without_real_permission_transition_and_complete_window) ... ok
+test_crash_window_ignores_old_and_unrelated_but_retains_early_crash (test_device_evidence.DeviceEvidenceTests.test_crash_window_ignores_old_and_unrelated_but_retains_early_crash) ... ok
+test_dirty_or_missing_provenance_is_unknown (test_device_evidence.DeviceEvidenceTests.test_dirty_or_missing_provenance_is_unknown) ... ok
+test_incomplete_or_ambiguous_stream_is_unknown (test_device_evidence.DeviceEvidenceTests.test_incomplete_or_ambiguous_stream_is_unknown) ... ok
+test_install_success_is_not_issued_or_cached (test_device_evidence.DeviceEvidenceTests.test_install_success_is_not_issued_or_cached) ... ok
+test_native_crash_and_incomplete_fatal_attribution (test_device_evidence.DeviceEvidenceTests.test_native_crash_and_incomplete_fatal_attribution) ... ok
+test_readback_hash_and_embedded_clean_revision (test_device_evidence.DeviceEvidenceTests.test_readback_hash_and_embedded_clean_revision) ... ok
+test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity) ... ok
+test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.017s
+
+OK
+```
+
+## stale-boot-broken
+
+```text
+test_activity_history_cannot_satisfy_resumed (test_device_evidence.DeviceEvidenceTests.test_activity_history_cannot_satisfy_resumed) ... ok
+test_case_cannot_pass_without_real_permission_transition_and_complete_window (test_device_evidence.DeviceEvidenceTests.test_case_cannot_pass_without_real_permission_transition_and_complete_window) ... ok
+test_crash_window_ignores_old_and_unrelated_but_retains_early_crash (test_device_evidence.DeviceEvidenceTests.test_crash_window_ignores_old_and_unrelated_but_retains_early_crash) ... ok
+test_dirty_or_missing_provenance_is_unknown (test_device_evidence.DeviceEvidenceTests.test_dirty_or_missing_provenance_is_unknown) ... ok
+test_incomplete_or_ambiguous_stream_is_unknown (test_device_evidence.DeviceEvidenceTests.test_incomplete_or_ambiguous_stream_is_unknown) ... ok
+test_install_success_is_not_issued_or_cached (test_device_evidence.DeviceEvidenceTests.test_install_success_is_not_issued_or_cached) ... ok
+test_native_crash_and_incomplete_fatal_attribution (test_device_evidence.DeviceEvidenceTests.test_native_crash_and_incomplete_fatal_attribution) ... ok
+test_readback_hash_and_embedded_clean_revision (test_device_evidence.DeviceEvidenceTests.test_readback_hash_and_embedded_clean_revision) ... ok
+test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity) ... FAIL
+test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
+
+======================================================================
+FAIL: test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-evidence/collectors/local/tests/test_device_evidence.py", line 61, in test_run_binds_cold_process_warm_resume_and_installed_identity
+    self.assertIs(record['launch_stays_open'],None if changed_boot else True)
+AssertionError: True is not None
+
+----------------------------------------------------------------------
 Ran 10 tests in 0.013s
+
+FAILED (failures=1)
+```
+
+## stale-boot-restored
+
+```text
+test_activity_history_cannot_satisfy_resumed (test_device_evidence.DeviceEvidenceTests.test_activity_history_cannot_satisfy_resumed) ... ok
+test_case_cannot_pass_without_real_permission_transition_and_complete_window (test_device_evidence.DeviceEvidenceTests.test_case_cannot_pass_without_real_permission_transition_and_complete_window) ... ok
+test_crash_window_ignores_old_and_unrelated_but_retains_early_crash (test_device_evidence.DeviceEvidenceTests.test_crash_window_ignores_old_and_unrelated_but_retains_early_crash) ... ok
+test_dirty_or_missing_provenance_is_unknown (test_device_evidence.DeviceEvidenceTests.test_dirty_or_missing_provenance_is_unknown) ... ok
+test_incomplete_or_ambiguous_stream_is_unknown (test_device_evidence.DeviceEvidenceTests.test_incomplete_or_ambiguous_stream_is_unknown) ... ok
+test_install_success_is_not_issued_or_cached (test_device_evidence.DeviceEvidenceTests.test_install_success_is_not_issued_or_cached) ... ok
+test_native_crash_and_incomplete_fatal_attribution (test_device_evidence.DeviceEvidenceTests.test_native_crash_and_incomplete_fatal_attribution) ... ok
+test_readback_hash_and_embedded_clean_revision (test_device_evidence.DeviceEvidenceTests.test_readback_hash_and_embedded_clean_revision) ... ok
+test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity) ... ok
+test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.021s
 
 OK
 ```
@@ -939,7 +1010,7 @@ test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evid
 test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.012s
+Ran 10 tests in 0.011s
 
 OK
 ```
@@ -977,7 +1048,7 @@ Traceback (most recent call last):
 AssertionError: None is not True
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.011s
+Ran 10 tests in 0.014s
 
 FAILED (failures=2)
 ```

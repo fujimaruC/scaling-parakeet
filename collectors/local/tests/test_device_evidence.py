@@ -43,7 +43,7 @@ class DeviceEvidenceTests(unittest.TestCase):
   class Window:
    def start(self):pass
    def stop(self):return False
-  for changed_process,changed_apk in [(False,False),(True,False),(False,True)]:
+  for changed_process,changed_apk,changed_boot in [(False,False,False),(True,False,False),(False,True,False),(False,False,True)]:
    identifiers=iter(['sample','cold','warm']);phase=[0]
    def read(*args):
     if args[:2]==('shell','am') and args[2]=='start':phase[0]=0 if args[-1]=='cold' else 1
@@ -51,12 +51,15 @@ class DeviceEvidenceTests(unittest.TestCase):
     if args[:2]==('shell','dumpsys'):return 'mResumedActivity: ActivityRecord{xyz u0 '+d.COMP+' t1}'
     if args[0]=='logcat':return json.dumps({'run':'cold','notification_access':False,'queue_count':0})
     return ''
-   def cmd(*args):return (0,'') if args[1]=='am' else (1,'')
+   def cmd(*args):
+    if args[0]=='get-serialno':return 0,'synthetic-device'
+    if args[1]=='cat':return 0,('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' if changed_boot and phase[0] else 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    return (0,'') if args[1]=='am' else (1,'')
    artifacts=[('a'*64,'c'*40),('b'*64 if changed_apk else 'a'*64,'c'*40)]
    with patch.object(d,'adb',side_effect=read),patch.object(d,'command',side_effect=cmd),patch.object(d,'installed_artifact',side_effect=artifacts),patch.object(d,'CrashWindow',Window),patch.object(d.time,'sleep'),patch.object(d.uuid,'uuid4',side_effect=lambda:next(identifiers)):
     record=d.collect()
-   self.assertIs(record['launch_stays_open'],True)
-   self.assertIs(record['reopen_ok'],None if changed_process else True)
+   self.assertIs(record['launch_stays_open'],None if changed_boot else True)
+   self.assertIs(record['reopen_ok'],None if changed_process or changed_boot else True)
    self.assertEqual(record['apk_sha256'],None if changed_apk else 'a'*64)
    self.assertEqual(record['source_commit'],None if changed_apk else 'c'*40)
  def test_case_cannot_pass_without_real_permission_transition_and_complete_window(self):

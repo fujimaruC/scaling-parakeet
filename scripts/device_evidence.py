@@ -3,10 +3,11 @@ import argparse,hashlib,json,re,subprocess,tempfile,threading,time,uuid,zipfile
 from pathlib import Path
 PKG='id.academicos.companion'
 COMP=PKG+'/.MainActivity'
+_serial=None
 
 def command(*args):
  try:
-  r=subprocess.run(['adb',*args],capture_output=True,text=True,errors='replace',timeout=30)
+  r=subprocess.run(['adb',*(['-s',_serial] if _serial else []),*args],capture_output=True,text=True,errors='replace',timeout=30)
   return r.returncode,r.stdout
  except (OSError,subprocess.TimeoutExpired):return None,''
 def adb(*args):
@@ -58,7 +59,7 @@ class CrashWindow:
   if re.match(r'Process: [A-Za-z0-9_.:]+, PID: '+pid+r'\b',body):self.identified.add(pid)
   if re.match(r'Process: '+re.escape(PKG)+r'(?:\:[A-Za-z0-9_.]+)?, PID: '+pid+r'\b',body):self.target.add(pid)
  def start(self):
-  try:self.proc=subprocess.Popen(['adb','logcat','-b','main','-b','crash','-v','brief','-T','1','AOS-RUN:I','AndroidRuntime:E','DEBUG:F','libc:F','chatty:I','*:S'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,errors='replace')
+  try:self.proc=subprocess.Popen(['adb',*(['-s',_serial] if _serial else []),'logcat','-b','main','-b','crash','-v','brief','-T','1','AOS-RUN:I','AndroidRuntime:E','DEBUG:F','libc:F','chatty:I','*:S'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,errors='replace')
   except OSError:return
   def read():
    try:
@@ -87,8 +88,16 @@ class CrashWindow:
   return None
 
 def collect(apk=None):
+ global _serial
  run=str(uuid.uuid4());records=[];observed=[];cold_pid=None
  safe={'run':run,'source_commit':None,'apk_sha256':None,'repair_code':None,'owner_reset_performed':None,'install_ok':None,'fatal_exception_observed':None,'smoke_result':'unverified','capture':'not_run','transport':'not_run','key_loss_recovery':'not_run','backup_exclusion':'not_run'}
+ code,serial=command('get-serialno')
+ if code!=0 or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,120}',serial.strip()) or serial.strip()=='unknown':
+  safe.update({'launch_stays_open':None,'reopen_ok':None,'error_code':'DEVICE_NOT_IDENTIFIED'})
+  safe['unavailable']=[k for k,v in safe.items() if v is None];return safe
+ _serial=serial.strip()
+ boot_code,boot=command('shell','cat','/proc/sys/kernel/random/boot_id')
+ boot=boot.strip() if boot_code==0 and re.fullmatch(r'[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}',boot.strip()) else None
  # Begin monitoring before install/cold start so early crashes are not lost.
  monitor=CrashWindow();monitor.start()
  try:
@@ -120,6 +129,8 @@ def collect(apk=None):
     if attempt<3:adb('shell','am','start','-n',COMP,'--es','evidence_run',token)
    if i==0 and ok:cold_pid=pid_text
    observed.append(True if ok else None);records.extend(current)
+  boot_end_code,boot_end=command('shell','cat','/proc/sys/kernel/random/boot_id')
+  if not boot or boot_end_code!=0 or boot_end.strip()!=boot:observed=[None,None]
   safe['launch_stays_open'],safe['reopen_ok']=observed
   after_digest,after_commit=installed_artifact()
   if before_digest and before_digest==after_digest:
