@@ -31,3 +31,7 @@ V0.1 permitted raw excerpts and an untyped nested candidate object, while missin
 ## Decision change procedure
 
 Record date, status, requirement/source, alternatives, consequence, affected feature/test IDs, rollout and rollback. Proposed provider/framework/tool version is not marked verified until tested. Do not use an ADR to silently weaken confirmed privacy, approval or dual-ingestion scope.
+
+## ADR-016 — Implementation baseline (2026-11-06)
+
+Owner expanded authorization from M0-only to the whole system. Proceed with independent slices while retaining real-device/account release gates. React/Vite static PWA, Worker/D1, Python local evidence and Kotlin probe are now actual code. Exact dependency versions are locked; pre-release Miniflare 5 proved incompatible with the legacy harness options, so stable v4 is pinned. Production identity uses verified Access JWT issuer/audience/subject, with no deployed dev-identity flag. Synthetic tests inject identity only through a separate non-deployed loopback runner. Local UI/API share an origin to retain Origin enforcement without development-proxy rewriting. Cloud scheduler currently delivers durable in-app inbox only; external push is explicitly unconfigured. Android build/device/transport proof remains blocked and no native task UI was added.

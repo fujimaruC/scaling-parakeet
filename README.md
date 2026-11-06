@@ -2,7 +2,9 @@
 
 Private memory for **academic and organizational responsibilities**: what needs doing, when, where it came from, what changed and what may have been missed.
 
-**Specification v0.2.0 · 2026-11-06 · planning complete; application not implemented.**
+**Specification v0.2.0 · 2026-11-06 · implementation in progress.**
+
+[Run the local implementation and checks](docs/18-DEVELOPMENT.md). See STATUS for tested behavior and remaining gates.
 
 One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected WhatsApp conversations. No teams, no public accounts, no productivity scoring.
 
@@ -39,15 +41,15 @@ $0 mandatory recurring spend is a preference, not an absolute constraint. Paid a
 
 ## Roadmap
 
-Implementation proceeds one vertical slice at a time. **Only M0 is currently authorized.**
+Implementation proceeds one vertical slice at a time. The owner has authorized implementation across the system. External/device gates still require real evidence.
 
 | Gate | Scope | State |
 |---|---|---|
-| **M0** Feasibility and foundation | Toolchain, monorepo, contracts, local D1; real Android 9 listener probe; private phone→Linux transport proof; Cloudflare auth/cost; 9Router synthetic smoke; linked-device research ADR | NOT STARTED |
-| **M1** Private ledger | Owner auth, contexts, task CRUD with date precision, history, manual quick-add, base React shell | NOT STARTED |
-| **M2** Both collection paths | Hardened listener queue, remote receipt/ack, export parser and import preview, shared normalization, dedupe, local evidence | NOT STARTED |
-| **M3** AI review | 9Router adapter, consent, redaction, strict validation, cloud projection, proposal inbox, conflicts | NOT STARTED |
-| **M4** Daily product | PWA screens, cloud scheduler/inbox, push feasibility, offline snapshot, source health, export/purge/restore, 7-day pilot = **MVP** | NOT STARTED |
+| **M0** Feasibility and foundation | Toolchain, monorepo, contracts, local D1; real Android 9 listener probe; private phone→Linux transport proof; Cloudflare auth/cost; 9Router synthetic smoke; linked-device research ADR | PARTIAL — see STATUS |
+| **M1** Private ledger | Owner auth, contexts, task CRUD with date precision, history, manual quick-add, base React shell | PARTIAL — see STATUS |
+| **M2** Both collection paths | Hardened listener queue, remote receipt/ack, export parser and import preview, shared normalization, dedupe, local evidence | PARTIAL — see STATUS |
+| **M3** AI review | 9Router adapter, consent, redaction, strict validation, cloud projection, proposal inbox, conflicts | PARTIAL — see STATUS |
+| **M4** Daily product | PWA screens, cloud scheduler/inbox, push feasibility, offline snapshot, source health, export/purge/restore, 7-day pilot = **MVP** | PARTIAL — see STATUS |
 | **M5** ITK integration | Evidence-gated iCalendar or permitted feed/API; manual fallback otherwise | UNVERIFIED / conditional |
 
 Work packages: `W00`–`W03` (M0), `W10`–`W11` (M1), `W20`–`W22` (M2), `W30`–`W31` (M3), `W40`–`W42` (M4), `W50` (M5) — details in [17](docs/17-WORK-PACKAGES.md).
@@ -74,14 +76,14 @@ Later: F28 subtasks/recurrence, F29 group recaps, F30 offline writes.
 
 ## Architecture
 
-Planned repository layout — **M0 creates these; none exist yet**:
+Repository modules (implementation maturity differs; see STATUS):
 
 ```
 apps/web                  React + TS static PWA (cloud-facing)
 apps/worker               TS Worker + D1: auth, routes, domain, scheduler, delivery
 apps/worker/migrations    Versioned D1 SQL, no real seeds
 apps/android-companion    Kotlin listener, queue, pairing, transfer
-apps/local-ui             Browser UI for import preview, consent, local evidence
+collectors/local/server   Local browser import/evidence UI; processing UI pending
 collectors/local          Python ingest, normalize, evidence, privacy, ai, sync
 packages/contracts        Validation adapters generated from root schemas
 tests/{fixtures,contract,integration,e2e}   Synthetic only
@@ -133,7 +135,7 @@ Details in [02](docs/02-DATA-MODEL.md) and [10](docs/10-API-CONTRACTS.md).
 | [16 Owner decisions](docs/16-OWNER-DECISIONS.md) | Confirmed requirements vs proposed engineering choices |
 | [17 Work packages](docs/17-WORK-PACKAGES.md) | Executable instructions and milestone handoffs |
 
-`docs/`, `schemas/` and `examples/` at the repository root are canonical. Old package entry points redirect here; do not create independent copies. No application test commands exist yet: M0 must implement them. Documentation validation is not application verification.
+`docs/`, `schemas/` and `examples/` at the repository root are canonical. Old package entry points redirect here; do not create independent copies. Use `npm run check`, `npm run test:e2e` and the Python checks in the development guide. Documentation validation is not application verification.
 
 ## Validate this planning package
 
@@ -145,8 +147,8 @@ pip install -r requirements-docs.txt
 python scripts/validate_planning.py
 ```
 
-Expected output: `PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 48 local links; 30 features; 34 test IDs.`
+Expected output reports 3 schemas, 5 valid fixtures/date variants, 21 rejection cases, the current relative-link count, 30 features and 34 test IDs.
 
 ## Status
 
-Planning only. No application code, deployment, device test or account verification exists. Evidence and blockers live in [STATUS](docs/STATUS.md); the next action is M0 `W00`.
+Runnable local implementation and Android probe source are present. Deployment/device/account gates remain open. Evidence, incomplete features and next steps live in [STATUS](docs/STATUS.md).

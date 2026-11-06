@@ -1,3 +1,5 @@
+> Superseded session scope, 2026-11-06: the owner now authorizes implementation across the whole system. Read current STATUS and 18-DEVELOPMENT; preserve the working implementation and continue independent slices while external gates remain open. The original M0 prompt below is historical guidance, not a new restriction on this authorization.
+
 # Next-model handoff — Academic OS v0.2
 
 Planning is ready. No application has been built. Use an isolated working branch and begin **M0 only**. Do not call device/account gates complete using mocks.

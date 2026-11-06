@@ -1,0 +1,46 @@
+{
+  "name": "academic-os",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/worker",
+    "packages/contracts"
+  ],
+  "scripts": {
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run tests/integration",
+    "build": "npm run build -w @academic-os/web && npm run build -w @academic-os/worker",
+    "dev": "wrangler dev --config apps/worker/wrangler.jsonc",
+    "dev:web": "npm run dev -w @academic-os/web",
+    "test:python": "python -m unittest discover -s collectors/local/tests -v",
+    "dev:synthetic": "node --import tsx scripts/dev-synthetic.ts",
+    "test:e2e": "playwright test",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\"",
+    "lint": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\""
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261104.1",
+    "@playwright/test": "1.56.1",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "miniflare": "4.20260730.0",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "7.3.7",
+    "vitest": "3.2.7",
+    "wrangler": "4.158.0"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "jose": "6.2.15",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}
