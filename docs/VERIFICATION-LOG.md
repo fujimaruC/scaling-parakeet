@@ -4,7 +4,7 @@
 
 **Rule for this document.** A line appears here only if the command really ran. Anything not run is marked `NOT RUN`. Synthetic results never imply device, account, network or provider behaviour.
 
-Last updated: 2026-11-06, at commit `c7c57c5`.
+Historical owner record through 2026-11-06, commit `c7c57c5`; later cloud checks are appended below.
 
 ---
 
@@ -170,3 +170,5 @@ Full retained command output is in EVIDENCE-CHECKS.md. Test/fault counts come fr
 Existing defects found: resumed detection accepted component names anywhere in activity history; force-stop/process-absence success was not checked. Now only the actual resumed field qualifies, and warm resume must belong to the cold-run process or a fresh token. Run-bound crash markers, continuous consumption and explicit unknowns replace tail-based/inferred crash claims. Build-declared source provenance is not an independent reproducible-build attestation; unknown/dirty APKs remain null. Matrix journal signatures detect accidental editing, not a malicious owner/root holding its local key. Other capture cases remain UNVERIFIED even when prompted/run if the available sensors cannot certify their expected behavior.
 
 Environment reused from the previous local toolchain: Java/compiler 17.0.20, Gradle 8.11.1, Kotlin 2.1.21, AGP 8.9.2; SDK platforms 28/35 and build-tools 35.0.0. Node 24.22.1, npm 11.9.0, Python 3.12.14. No new dependency or toolchain installation needed. Playwright's pinned Chromium headless shell was installed using npx playwright install chromium --only-shell. No device/emulator was started. No milestone complete.
+
+Clean-build provenance check: actual APK asset declared source_commit=e65775873cfcf80fcd6e12b327ee6b4d91e5170d with source_dirty=false, matching that clean checkout exactly. Assertion passed after native acceptance exit 0. Later report-only commit does not change implementation. This is a local build check, NOT an installed-device observation or independent binary-source attestation. Full actual output, including all nine broken/restored runs and their clean baselines, is pasted in [EVIDENCE-CHECKS](EVIDENCE-CHECKS.md). The shipped CASES list has exactly nine faults; no hand-run extra faults are included in that count.
