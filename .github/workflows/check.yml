@@ -30,6 +30,6 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - run: ./gradlew assembleDebug lintDebug --no-daemon
+      - run: sdkmanager 'platforms;android-28' 'platforms;android-35' 'build-tools;35.0.0'
+      - run: ./gradlew assembleDebug lint testDebugUnitTest --no-daemon
         working-directory: apps/android-companion

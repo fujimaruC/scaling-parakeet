@@ -2,7 +2,19 @@
 
 **2026-11-06 · Asia/Makassar. Whole-system implementation continues; full MVP is not complete.**
 
-Remote base: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
+Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
+
+## Current focused follow-up — base d0cbb60
+
+Base: `d0cbb60972ad8fb198e058c1802a6889164c27a1`; branch `fix/android-api28-private-queue`, fresh GitHub clone. Owner updated the requested base from 6d8a2f3; required reading files were unchanged. Scope: queue privacy/key-loss recovery, API-28 compatibility and device smoke documentation. No dependency, ledger rewrite, AI-approval or cloud-boundary change. No push/deployment/paid provisioning or real-data import.
+
+Implementation: domain-separated Keystore HMAC separate from AES; missing-key checks cover queue and encrypted pairing/batch state before retention writes. Visible repair UI and durable reset marker; pause rechecked under queue/reset lock. Every v1 database requires owner-confirmed reset (including empty legacy queues). Until then old hashes remain in a blocked legacy database. Reset discards untransferred data and encrypted pairing/batches, deletes sidecars/keys, pauses capture and requires re-pairing. Cancel preserves blocked data. Do not silently reverse this policy.
+
+`verifyApi28` compiles all Kotlin against API-28 stubs without host JDK APIs; NewApi/InlinedApi lint is fatal. Five plain-JVM policy tests use standard JCA and an injected key store, not Android Keystore/SQLite. Mutation checks undo each fix and inject incompatible Android/Java APIs. Actual outcomes and output are recorded in [SESSION-CHECKS](SESSION-CHECKS.md).
+
+The chat workspace reset before the first result could be packaged. Source was reconstructed and all acceptance checks are rerun; only retained, freshly captured output is used for this deliverable. Earlier passing results from the discarded workspace are not substituted.
+
+Actual device/emulator, key loss/invalidation, SQLite/process/disk/reset interruption, listener capture, real peer/network, account/provider/push and pilot tests remain **unverified**. M0 and every release gate remain incomplete. Owner must run [DEVICE-SMOKE](DEVICE-SMOKE.md), then [the longer capture matrix](14-ANDROID-COMPANION.md#required-actual-device-matrix). Existing device evidence below belongs to the owner's earlier session.
 
 ## Implemented and exercised locally
 
@@ -22,7 +34,7 @@ Remote base: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at 
 | Backup | Encrypted canonical export and disposable SQLite restore parity; future-only rebuild queued after validation; no raw evidence/credentials/old delivery intents restored |
 | Calendar import | Conservative ICS preview parser; recurrence/floating-time uncertainty flagged; actual ITK unverified |
 
-## Latest commands and outcomes
+## Earlier whole-system evidence (historical)
 
 All data used for automated verification was synthetic.
 
@@ -58,3 +70,14 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
 Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.
+
+
+## Focused-session environment and verification
+
+Node 24.22.1, npm 11.9.0, Python 3.12.14, Java/compiler 17.0.20, Gradle 8.11.1, Kotlin 2.1.21, AGP 8.9.2. SDK platform 28 rev 6 / platform 35 rev 2, build-tools 35.0.0; Gradle downloaded platform-tools 37.0.1 without any device operation.
+
+The resumed runtime had Java 17 compiler/tool modules but lacked executable launchers and SDK. Official Ubuntu JDK download returned HTTP 503; Adoptium API returned HTTP 403. Restored missing javac/jar/javap/jlink/jmod launchers against the existing standard JDK modules in a workspace-local runtime copy, then compiled and ran a Java probe. Explicit local Gradle toolchain settings select that copy; they are excluded from delivery. Official Android CLI tools 16.0 archive 12266719 passed its published SHA-1 check. Installed platforms 28/35 and build-tools 35.0.0 with sdkmanager; normalized the nested extracted platform roots after verifying source.properties API levels. None of these toolchain/cache files are in the repository ZIP.
+
+Current captured results: npm ci exit 0; npm run check exit 0 (16 D1 tests plus formatting/types/PWA build/Worker dry-run); Python unittest exit 0 (19 tests); planning validation exit 0; Android assembleDebug/lint/testDebugUnitTest exit 0 with 0 lint errors and 6 existing warnings, including 5 plain-JVM policy tests and the whole-source API-28 check. Mutation checks completed: all 6 deliberately broken runs exited 1 for the intended reason; all 6 restored runs exited 0. Full actual output is in [SESSION-CHECKS](SESSION-CHECKS.md). Earlier browser E2E/PWA tests (5+1) were not rerun for this Android slice. Do not relabel the historical 41-test count as fresh browser/device proof.
+
+Actual Android Keystore/SQLite/vendor behavior, changed APK install/launch, reset cancellation/interruption, listener grant/filter/queue/recovery, physical/private peer/network, account/provider/push tests and pilot remain unverified. Missing actual observation blocks those gates, not independent local checks. Run the one-minute smoke test on the owner's phone first. Build with the owner's existing local debug signing identity; no signing key/cloud-built APK is included.

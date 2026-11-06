@@ -4,7 +4,7 @@ This branch starts the whole-system implementation authorized by the owner on 20
 
 ## Reproducible local checks
 
-Node 24, Python 3.12 and a Python virtual environment were used here. Java 17 **JDK**, Android SDK platform 35/build-tools 35.0.0 are required to compile the companion. Java runtime alone is insufficient.
+Node 24, Python 3.12 and a Python virtual environment were used here. Java 17 **JDK**, Android SDK platforms 28 and 35/build-tools 35.0.0 are required to compile the companion. Java runtime alone is insufficient.
 
 ```bash
 npm ci
@@ -56,7 +56,7 @@ Encryption uses standard authenticated Fernet encryption. Keys are created exclu
 
 ```bash
 cd apps/android-companion
-./gradlew assembleDebug lintDebug --no-daemon
+./gradlew assembleDebug lint testDebugUnitTest --no-daemon
 ```
 
 Requires a Java 17 compiler and configured Android SDK. The Gradle wrapper is from the official Gradle v8.11.1 repository. Wrapper/SDK downloads need normal network access; use your organization's normal proxy configuration if applicable. The debug APK builds and Android lint completes on Java 17 / SDK 35. Earlier JRE/compiler setup problems were resolved. The APK is a debug build, not a signed production release. Lint still warns about intentional synchronous credential commits, the custom pinned TLS trust manager, missing launcher icon and untranslated native strings; these require release review.
@@ -91,3 +91,18 @@ openssl x509 -in /private/receiver.crt -noout -fingerprint -sha256
 PWA Settings edits enabled state, up to five pre-deadline hour offsets and date-only prior-day reminder hour. Dates preserve their original precision and timezone. Policy changes invalidate existing intents and enqueue a bounded rebuild (20 tasks per scheduler tick); new intents are future-only. Owner-timezone quiet hours defer/coalesce new inbox deliveries, including across daylight-saving transitions. Deadlines remain unchanged, so deferred reminders may arrive after a deadline. Existing inbox entries remain visible. Web Push and physical delivery are still pending. In-app notifications support read and one-hour snooze. Briefing counts aggregate the entire ledger; task/calendar/search views disclose when only a page is loaded.
 
 Source purge uses generation tombstones and revokes sync credentials. Linux checks cloud source status before sending a job, erases local source evidence/jobs when revoked, and acknowledges the wipe. Phone checks its Linux status before transfer and wipes its queue before acknowledging. An offline device remains pending; the cloud does not claim a phone wipe it has not verified. Cloud status presently shows phone wipe as `verify_locally`. Manually retained/edited tasks survive purge; sole-source unedited AI tasks are scrubbed when delete mode is selected. Owner-edited retained text must be reviewed separately.
+
+## Queue/API-28 follow-up
+
+Install SDK platforms 28 and 35 plus build-tools 35.0.0. `verifyApi28` checks all Kotlin against Android 9 without host JDK APIs. `testDebugUnitTest` runs five plain-JVM policy tests through its `testQueuePrivacy` prerequisite; these are not Android runtime tests or a JUnit class. No dependency was added.
+
+```bash
+cd apps/android-companion
+./gradlew assembleDebug lint testDebugUnitTest
+cd ../..
+.venv/bin/python scripts/check_android_mutations.py --output-dir /absolute/synthetic-check-output
+```
+
+Run mutations only in an isolated checkout without concurrent Android builds. Each broken run must fail for the intended reason; each restored run must pass. Files restore in finally. No device/emulator or actual peer/account is used.
+
+V1 queue upgrade requires owner-confirmed reset: untransferred data/pairing are discarded, capture pauses and re-pairing is required. Cancel keeps legacy data blocked and unchanged. Missing keys never regenerate over protected ciphertext. Run [DEVICE-SMOKE](DEVICE-SMOKE.md) first, then the longer matrix in [14](14-ANDROID-COMPANION.md).

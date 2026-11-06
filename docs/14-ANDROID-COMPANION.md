@@ -82,10 +82,42 @@ Because `isLowRamDevice()` is false, the documented low-RAM listener restriction
 
 `Queue` extends `SQLiteOpenHelper`, which does **not** implement `AutoCloseable` on API 28. Every `Queue(...).use { }` call therefore threw `ClassCastException` and `MainActivity` crashed on launch — invisible to compile, lint and synthetic tests. Fixed by declaring `Queue : SQLiteOpenHelper(...), AutoCloseable`. Six call sites in `MainActivity`, `CaptureService` and `Transport` were affected.
 
-### Deviation from contract (open)
+### Deviation at the base (addressed below; device unverified)
 
-`Queue.add` stores an **unkeyed** SHA-256 of the payload as `fingerprint`, while [02](02-DATA-MODEL.md) requires keyed hashes with locally managed secrets. The column is local-only and never synced, but it is a stable content identifier at rest and does not meet the stated rule. Not yet changed.
+`Queue.add` stores an **unkeyed** SHA-256 of the payload as `fingerprint`, while [02](02-DATA-MODEL.md) requires keyed hashes with locally managed secrets. The column is local-only and never synced, but it is a stable content identifier at rest and does not meet the stated rule. The follow-up below addresses it; device verification remains unverified.
 
 ### Device cases still unverified
 
 Grant/revoke, service connect/disconnect, selected-vs-unselected filtering, bundled/updated notification dedupe, muted or hidden previews, locked screen and battery saver delivery, app kill / reboot / force-stop recovery, Linux-off queue retention, interrupted-ack retry, capacity and key-loss paths, backup/logcat sink inspection, and transfer over mobile data. The listener grant must be made by the owner in system settings; the coding agent does not automate it.
+
+## Queue privacy and API-28 follow-up — cloud workspace, 2026-11-06
+
+Base: `d0cbb60`. The device evidence above belongs to the owner's earlier run; it is not a device test here. Follow [DEVICE-SMOKE](DEVICE-SMOKE.md) after every install. All changed runtime/device behavior is **unverified**.
+
+### Design and migration
+
+Queue v2 uses domain-separated HMAC-SHA-256 with a random, non-exportable Keystore signing key separate from AES-GCM encryption. Equal payloads deduplicate within the installation; a database copy alone no longer permits guessing a message's plain hash. Equality still reveals repetition inside one queue. Fingerprints are never returned by `events()` or included in transfer/cloud IDs.
+
+A public salt was rejected because database+salt still permits dictionary confirmation. A per-source key hierarchy adds lifecycle machinery this one selected-source queue does not need. No new dependency is added; standard JCA and Android Keystore suffice.
+
+**Every v1 database requires explicit owner reset, even if empty.** Opening one returns `LEGACY_QUEUE_WIPE_REQUIRED` and a repair UI. No automatic deletion or migration carries old hashes forward. Cancel preserves the blocked legacy data; old hashes remain there until reset. Confirmed reset closes helpers, deletes database/sidecars, clears encrypted pairing/pending batch and deletes keys. Capture pauses; re-pairing is mandatory. Untransferred events are lost. If they matter, arrange recovery with the previous trusted build before upgrading or backfill an export on Linux. Logical file deletion is not a forensic flash/old-backup erasure guarantee.
+
+A synchronous repair marker is written before destructive steps. Failure/interruption keeps operations blocked until owner retries. Missing AES keys fail closed for queued **or pairing/batch ciphertext**, even at queue count zero. Missing HMAC keys with queued rows fail closed. Checks precede retention deletion so expiry cannot hide key loss. Generating a missing HMAC key with no HMAC-protected rows does not replace the AES key protecting pairing ciphertext. Keystore errors propagate without plaintext fallback. Capture pause is rechecked under the queue/reset lock to prevent an already-scheduled callback repopulating a reset queue.
+
+### API review
+
+| Surface | Verdict and remaining limit |
+|---|---|
+| SQLiteOpenHelper / `use` | Explicit AutoCloseable/close retained on Queue; parent gains it only in API 29. All call sites compile against API-28 hierarchy. |
+| Cursors/streams/close | API-28 compilation checks receiver interfaces. Disk/process/SQLite behavior needs hardware tests. |
+| java.time.Instant | Available since API 26; no newer time API needed. |
+| Keystore/GCM/HMAC | API-23 builders/algorithms; independent 256-bit keys, no StrongBox-only/new builder calls. Vendor key-loss/invalidation behavior unverified. |
+| Notification APIs | Listener/rebind/recoverBuilder/MessagingStyle APIs precede 28. Existing exception fallback retained. WhatsApp metadata and coverage unverified. |
+| JobScheduler/threads | Calls precede 28; manufacturer scheduling/recovery unverified. |
+| TLS/JSON/preferences | Calls compile against 28; peer rejection/interrupted writes unverified on device. |
+| Manifest/resources | Compile/target 35, min 28 unchanged. Higher backup attributes are separate from runtime Kotlin calls; OS backup tests unverified. |
+| API annotations | No higher-API Kotlin call needs RequiresApi in this slice. A future intentional newer API needs a reviewed exception/design, never weakening the whole guard. |
+
+`verifyApi28` compiles **all production Kotlin** against the official Android-28 stubs using the existing pinned Kotlin compiler and `-no-jdk`; host Java 17 APIs cannot hide missing Android APIs. It runs alongside assemble/lint/unit acceptance. NewApi/InlinedApi lint findings are fatal. This checks classes/methods/inherited interfaces/Java references, broader than a grep for one prior bug.
+
+This does not execute Android bytecode, Keystore, SQLite, reflection/dynamic paths or vendor implementations. The five plain-JVM policy tests inject an in-memory key provider and use real JCA crypto; they do not emulate Keystore. A JavaExec prerequisite of testDebugUnitTest runs them without adding JUnit/dependencies. The standalone main is excluded from JUnit discovery; future JUnit tests remain discoverable. Mutation tests deliberately undo hash/key/migration fixes and inject inherited-interface/new Android/new Java API regressions; actual failing/restored output is in SESSION-CHECKS.

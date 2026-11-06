@@ -35,7 +35,7 @@ class CaptureService: NotificationListenerService() {
   if(parts.isEmpty()) {health("hidden_or_empty_preview");return}
   for((text,time) in parts){
    val payload=JSONObject().put("notification_key",event.key).put("observed_at",event.postTime).put("source_message_at",time ?: JSONObject.NULL).put("text",text).toString()
-   try {executor.execute {try {Queue(applicationContext).use {it.add(payload)}}catch(_: Exception){health("storage_error")}}} catch(_: java.util.concurrent.RejectedExecutionException){health("queue_overflow")}
+   try {executor.execute {try {if(getSharedPreferences("capture",0).getBoolean("enabled",false))Queue(applicationContext).use {it.add(payload)}}catch(_: Exception){health("storage_error")}}} catch(_: java.util.concurrent.RejectedExecutionException){health("queue_overflow")}
   }
  }
 }

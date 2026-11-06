@@ -13,15 +13,27 @@ class MainActivity: Activity(){
  override fun onResume(){super.onResume();render()}
  private fun button(text:String,action:()->Unit){content.addView(Button(this).apply {this.text=text;setOnClickListener{action()}})}
  private fun line(text:String){content.addView(TextView(this).apply {this.text=text;textSize=16f;setPadding(0,16,0,16)})}
+ private fun repair(code:String){
+  android.util.Log.e("AOS-PROBE","queueRepair=true code=$code")
+  line("Academic OS · Queue repair required")
+  line("$code. Capture and transfer are blocked. No automatic key replacement is allowed. Owner action is required; interrupted resets stay blocked.")
+  button("Reset private queue and pairing"){
+   android.app.AlertDialog.Builder(this).setMessage("Permanently discard all queued notifications and encrypted pairing/batch state? Capture will pause. Re-pair with Linux afterward. Untransferred events will be lost; use an export on Linux to backfill where possible.").setPositiveButton("Reset"){_,_->
+    try{Queue.resetAfterOwnerConfirmation(this);render()}catch(_:Exception){line("Reset incomplete. Capture stays blocked. Retry the reset; no new key is generated.")}
+   }.setNegativeButton("Cancel",null).show()
+  }
+ }
  private fun render(){
   content=LinearLayout(this).apply {orientation=LinearLayout.VERTICAL;setPadding(28,32,28,32)};setContentView(ScrollView(this).apply {addView(content)})
   val low=(getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
   val granted=Settings.Secure.getString(contentResolver,"enabled_notification_listeners")?.split(":")?.any {it=="$packageName/$packageName.CaptureService" || it=="$packageName/.CaptureService"}==true
   val health=getSharedPreferences("health",0);val settings=getSharedPreferences("capture",0)
+  val queued=try{Queue(this).use {it.count()}}catch(e:QueueUnavailable){repair(e.code);return}catch(_:Exception){repair("QUEUE_STORAGE_UNAVAILABLE");return}
   // Sanitized device record for M0 evidence: booleans and counts only, never message content.
-  android.util.Log.i("AOS-PROBE","lowRam=$low granted=$granted listener=${health.getString("listener","unknown")} queue=${Queue(this).use {it.count()}} gaps=${health.getInt("gaps",0)}")
+  android.util.Log.i("AOS-PROBE","lowRam=$low granted=$granted listener=${health.getString("listener","unknown")} queue=$queued gaps=${health.getInt("gaps",0)}")
   line("Academic OS · Android 9 probe")
-  line("Notification access: $granted · low-RAM: $low\nListener: ${health.getString("listener","unknown")}\nQueue: ${Queue(this).use {it.count()}} events · observed drops: ${health.getInt("gaps",0)}")
+  line("Notification access: $granted · low-RAM: $low\nListener: ${health.getString("listener","unknown")}\nQueue: $queued events · observed drops: ${health.getInt("gaps",0)}")
+  if(health.getBoolean("owner_reset",false))line("Owner reset recorded. Earlier untransferred events may have been discarded; an empty queue does not prove complete collection.")
   line("Partial coverage only. Missing notifications cannot be recovered here. Private transfer queues until Linux is reachable. Delivery and complete message coverage are never guaranteed.")
   button("Notification access settings"){startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))}
   line("Test only an owner-controlled synthetic conversation. Verify exact title AND notification group key locally. Leave disabled until verified; no broad capture.")
