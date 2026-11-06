@@ -67,6 +67,17 @@ object QueuePrivacyTest {
             reject("LEGACY_QUEUE_WIPE_REQUIRED") { QueuePrivacy.requireCurrentFormat(1) }
             QueuePrivacy.requireCurrentFormat(2)
         }
+        test("purge acknowledgment follows durable application and stops on failures") {
+            val events=mutableListOf<String>()
+            PurgeApplication.apply({events.add("pause")},{events.add("wipe")},{events.add("batch")},{events.add("ack")})
+            check(events==listOf("pause","wipe","batch","ack"))
+            for(fail in 0..2){
+                var acknowledged=false;var step=0
+                fun action(){if(step++==fail)error("SYNTHETIC_WRITE_FAILURE")}
+                try{PurgeApplication.apply({action()},{action()},{action()},{acknowledged=true})}catch(_:IllegalStateException){}
+                check(!acknowledged)
+            }
+        }
         println("Queue privacy policy: $passed tests passed (JVM only; Android Keystore/SQLite/device unverified)")
     }
 }

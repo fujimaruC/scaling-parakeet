@@ -86,7 +86,8 @@ def make_handler(store,token,origin,receiver=False):
                 raw,value=self.read_body(262144 if receiver else 26*1024*1024)
                 if receiver:
                     if self.path=='/local/v1/pair':self.reply(200,pairing.accept(value.get('token'),value.get('device_id')));return
-                    if self.path=='/local/v1/purge-ack':device=self.device_auth(raw,True);self.reply(200,pairing.acknowledge_purge(device,value.get('generation')));return
+                    if self.path=='/local/v1/receipt-applied':device=self.device_auth(raw,True);self.reply(200,pairing.acknowledge_receipt(device,value.get('batch_id'),value.get('phase')));return
+                    if self.path=='/local/v1/purge-ack':device=self.device_auth(raw,True);self.reply(200,pairing.acknowledge_purge(device,value.get('generation'),value.get('phase','delivered')));return
                     if self.path!='/local/v1/notification-batches':self.reply(404,{'error':'NOT_FOUND'});return
                     device=self.device_auth(raw);self.reply(200,store.receive(device,value));return
                 if self.path=='/login':

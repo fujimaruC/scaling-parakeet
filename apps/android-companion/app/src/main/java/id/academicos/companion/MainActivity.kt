@@ -11,6 +11,7 @@ class MainActivity: Activity(){
  private lateinit var content: LinearLayout
  override fun onCreate(saved: Bundle?){super.onCreate(saved);window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);render()}
  override fun onResume(){super.onResume();render()}
+ override fun onNewIntent(value:Intent){super.onNewIntent(value);setIntent(value);render()}
  private fun button(text:String,action:()->Unit){content.addView(Button(this).apply {this.text=text;setOnClickListener{action()}})}
  private fun line(text:String){content.addView(TextView(this).apply {this.text=text;textSize=16f;setPadding(0,16,0,16)})}
  private fun repair(code:String){
@@ -28,6 +29,13 @@ class MainActivity: Activity(){
   val low=(getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
   val granted=Settings.Secure.getString(contentResolver,"enabled_notification_listeners")?.split(":")?.any {it=="$packageName/$packageName.CaptureService" || it=="$packageName/.CaptureService"}==true
   val health=getSharedPreferences("health",0);val settings=getSharedPreferences("capture",0)
+  val evidenceRun=intent.getStringExtra("evidence_run")
+  if(evidenceRun!=null && evidenceRun.matches(Regex("[0-9a-f-]{36}"))){
+   val count=try{Queue(this).use {it.count()}}catch(_:Exception){null}
+   val record=org.json.JSONObject().put("run",evidenceRun).put("android_api",android.os.Build.VERSION.SDK_INT).put("device_model",android.os.Build.MODEL).put("device_build",android.os.Build.DISPLAY).put("version",packageManager.getPackageInfo(packageName,0).versionName).put("notification_access",granted).put("low_ram",low).put("queue_count",count?:org.json.JSONObject.NULL).put("observed_gap_count",health.getInt("gaps",0)).put("repair_required",count==null)
+   android.util.Log.i("AOS-EVIDENCE",record.toString())
+  }
+
   val queued=try{Queue(this).use {it.count()}}catch(e:QueueUnavailable){repair(e.code);return}catch(_:Exception){repair("QUEUE_STORAGE_UNAVAILABLE");return}
   // Sanitized device record for M0 evidence: booleans and counts only, never message content.
   android.util.Log.i("AOS-PROBE","lowRam=$low granted=$granted listener=${health.getString("listener","unknown")} queue=$queued gaps=${health.getInt("gaps",0)}")

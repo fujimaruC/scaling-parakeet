@@ -69,3 +69,15 @@ The repair prompt is gone and the probe reports a clean queue. One note on obser
 
 The phone holds a v1 `capture.db` from the earlier build. Its queue was empty at last observation, so a reset discards nothing transferred. Reset will delete the queue, encrypted pairing state and keys, pause capture, and require re-pairing. No reset was performed by the agent; that is an owner action.
 
+
+## Local sanitized collection command
+
+On the owner's Linux machine with the intended phone selected in adb, run:
+
+```bash
+python scripts/device_evidence.py --samples 1
+```
+
+For a matrix session use `--samples 120` (bounded samples about 16 seconds apart, including each probe). The command launches, backgrounds and relaunches the app, using a fresh random token for each launch. Only matching `AOS-EVIDENCE` JSON emissions are projected; old log lines cannot prove a reopen. Output is one JSON record per sample: booleans, counts, bounded build strings, UUID run token, and an explicit unavailable-field list. No raw adb/logcat response is printed or saved. Do not run repeated launch probes during a lifecycle case where relaunching would alter the experiment; collect before/after instead.
+
+The probe observes permission/low-RAM/queue/gap/repair status directly and checks process presence after launch. It does not inspect private notifications, infer install success from package presence, claim no crash from silence, or infer filtering/transport from a count. Source commit/APK hash and fatal-exception inspection are unavailable to this command. `smoke_result` stays unverified; capture, transport, key-loss and backup cases stay not_run. It emits observations, not a fabricated matrix verdict. The owner must still evaluate the matrix's expected behavior; those cases cannot be automatically certified without actually exercising them. Actual adb/device execution of the new command is unverified here.

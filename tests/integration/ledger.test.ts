@@ -791,3 +791,85 @@ it('quiet hours defer and coalesce reminders without changing deadlines, includi
   ).toHaveLength(1);
   expect((await data(await call('/tasks/' + task.id))).due).toEqual(task.due);
 });
+
+it('device actions require explicit attestations and expiry/retirement never confirm', async () => {
+  const { relayActions, actionView } =
+    await import('../../apps/worker/src/device-actions');
+  const source = await data(
+    await call('/sources', 'POST', {
+      display_name: 'Control fixture',
+      kind: 'whatsapp_notification',
+    }),
+  );
+  const device = crypto.randomUUID();
+  await relayActions(db, source, { devices: [device], observations: [] });
+  await data(
+    await call('/sources/' + source.id + '/purge', 'POST', {
+      expected_generation: 1,
+      task_policy: 'retain_as_manual',
+    }),
+  );
+  const revoked = await db
+    .prepare('SELECT * FROM sources WHERE id=?')
+    .bind(source.id)
+    .first<any>();
+  const snapshot = () =>
+    relayActions(db, revoked, { devices: [device], observations: [] });
+  let rows = await snapshot();
+  expect(rows).toHaveLength(1);
+  expect(rows[0].status).toBe('pending');
+  expect(rows[0].progress).toBe('queued');
+  expect(actionView(rows[0], '2099-01-01').status).toBe('expired');
+  expect(actionView(rows[0], '2099-01-01').applied_at).toBeNull();
+  await relayActions(db, revoked, {
+    devices: [],
+    observations: [{ device_id: device, generation: 2, phase: 'delivered' }],
+  });
+  rows = await snapshot();
+  expect(rows[0].progress).toBe('delivered');
+  expect(rows[0].status).toBe('pending');
+  await data(
+    await call('/device-actions/' + rows[0].id + '/retire', 'POST', {}),
+  );
+  rows = await snapshot();
+  expect(rows[0].status).toBe('retired_unconfirmed');
+  expect(rows[0].applied_at).toBeNull();
+  await expect(
+    relayActions(db, revoked, {
+      devices: [],
+      observations: [{ device_id: device, generation: 1, phase: 'applied' }],
+    }),
+  ).rejects.toThrow();
+  await relayActions(db, revoked, {
+    devices: [],
+    observations: [{ device_id: device, generation: 2, phase: 'applied' }],
+  });
+  rows = await snapshot();
+  expect(rows[0].status).toBe('confirmed');
+  await relayActions(db, revoked, {
+    devices: [],
+    observations: [{ device_id: device, generation: 2, phase: 'delivered' }],
+  });
+  expect((await snapshot())[0].status).toBe('confirmed');
+});
+it('durable Linux receipt is queued until phone explicitly reports cleanup', async () => {
+  const { relayActions } = await import('../../apps/worker/src/device-actions');
+  const source = await data(
+    await call('/sources', 'POST', {
+      display_name: 'Receipt fixture',
+      kind: 'whatsapp_notification',
+    }),
+  );
+  const device = crypto.randomUUID(),
+    batch = crypto.randomUUID();
+  const send = (phase: string) =>
+    relayActions(db, source, {
+      devices: [device],
+      observations: [],
+      receipts: [{ device_id: device, batch_id: batch, generation: 1, phase }],
+    });
+  expect((await send('queued'))[0].progress).toBe('queued');
+  expect((await send('delivered'))[0].applied_at).toBeNull();
+  expect((await send('applied'))[0].status).toBe('confirmed');
+  expect((await send('queued'))[0].status).toBe('confirmed');
+});

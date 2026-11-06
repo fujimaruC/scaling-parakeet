@@ -1,3 +1,4 @@
+import { actionView, relayActions } from './device-actions';
 import { listTasks } from './task-list';
 import { owner, sha256, hmac, equal, type AuthEnv } from './auth';
 import {
@@ -433,6 +434,27 @@ export function createApp(authorize: typeof owner = owner) {
             revoked: !!cred.revoked,
             purge_required: !!source?.purged_at,
           });
+        }
+        if (path === '/api/v1/sync/device-actions' && req.method === 'POST') {
+          const { raw, value: v } = await body(req);
+          const { cred } = await collectorAuth(req, env, raw, true);
+          const source = await env.DB.prepare(
+            'SELECT * FROM sources WHERE id=?',
+          )
+            .bind(cred.source_id)
+            .first<any>();
+          if (
+            !source ||
+            v.source_id !== cred.source_id ||
+            Object.keys(v).sort().join(',') !==
+              'devices,observations,receipts,source_id'
+          )
+            throw new Http(403, 'ACCESS_DENIED');
+          try {
+            return result(await relayActions(env.DB, source, v));
+          } catch {
+            throw new Http(422, 'INVALID_ACTION_REPORT');
+          }
         }
         if (path === '/api/v1/sync/purge-ack' && req.method === 'POST') {
           const { raw, value: v } = await body(req);
@@ -1078,8 +1100,27 @@ export function createApp(authorize: typeof owner = owner) {
             .run();
           return result({ read: true });
         }
+        const retire = p.match(/^\/device-actions\/([^/]+)\/retire$/);
+        if (retire && method === 'POST') {
+          await db
+            .prepare(
+              'UPDATE device_actions SET retired_at=coalesce(retired_at,?) WHERE id=? AND applied_at IS NULL',
+            )
+            .bind(now(), retire[1])
+            .run();
+          return result({ retired: true, success_claimed: false });
+        }
         const purgeState = p.match(/^\/sources\/([^/]+)\/purge-status$/);
         if (purgeState && method === 'GET') {
+          const actionOffset = Number(
+            url.searchParams.get('actions_offset') ?? 0,
+          );
+          if (
+            !Number.isInteger(actionOffset) ||
+            actionOffset < 0 ||
+            actionOffset > 1000000
+          )
+            throw new Http(422, 'INVALID_CURSOR');
           const source = await db
             .prepare('SELECT id,generation,purged_at FROM sources WHERE id=?')
             .bind(purgeState[1])
@@ -1097,7 +1138,30 @@ export function createApp(authorize: typeof owner = owner) {
             local_wipe_pending:
               !!source.purged_at &&
               !ack.results.some((a: any) => a.actor === 'linux'),
-            phone_wipe_status: 'verify_locally',
+            phone_wipe_status: 'inspect_actions_inventory_may_be_incomplete',
+            actions: (
+              await db
+                .prepare(
+                  'SELECT * FROM device_actions WHERE source_id=? ORDER BY created_at,id LIMIT 100 OFFSET ?',
+                )
+                .bind(source.id, actionOffset)
+                .all()
+            ).results.map((r) => actionView(r)),
+            inventory: (
+              await db
+                .prepare('SELECT id FROM capture_devices WHERE source_id=?')
+                .bind(source.id)
+                .all()
+            ).results,
+            inventory_complete: false,
+            actions_total: (
+              await db
+                .prepare(
+                  'SELECT count(*) n FROM device_actions WHERE source_id=?',
+                )
+                .bind(source.id)
+                .first<any>()
+            ).n,
           });
         }
         const purge = p.match(/^\/sources\/([^/]+)\/(purge-preview|purge)$/);
@@ -1181,6 +1245,18 @@ export function createApp(authorize: typeof owner = owner) {
                 'UPDATE source_items SET removed_at=?,local_evidence_available=0 WHERE source_id=?',
               )
               .bind(at, src.id),
+          );
+          ops.push(
+            db
+              .prepare(
+                'INSERT OR IGNORE INTO device_actions(id,source_id,device_id,generation,created_at,expires_at) SELECT lower(hex(randomblob(16))),source_id,id,?,?,? FROM capture_devices WHERE source_id=?',
+              )
+              .bind(
+                src.generation + 1,
+                at,
+                new Date(Date.parse(at) + 7 * 86400000).toISOString(),
+                src.id,
+              ),
           );
           await db.batch(ops);
           return result({ cloud_purged: true, local_wipe_pending: true });

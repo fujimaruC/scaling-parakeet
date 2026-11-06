@@ -1,0 +1,2 @@
+CREATE TABLE capture_devices(id TEXT PRIMARY KEY,source_id TEXT NOT NULL REFERENCES sources(id));
+CREATE TABLE device_actions(id TEXT PRIMARY KEY,source_id TEXT NOT NULL,device_id TEXT NOT NULL,generation INTEGER NOT NULL,kind TEXT NOT NULL DEFAULT 'purge',reference TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,expires_at TEXT NOT NULL,delivered_at TEXT,applied_at TEXT,retired_at TEXT,UNIQUE(device_id,generation,kind,reference));

@@ -4,7 +4,9 @@ from .core import Invalid
 class Pairing:
  def __init__(self,store):
   self.store=store
-  store.db.executescript('''CREATE TABLE IF NOT EXISTS pairing_invites(digest TEXT PRIMARY KEY,source_id TEXT NOT NULL,generation INTEGER NOT NULL,expires_at INTEGER NOT NULL,device_id TEXT);
+  store.db.executescript('''CREATE TABLE IF NOT EXISTS receipt_ack(device_id TEXT NOT NULL,batch_id TEXT NOT NULL,phase TEXT NOT NULL,PRIMARY KEY(device_id,batch_id,phase));
+  CREATE TABLE IF NOT EXISTS device_action_observations(device_id TEXT NOT NULL,generation INTEGER NOT NULL,phase TEXT NOT NULL,PRIMARY KEY(device_id,generation,phase));
+  CREATE TABLE IF NOT EXISTS pairing_invites(digest TEXT PRIMARY KEY,source_id TEXT NOT NULL,generation INTEGER NOT NULL,expires_at INTEGER NOT NULL,device_id TEXT);
   CREATE TABLE IF NOT EXISTS device_purge_ack(device_id TEXT NOT NULL,generation INTEGER NOT NULL,acked_at INTEGER NOT NULL,PRIMARY KEY(device_id,generation));''');store.db.commit()
  def invite(self,source):
   row=self.store.db.execute('SELECT generation FROM sources WHERE id=? AND enabled=1',(source,)).fetchone()
@@ -40,8 +42,17 @@ class Pairing:
   row=self.store.db.execute('SELECT count FROM receipts WHERE device_id=? AND batch_id=?',(device,batch)).fetchone()
   if not row:raise Invalid('RECEIPT_NOT_FOUND')
   return {'batch_id':batch,'count':row[0],'state':'committed'}
- def acknowledge_purge(self,device,generation):
+ def acknowledge_purge(self,device,generation,phase="applied"):
+  if phase not in ("delivered","applied"):raise Invalid("INVALID_ACK")
   status=self.status(device)
   if not status['revoked'] or status['source_generation']!=generation:raise Invalid('INVALID_ACK')
-  with self.store.db:self.store.db.execute('INSERT OR IGNORE INTO device_purge_ack VALUES(?,?,?)',(device,generation,int(time.time())))
+  with self.store.db:
+   self.store.db.execute('INSERT OR IGNORE INTO device_action_observations VALUES(?,?,?)',(device,generation,phase))
+   if phase=='applied':self.store.db.execute('INSERT OR IGNORE INTO device_purge_ack VALUES(?,?,?)',(device,generation,int(time.time())))
+  return {'acknowledged':True}
+
+ def acknowledge_receipt(self,device,batch,phase):
+  if phase not in ('delivered','applied'):raise Invalid('INVALID_ACK')
+  self.receipt(device,batch)
+  with self.store.db:self.store.db.execute('INSERT OR IGNORE INTO receipt_ack VALUES(?,?,?)',(device,batch,phase))
   return {'acknowledged':True}

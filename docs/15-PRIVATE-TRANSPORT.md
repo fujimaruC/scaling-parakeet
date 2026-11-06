@@ -41,3 +41,19 @@ User can revoke pairing without deleting approved cloud tasks. Changing receiver
 ## Validation
 
 Real phone mobile network→Linux different network; invalid peer cert; revoked phone; wrong source; replay; same batch/different bytes; clock skew; duplicate events; before/after-commit disconnect; Linux shutdown; queue cap; invalid VPN; expired network auth; public-port scan; no raw content in cloud traffic/logging. Sanitized packet/endpoint audit documents destinations without recording message plaintext.
+
+## Acknowledgment ledger (base 57947a3 follow-up)
+
+Only the existing phone controls are implemented: source purge/revocation and durable-receipt cleanup. New control kinds must implement the same ledger before being enabled. Cloud holds opaque device/batch IDs, generations, fixed phases and server observation times, never message hashes/bodies. The source-scoped collector relays authenticated phone attestations; this is not independent physical attestation against a compromised Linux collector.
+
+Purge creates one action per known device; later first contact can register previously unknown inventory. Inventory is always explicitly incomplete. Receipt records start queued from Linux commit; that is not phone cleanup. Phone explicitly acknowledges `delivered`, durably pauses/wipes/removes pending raw batch as appropriate, then acknowledges `applied`. Receipt cleanup retains encrypted metadata-only retry state; after response loss it repeats idempotent local cleanup and acknowledgment. Purge keeps its pairing credential until the applied response arrives, enabling offline retry. Old phone clients lacking the new phase can only report delivered, never application confirmation.
+
+PWA Sources polls every 15 seconds and separates progress queued/delivered/applied from pending/expired/retired_unconfirmed/confirmed. Seven-day expiry is visibility only, not success or cancellation of mandatory source revocation. Owner retirement preserves unresolved history, not a wipe claim. A late explicit application acknowledgment can confirm with its timestamps preserved. Missing inventory, missing response, laptop never returning or stale UI never implies completion. No push delivery is required or claimed by this implementation.
+
+Run the collector control loop independently of jobs/AI (one configured source credential per process):
+
+```bash
+COLLECTOR_SOURCE_ID=SOURCE_UUID .venv/bin/python -m academic_os.control --data-dir /absolute/private/linux-directory --watch
+```
+
+Use local environment configuration from 18-DEVELOPMENT; no secrets in chat or repository. The loop checks every 30 seconds while running, reconciles tombstones before raw processing, retries local wipe acknowledgment and relay journals after failure. Receipt relay pages rotate in batches of 50 and advance only after successful cloud response. Keep this process running alongside the local UI/private receiver. The laptop being off remains a visible unresolved state, not guaranteed delivery. Local SQLite and cloud D1 are never one distributed transaction; idempotent phase journals close response-loss windows. Cloud still rejects stale source generations. Actual phone/network/account behavior is unverified.

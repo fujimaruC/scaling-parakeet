@@ -1,3 +1,4 @@
+import DeviceActions from './components/DeviceActions';
 import ReminderSettings from './components/ReminderSettings';
 import TaskEditor from './components/TaskEditor';
 import MonthCalendar from './components/MonthCalendar';
@@ -786,13 +787,7 @@ function App() {
                             </button>
                           </div>
                         )}
-                        {x.purged_at && (
-                          <p>
-                            {locale === 'en'
-                              ? 'Cloud purged · verify device wipe status'
-                              : 'Cloud dihapus · periksa penghapusan perangkat'}
-                          </p>
-                        )}
+                        <DeviceActions source={x.id} api={api} />
                       </div>
                     </article>
                   ))
