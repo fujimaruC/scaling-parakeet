@@ -106,3 +106,13 @@ cd ../..
 Run mutations only in an isolated checkout without concurrent Android builds. Each broken run must fail for the intended reason; each restored run must pass. Files restore in finally. No device/emulator or actual peer/account is used.
 
 V1 queue upgrade requires owner-confirmed reset: untransferred data/pairing are discarded, capture pauses and re-pairing is required. Cancel keeps legacy data blocked and unchanged. Missing keys never regenerate over protected ciphertext. Run [DEVICE-SMOKE](DEVICE-SMOKE.md) first, then the longer matrix in [14](14-ANDROID-COMPANION.md).
+
+## Evidence tooling checks
+
+Run the normal acceptance suites, including npm run test:e2e and npm run test:pwa. Run new fault checks sequentially:
+
+```bash
+.venv/bin/python scripts/check_evidence_mutations.py --output-dir /absolute/synthetic-check-output
+```
+
+The script declares its full fault list and prints the actual count. It never runs adb or a device. Gradle's preBuild produces assets/academic-os-build.json; only a clean Git checkout can name source_commit, while dirty builds stamp null. Metadata is a build declaration, not independent binary provenance proof. Owner-local adb collection and matrix commands/limits are in DEVICE-SMOKE. Keep generated audit directories and local verification keys outside the repository and cloud backups.

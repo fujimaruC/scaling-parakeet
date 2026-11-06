@@ -144,3 +144,29 @@ Fix: force-stop before sample 1 (genuine cold start), and accept process-alive +
 - Playwright E2E and PWA tests were **not** re-run for the two most recent Android-focused slices.
 
 **No milestone is complete. M0 remains PARTIAL/BLOCKED.**
+
+---
+
+## 6. Cloud evidence-integrity follow-up — base 43ddeea, 2026-11-06
+
+User's explicit base 43ddeea supersedes the c7c57c5 revision in NEXT-SLICE's block. No live device was available. Historical nulls and NOT RUN entries above remain unverified; none are converted into a hardware result.
+
+| Command | Actual result in this workspace |
+|---|---|
+| npm ci | exit 0 |
+| npm run check | exit 0, 18 D1 tests, format/types/build/Worker dry-run |
+| npm run test:e2e | 5 passed (rerun this slice) |
+| npm run test:pwa | 1 passed (rerun this slice) |
+| Python unittest discovery | 33 passed, synthetic only |
+| scripts/check_evidence_mutations.py --output-dir ... | 9 declared faults: baseline 0, broken 1, restored 0 for every case |
+| Gradle assembleDebug lint testDebugUnitTest --no-daemon | BUILD SUCCESSFUL, API-28 surface check and 6 JVM policy tests |
+| Dirty-build actual APK asset inspection | source_commit=null, source_dirty=true; assertion passed |
+| New adb collector / matrix harness on hardware | NOT RUN |
+| Capture / listener received notification | NOT RUN; last notification_access=false; no capture has ever run on hardware |
+| Account / real peer / network / push / provider | NOT RUN |
+
+Full retained command output is in EVIDENCE-CHECKS.md. Test/fault counts come from unittest discovery and the shipped runner's CASES list, not hand-run extra faults. The mutation runner locks concurrent executions and isolates per-run Python bytecode caches, checks a passing baseline and actual test assertions, and restores source in finally. Earlier overlapping development runs contaminated a working copy; they were discarded, the production condition restored and the final suites rerun sequentially.
+
+Existing defects found: resumed detection accepted component names anywhere in activity history; force-stop/process-absence success was not checked. Now only the actual resumed field qualifies, and warm resume must belong to the cold-run process or a fresh token. Run-bound crash markers, continuous consumption and explicit unknowns replace tail-based/inferred crash claims. Build-declared source provenance is not an independent reproducible-build attestation; unknown/dirty APKs remain null. Matrix journal signatures detect accidental editing, not a malicious owner/root holding its local key. Other capture cases remain UNVERIFIED even when prompted/run if the available sensors cannot certify their expected behavior.
+
+Environment reused from the previous local toolchain: Java/compiler 17.0.20, Gradle 8.11.1, Kotlin 2.1.21, AGP 8.9.2; SDK platforms 28/35 and build-tools 35.0.0. Node 24.22.1, npm 11.9.0, Python 3.12.14. No new dependency or toolchain installation needed. Playwright's pinned Chromium headless shell was installed using npx playwright install chromium --only-shell. No device/emulator was started. No milestone complete.

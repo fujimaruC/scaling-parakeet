@@ -34,3 +34,21 @@ tasks.withType<Test>().configureEach {
  // Standalone main is not a JUnit class; future JUnit tests remain discoverable.
  exclude("**/QueuePrivacyTest*")
 }
+
+// Build-declared provenance only: a dirty/untracked checkout never names a commit.
+val evidenceAssets = layout.buildDirectory.dir("generated/evidenceAssets")
+android.sourceSets.getByName("main").assets.srcDir(evidenceAssets)
+val evidenceProvenance by tasks.registering {
+ doLast {
+  fun git(vararg arguments: String): String? = try {
+   val process=ProcessBuilder(listOf("git")+arguments).directory(rootProject.projectDir.parentFile.parentFile).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+   val text=process.inputStream.bufferedReader().readText().trim()
+   if(process.waitFor()==0)text else null
+  } catch(_: Exception){null}
+  val dirty=git("status","--porcelain")
+  val commit=if(dirty=="")git("rev-parse","HEAD") else null
+  val output=evidenceAssets.get().asFile;output.mkdirs()
+  output.resolve("academic-os-build.json").writeText("{\"source_commit\":"+(commit?.let{"\"$it\""}?:"null")+",\"source_dirty\":"+(dirty!="")+"}")
+ }
+}
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(evidenceProvenance) }
