@@ -12,7 +12,9 @@ import javax.crypto.SecretKey
 import java.security.MessageDigest
 import java.util.UUID
 
-class Queue(private val context: Context): SQLiteOpenHelper(context,"capture.db",null,1) {
+class Queue(private val context: Context): SQLiteOpenHelper(context,"capture.db",null,1), AutoCloseable {
+ // API 28 SQLiteOpenHelper does not implement AutoCloseable, so `use{}` failed on device.
+ override fun close() = super.close()
  override fun onCreate(db: SQLiteDatabase) { db.execSQL("CREATE TABLE events(id TEXT PRIMARY KEY,fingerprint TEXT UNIQUE,payload BLOB NOT NULL,created INTEGER NOT NULL)") }
  override fun onUpgrade(db: SQLiteDatabase, old: Int, next: Int) { error("Migration required") }
  private fun key(): SecretKey {

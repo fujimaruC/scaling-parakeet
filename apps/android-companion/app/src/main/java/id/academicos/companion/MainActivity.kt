@@ -18,6 +18,8 @@ class MainActivity: Activity(){
   val low=(getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
   val granted=Settings.Secure.getString(contentResolver,"enabled_notification_listeners")?.split(":")?.any {it=="$packageName/$packageName.CaptureService" || it=="$packageName/.CaptureService"}==true
   val health=getSharedPreferences("health",0);val settings=getSharedPreferences("capture",0)
+  // Sanitized device record for M0 evidence: booleans and counts only, never message content.
+  android.util.Log.i("AOS-PROBE","lowRam=$low granted=$granted listener=${health.getString("listener","unknown")} queue=${Queue(this).use {it.count()}} gaps=${health.getInt("gaps",0)}")
   line("Academic OS · Android 9 probe")
   line("Notification access: $granted · low-RAM: $low\nListener: ${health.getString("listener","unknown")}\nQueue: ${Queue(this).use {it.count()}} events · observed drops: ${health.getInt("gaps",0)}")
   line("Partial coverage only. Missing notifications cannot be recovered here. Private transfer queues until Linux is reachable. Delivery and complete message coverage are never guaranteed.")
