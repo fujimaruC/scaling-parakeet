@@ -16,6 +16,7 @@ One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected Wha
 4. [Implementation gates](docs/09-IMPLEMENTATION.md) and [detailed work packages](docs/17-WORK-PACKAGES.md)
 5. [Status](docs/STATUS.md) and [decisions](docs/DECISIONS.md)
 6. [Next-model handoff](FIRST-AGENT-SESSION.md) · [Cloud-agent prompt](NEXT-PROMPT.md)
+7. [Background checks](docs/AUTOMATION.md) — how delivery is watched while away
 
 ## Product structure
 
