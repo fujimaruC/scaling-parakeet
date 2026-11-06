@@ -17,6 +17,8 @@ One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected Wha
 5. [Status](docs/STATUS.md) and [decisions](docs/DECISIONS.md)
 6. [Next-model handoff](FIRST-AGENT-SESSION.md) · [Cloud-agent prompt](NEXT-PROMPT.md)
 7. [Background checks](docs/AUTOMATION.md) — how delivery is watched while away
+8. [Verification log](docs/VERIFICATION-LOG.md) — what was actually run, and what was not
+9. [Next slice](docs/NEXT-SLICE.md) — the handoff prompt to continue
 
 ## Product structure
 
