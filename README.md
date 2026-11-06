@@ -4,6 +4,8 @@ Private memory for **academic and organizational responsibilities**: what needs 
 
 **Specification v0.2.0 · 2026-11-06 · planning complete; application not implemented.**
 
+One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected WhatsApp conversations. No teams, no public accounts, no productivity scoring.
+
 ## Start here
 
 1. [Agent rules](AGENTS.md)
@@ -25,6 +27,88 @@ Private memory for **academic and organizational responsibilities**: what needs 
 Both notification capture **and** manual export import belong in MVP. Academic courses and Himpunan/organizational contexts are equally supported. Every AI task requires explicit owner approval. Raw messages, quotes and exports never enter application cloud storage. Minimized unapproved proposals may sync for phone review; full evidence stays local. Remote phone-to-Linux transport is preferred and must be proven privately on the actual Android 9 device.
 
 $0 mandatory recurring spend is a preference, not an absolute constraint. Paid alternatives require a concrete cost/benefit decision; no billing activation is authorized by this planning package.
+
+## The problem, in one flow
+
+1. **Today** — academic deadlines and organizational duties in one urgency order; unknown dates sit in their own visible section.
+2. **Capture** — the phone listener queues selected notification events; the laptop being off never discards them.
+3. **Backfill** — a Linux-local WhatsApp export is previewed, normalized, deduplicated and optionally extracted.
+4. **Review** — AI proposes; the owner accepts, edits, rejects or asks for clarification. Quotes never leave the laptop.
+5. **Change** — a new deadline claim preserves the old one plus evidence; only owner acceptance moves the task and recomputes reminders.
+6. **Laptop off** — cloud tasks, briefing and reminders keep working; capture waits and says so.
+
+## Roadmap
+
+Implementation proceeds one vertical slice at a time. **Only M0 is currently authorized.**
+
+| Gate | Scope | State |
+|---|---|---|
+| **M0** Feasibility and foundation | Toolchain, monorepo, contracts, local D1; real Android 9 listener probe; private phone→Linux transport proof; Cloudflare auth/cost; 9Router synthetic smoke; linked-device research ADR | NOT STARTED |
+| **M1** Private ledger | Owner auth, contexts, task CRUD with date precision, history, manual quick-add, base React shell | NOT STARTED |
+| **M2** Both collection paths | Hardened listener queue, remote receipt/ack, export parser and import preview, shared normalization, dedupe, local evidence | NOT STARTED |
+| **M3** AI review | 9Router adapter, consent, redaction, strict validation, cloud projection, proposal inbox, conflicts | NOT STARTED |
+| **M4** Daily product | PWA screens, cloud scheduler/inbox, push feasibility, offline snapshot, source health, export/purge/restore, 7-day pilot = **MVP** | NOT STARTED |
+| **M5** ITK integration | Evidence-gated iCalendar or permitted feed/API; manual fallback otherwise | UNVERIFIED / conditional |
+
+Work packages: `W00`–`W03` (M0), `W10`–`W11` (M1), `W20`–`W22` (M2), `W30`–`W31` (M3), `W40`–`W42` (M4), `W50` (M5) — details in [17](docs/17-WORK-PACKAGES.md).
+
+### M0 exit condition
+
+Reproducible local skeleton checks; **real Android device evidence** for lifecycle, metadata, filtering, queue and recovery; transport/privacy and auth design evidence; ADRs updated. If the phone or accounts are unreachable, the subgate is marked `BLOCKED` and independent local work continues — M0 is never declared complete on mocks.
+
+## Feature scope
+
+30 tracked features in [13](docs/13-FEATURE-CATALOG.md). MVP-required highlights:
+
+| Area | Features |
+|---|---|
+| Identity and ledger | F01 single-owner auth · F02 academic/organization contexts · F03 task CRUD · F04 versioned history |
+| Android capture | F05 listener lifecycle · F06 conversation filtering · F07 encrypted queue · F08 private transfer |
+| Linux ingest | F09 export import + preview · F10 normalization/dedupe · F11 local evidence vs cloud projection |
+| AI | F12 consent and extraction · F13 owner review · F14 deadline conflict reconciliation |
+| Daily use | F15 today/list/calendar · F16 search/history · F17 deterministic briefing · F18 reminders/inbox · F19 push feasibility · F20 offline snapshot · F21 source health · F22 ID/EN, themes, a11y |
+| Lifecycle | F23 export/encrypted restore · F24 purge without resurrection · F25 budgets and recovery |
+| Conditional | F26 ITK source · F27 linked-device research (no enrollment) |
+
+Later: F28 subtasks/recurrence, F29 group recaps, F30 offline writes.
+
+## Architecture
+
+Planned repository layout — **M0 creates these; none exist yet**:
+
+```
+apps/web                  React + TS static PWA (cloud-facing)
+apps/worker               TS Worker + D1: auth, routes, domain, scheduler, delivery
+apps/worker/migrations    Versioned D1 SQL, no real seeds
+apps/android-companion    Kotlin listener, queue, pairing, transfer
+apps/local-ui             Browser UI for import preview, consent, local evidence
+collectors/local          Python ingest, normalize, evidence, privacy, ai, sync
+packages/contracts        Validation adapters generated from root schemas
+tests/{fixtures,contract,integration,e2e}   Synthetic only
+scripts                   Setup and check runners
+```
+
+Trust boundary: raw source text lives on Android and Linux only. The cloud holds structured proposals, approved tasks, opaque evidence IDs and reminder state. Collector credentials are source-scoped and cannot read the dashboard API wholesale. See [01](docs/01-ARCHITECTURE.md) and [07](docs/07-SECURITY-PRIVACY.md).
+
+## Data model at a glance
+
+- **Cloud:** `contexts`, `sources`, `source_items` (no quotes, no bodies, no raw hashes), `candidates`, `candidate_evidence`, `assertions`, `tasks`, `task_evidence`, `review_actions`, `task_events`, `reminder_rules`, `reminder_intents`, `notification_inbox`, `delivery_attempts`, `push_subscriptions`, `idempotency_records`, `replay_nonces`, `source_tombstones`, `settings`.
+- **Local only:** phone capture events and receipts; Linux raw exports, normalized messages, extraction runs, consent receipts.
+- **Dates** stay distinct: exact timestamp, date-only, approximate, unknown (`null`). Relative dates resolve from the source message time, never from "today".
+- Every mutation is versioned; approvals and reminder recomputation are atomic.
+
+Details in [02](docs/02-DATA-MODEL.md) and [10](docs/10-API-CONTRACTS.md).
+
+## Rules that do not bend
+
+- One owner. No registration, no shared workspace, no public personal-data endpoint.
+- Listener **and** export import are both MVP; a working export fallback does not satisfy the dual-ingestion gate.
+- No raw chat text, quotes, exports or content hashes in Worker/D1, logs, assets, crash reports or cloud backups.
+- Every AI-extracted task waits for explicit owner approval; a model's `needs_review` field cannot override that.
+- 9Router is replaceable. External processing stays off until a named route and privacy policy are enabled.
+- Cloud tasks, briefing and reminders work with the laptop and 9Router switched off.
+- No hidden collection, non-allowlisted conversations, MFA/CAPTCHA circumvention or unsolicited messaging. Linked-device integration is research only.
+- Never fabricate coverage, missed-message counts, deadlines, push delivery or test results.
 
 ## Documentation map
 
@@ -54,3 +138,15 @@ $0 mandatory recurring spend is a preference, not an absolute constraint. Paid a
 ## Validate this planning package
 
 Use a Python virtual environment, install `requirements-docs.txt`, then run `python scripts/validate_planning.py`. It checks local documentation links, v2 schema/examples and rejection cases. It does not test application behavior or device/service feasibility. Runtime validators must explicitly enable date/UUID/time formats and implement semantic/reference checks.
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements-docs.txt
+python scripts/validate_planning.py
+```
+
+Expected output: `PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 48 local links; 30 features; 34 test IDs.`
+
+## Status
+
+Planning only. No application code, deployment, device test or account verification exists. Evidence and blockers live in [STATUS](docs/STATUS.md); the next action is M0 `W00`.

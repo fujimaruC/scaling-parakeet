@@ -21,6 +21,7 @@ Base: `293525f96a473fcbcab9026df58e16d17a18d59a`. Planning branch: `docs/academi
 | 2026-11-06 | `PYTHONPATH=/tmp/academic-os-validation python scripts/validate_planning.py` | PASS: 3 schemas, 5 valid fixtures/date variants, 21 rejection cases, 48 relative Markdown links, 30 feature IDs, 34 test IDs | Documentation/contracts only; dependencies installed in temporary validation directory |
 | 2026-11-06 | JSON format checker negative test | Initially exposed missing optional date-time validator; explicit timestamp checker added; rerun passed | Runtime TS/Python validators still must enforce formats and semantic checks |
 | 2026-11-06 | `git diff --cached --check` | PASS, no whitespace errors | Planning changes only |
+| 2026-11-06 | `python3 scripts/validate_planning.py` after README consolidation | PASS: 3 schemas, 5 valid fixtures/date variants, 21 rejection cases, 55 relative Markdown links, 30 feature IDs, 34 test IDs | Link count rose from 48 because the README now carries the full roadmap and doc map |
 
 To reproduce in a fresh environment: create a local virtual environment, install `requirements-docs.txt`, then run `python scripts/validate_planning.py`. The temporary PYTHONPATH above is session-specific, not a repository runtime requirement.
 
