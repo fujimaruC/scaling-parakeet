@@ -59,6 +59,7 @@ class Store:
         if len(text.encode())>25*1024*1024:raise Invalid('OVERSIZE')
         records,warnings=parse_export(text);digest=self.fingerprint(text.replace('\r\n','\n'));occurrences=Counter()
         with self.db:
+            if self.db.execute('UPDATE sources SET generation=generation WHERE id=? AND generation=? AND enabled=1',(source_id,generation)).rowcount!=1:raise Invalid('SOURCE_REVOKED')
             old=self.db.execute('SELECT id FROM imports WHERE source_id=? AND digest=?',(source_id,digest)).fetchone()
             if old:return {'import_id':old[0],'inserted':0,'warnings':warnings}
             before=self.db.execute('SELECT count(*) FROM evidence').fetchone()[0]
@@ -81,6 +82,8 @@ class Store:
         if len(json.dumps(batch).encode())>262144:raise Invalid('OVERSIZE')
         digest=self.fingerprint(batch)
         with self.db:
+            live=self.db.execute('UPDATE sources SET generation=generation WHERE id=? AND generation=? AND enabled=1',(source,generation)).rowcount
+            if live!=1:raise Invalid('SOURCE_REVOKED')
             old=self.db.execute('SELECT digest,count FROM receipts WHERE device_id=? AND batch_id=?',(device_id,batch['batch_id'])).fetchone()
             if old:
                 if old[0]!=digest:raise Invalid('IDEMPOTENCY_CONFLICT')
@@ -89,12 +92,17 @@ class Store:
                 if set(e)!={'event_id','captured_at','source_message_at','text'} or not isinstance(e['text'],str) or len(e['text'])>16000:raise Invalid('INVALID_EVENT')
                 uuid.UUID(e['event_id']);datetime.fromisoformat(e['captured_at'])
                 if e['source_message_at'] is not None:datetime.fromisoformat(e['source_message_at'])
-                fingerprint=self.fingerprint([device_id,e['event_id']]);self.insert(source,generation,fingerprint,e)
+                fingerprint=self.fingerprint([device_id,e['event_id']])
+                previous=self.db.execute('SELECT payload FROM evidence WHERE source_id=? AND generation=? AND fingerprint=?',(source,generation,fingerprint)).fetchone()
+                if previous and json.loads(self.cipher.decrypt(previous[0]))!=e:raise Invalid('EVENT_REVISION_CONFLICT')
+                self.insert(source,generation,fingerprint,e)
             self.db.execute('INSERT INTO receipts VALUES(?,?,?,?)',(device_id,batch['batch_id'],digest,len(events)))
         return {'batch_id':batch['batch_id'],'state':'committed','count':len(events)}
     def purge(self,source):
         with self.db:
             self.db.execute('UPDATE sources SET enabled=0,generation=generation+1 WHERE id=?',(source,))
             self.db.execute('DELETE FROM evidence WHERE source_id=?',(source,));self.db.execute('DELETE FROM imports WHERE source_id=?',(source,));self.db.execute('UPDATE devices SET revoked=1 WHERE source_id=?',(source,))
+            for table in ['processing_jobs','processing_consent']:
+                if self.db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",(table,)).fetchone():self.db.execute('DELETE FROM '+table+' WHERE source_id=?',(source,))
     def evidence(self):
         return [{'id':r[0],'source_id':r[1],'payload':json.loads(self.cipher.decrypt(r[2]))} for r in self.db.execute('SELECT id,source_id,payload FROM evidence')]

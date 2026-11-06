@@ -15,6 +15,8 @@ python -m venv .venv
 .venv/bin/python -m unittest discover -s collectors/local/tests -v
 npx playwright install chromium --only-shell
 npm run test:e2e
+npm run test:pwa
+npm run check:secrets
 ```
 
 `npm run check` runs formatting checks, TypeScript checking, Vitest integration tests, static PWA build and Worker **dry-run** build. `lint` currently checks formatting; a separate semantic ESLint ruleset is not yet configured. These commands do not deploy. D1 integration tests run Miniflare/workerd with a disposable local database. CI configuration is provided but has not run on GitHub during this session.
@@ -35,9 +37,9 @@ export ACADEMIC_OS_LOCAL_TOKEN="$(.venv/bin/python -c 'import secrets; print(sec
 .venv/bin/academic-os-local --data-dir /absolute/private/directory/outside/repo
 ```
 
-Use the locally generated token at `http://127.0.0.1:8765`. Enroll an explicitly selected source UUID, choose a synthetic text export, and inspect locally decrypted evidence. Keep the data directory outside cloud-sync directories. The UI binds loopback, enforces Host/Origin, uses an HttpOnly SameSite session and does not log raw requests. Local file selection is followed by explicit confirmation. AI/network inference is disabled in this UI; the consent-gated adapter is a separately tested module, not a fully connected extraction workflow yet.
+Use the locally generated token at `http://127.0.0.1:8765`. Enroll an explicitly selected source UUID, choose a synthetic text export, and inspect locally decrypted evidence. Keep the data directory outside cloud-sync directories. The UI binds loopback, enforces Host/Origin, uses an HttpOnly SameSite session and does not log raw requests. Local file selection is followed by explicit confirmation. The same UI now connects selected evidence → redacted preview → named provider/route consent → extraction → structured projection review → durable outbound job → cloud proposal. Preview redaction is a heuristic: review the selected material before consenting. Extraction never approves a task. The cloud review inbox requires another explicit owner decision. Jobs are encrypted locally and retries reuse the exact reviewed envelope. Retry is user-triggered; a background Linux retry daemon is not implemented.
 
-The `server.py --receiver` mode requires a private bind address and TLS certificate/key and accepts only enrolled signed device batches. Pairing enrollment and native transfer integration remain unfinished; do not treat the receipt core as a proven phone connection.
+The `server.py --receiver` mode runs separately against the same data directory and requires a private bind address plus TLS certificate/key. The companion supports five-minute one-device invitations, exact certificate pinning with hostname verification, source-scoped HMAC batches, immutable encrypted retries, receipt-confirmed cleanup and revoked-source wipe acknowledgment. Synthetic HTTPS transport tests pass; the actual Android 9/private-overlay connection is still unverified. See the setup sequence below.
 
 ## Encrypted canonical backup
 
@@ -45,24 +47,47 @@ Download canonical JSON using the PWA Settings export. Then:
 
 ```bash
 .venv/bin/python -m academic_os.backup encrypt canonical.json canonical.enc --key /private/offline/key
-.venv/bin/python -m academic_os.backup restore canonical.enc --key /private/offline/key --database /private/new-disposable.sqlite --migration apps/worker/migrations/0001_core.sql
+.venv/bin/python -m academic_os.backup restore canonical.enc --key /private/offline/key --database /private/new-disposable.sqlite --migration apps/worker/migrations
 ```
 
-Encryption uses standard authenticated Fernet encryption. Keys are created exclusively, excluded from archives and must be retained separately. Restore requires a new disposable SQLite database and verifies canonical rows against the export, with no reminder dispatch intents, push subscriptions or credentials restored. Production D1 restore, reminder re-creation and deletion reconciliation still need release testing. Raw chat/evidence archives are never part of this cloud-data backup.
+Encryption uses standard authenticated Fernet encryption. Keys are created exclusively, excluded from archives and must be retained separately. Restore requires a new disposable SQLite database and verifies canonical rows against the export, with no old reminder dispatch intents, push subscriptions or credentials restored. After parity validation, restored active tasks enter a bounded queue to rebuild only future reminder intents. Production D1 restore and deletion reconciliation still need release testing. Raw chat/evidence archives are never part of this cloud-data backup.
 
 ## Android probe
 
 ```bash
 cd apps/android-companion
-./gradlew assembleDebug --no-daemon
+./gradlew assembleDebug lintDebug --no-daemon
 ```
 
-Requires a Java 17 compiler and configured Android SDK. The Gradle wrapper is from the official Gradle v8.11.1 repository. Wrapper/SDK downloads need normal network access; use your organization's normal proxy configuration if applicable. Native compilation was attempted here and failed because this runtime provides a JRE without javac; no APK or successful build is claimed.
+Requires a Java 17 compiler and configured Android SDK. The Gradle wrapper is from the official Gradle v8.11.1 repository. Wrapper/SDK downloads need normal network access; use your organization's normal proxy configuration if applicable. The debug APK builds and Android lint completes on Java 17 / SDK 35. Earlier JRE/compiler setup problems were resolved. The APK is a debug build, not a signed production release. Lint still warns about intentional synchronous credential commits, the custom pinned TLS trust manager, missing launcher icon and untranslated native strings; these require release review.
 
-The source probe includes permission/settings screen, low-RAM reporting, explicit metadata inspection, conjunctive title/group mapping, bounded callback queue, AES-GCM Android Keystore encrypted SQLite payloads, backup disabled, reconnect inspection and bounded rebind requests. Capture defaults disabled. Transfer is explicitly absent in this probe. Follow the complete matrix in 14-ANDROID-COMPANION on your actual phone before enabling real groups. No phone/emulator was available here.
+The source probe includes permission/settings screen, low-RAM reporting, explicit metadata inspection, conjunctive title/group mapping, bounded callback queue, AES-GCM Android Keystore encrypted SQLite payloads, backup disabled, reconnect inspection and bounded rebind requests. Capture defaults disabled. Private transfer and periodic platform-job retry are implemented; Android scheduling and manufacturer power behavior still require actual-device tests. Follow the complete matrix in 14-ANDROID-COMPANION on your actual phone before enabling real groups. No phone/emulator was available here.
 
 ## Production setup is still gated
 
 Worker auth requires ACCESS_TEAM as the exact `https://<team>.cloudflareaccess.com` issuer, ACCESS_AUD and immutable OWNER_SUB. Configure actual owner-only Access policies and service auth on production/preview, replace the placeholder D1 ID and test positive/negative identity paths. No local developer identity flag exists in the deployed entry point. Do not put source credentials or raw content into static PWA builds. No deployment or paid provisioning occurred.
 
 Do not enable a real 9Router provider route before recording provider/route/source consent. The project has not contacted the owner's router, Moodle, phone or Cloudflare account.
+
+## Configure credentials only on your own machine
+
+`examples/runtime.env.example` contains only nonfunctional placeholders. Do not put real values into this repository, the shared account or screenshots. Keep a local environment file outside the checkout with permissions `0600`, then export its variables into the collector process. Do not upload the local evidence directory or its key. Cloudflare secrets and owner identity belong in your own deployment environment, never Vite public environment variables.
+
+1. Create a WhatsApp source in PWA Settings; use a safe alias and copy its source UUID/generation. Enroll that same source locally. Source-scoped collector key ID/secret are configured only on Linux when production sync is available.
+2. Leave AI variables unconfigured for import, preview and local evidence browsing. For extraction, set `AI_BASE_URL`, `AI_MODEL`, `AI_PROVIDER_ID`, `AI_POLICY_VERSION` and `AI_API_KEY` locally. Inspect 9Router's actual upstream route; a loopback URL does not mean local inference. Changing provider/route/model/policy invalidates prior consent.
+3. Run the loopback UI above. Select only intended evidence, inspect the redacted preview, approve the disclosed source/provider policy, then extract. Inspect the structured projection before queuing it. Configure `ACADEMIC_OS_API_URL`, `COLLECTOR_KEY_ID` and `COLLECTOR_HMAC_SECRET` locally to send it. Errors display sanitized codes and retain retry state.
+4. For the phone, establish your chosen private overlay/network first. No VPN vendor account is configured by this repository. Use a receiver certificate whose subject alternative name matches the private hostname/IP; keep its private key only on Linux. Start the receiver separately:
+
+```bash
+.venv/bin/academic-os-local --data-dir /absolute/private/directory/outside/repo --receiver --bind PRIVATE_LINUX_IP --port 8766 --tls-cert /private/receiver.crt --tls-key /private/receiver.key
+openssl x509 -in /private/receiver.crt -noout -fingerprint -sha256
+```
+
+5. In the authenticated local UI, create a pairing invitation for the enrolled source. Enter the private HTTPS receiver address, independently verified SHA-256 certificate fingerprint and five-minute token in the companion. The invitation is consumed by one device; retrying the same invitation on that device can recover a lost response. No cloud key goes on the phone.
+6. Grant notification access explicitly. Inspect a synthetic WhatsApp conversation's title AND group metadata, save its exact mapping and enable collection. Verify queued events, signed transfer, interruption/retry, listener restart and revocation on the actual Android 9 phone. Muted chats, hidden previews, notification aggregation and missing metadata remain coverage limitations. Export import stays available.
+
+## Reminder policy and recovery
+
+PWA Settings edits enabled state, up to five pre-deadline hour offsets and date-only prior-day reminder hour. Dates preserve their original precision and timezone. Policy changes invalidate existing intents and enqueue a bounded rebuild (20 tasks per scheduler tick); new intents are future-only. Owner-timezone quiet hours defer/coalesce new inbox deliveries, including across daylight-saving transitions. Deadlines remain unchanged, so deferred reminders may arrive after a deadline. Existing inbox entries remain visible. Web Push and physical delivery are still pending. In-app notifications support read and one-hour snooze. Briefing counts aggregate the entire ledger; task/calendar/search views disclose when only a page is loaded.
+
+Source purge uses generation tombstones and revokes sync credentials. Linux checks cloud source status before sending a job, erases local source evidence/jobs when revoked, and acknowledges the wipe. Phone checks its Linux status before transfer and wipes its queue before acknowledging. An offline device remains pending; the cloud does not claim a phone wipe it has not verified. Cloud status presently shows phone wipe as `verify_locally`. Manually retained/edited tasks survive purge; sole-source unedited AI tasks are scrubbed when delete mode is selected. Owner-edited retained text must be reviewed separately.

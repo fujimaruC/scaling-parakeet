@@ -1,7 +1,7 @@
 /** Isolated synthetic harness, never bundled with the production Worker. */
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { resolve, extname, sep } from 'node:path';
 import { Miniflare } from 'miniflare';
 import { createServer as createViteServer } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -12,10 +12,44 @@ const mf = new Miniflare({
   d1Databases: ['DB'],
 });
 const DB = (await mf.getD1Database('DB')) as unknown as D1Database;
-for (const sql of readFileSync('apps/worker/migrations/0001_core.sql', 'utf8')
-  .trim()
-  .split(/;\n/))
-  if (sql.trim()) await DB.prepare(sql).run();
+for (const file of readdirSync('apps/worker/migrations')
+  .filter((f) => f.endsWith('.sql'))
+  .sort()) {
+  for (const sql of readFileSync('apps/worker/migrations/' + file, 'utf8')
+    .trim()
+    .split(/;\n/))
+    if (sql.trim()) await DB.prepare(sql).run();
+}
+if (process.env.SYNTHETIC_FIXTURES === '1') {
+  const fixture = JSON.parse(
+    readFileSync('examples/sync-envelope.synthetic.json', 'utf8'),
+  );
+  const candidate = fixture.candidates[0];
+  candidate.fields.title = 'Synthetic proposal for review';
+  await DB.batch([
+    DB.prepare('INSERT INTO sources(id,display_name,kind) VALUES(?,?,?)').bind(
+      fixture.source_id,
+      'Synthetic group',
+      'whatsapp_export',
+    ),
+    DB.prepare(
+      'INSERT INTO source_items(id,source_id,generation,observed_at,local_evidence_available) VALUES(?,?,1,?,1)',
+    ).bind(fixture.items[0].evidence_id, fixture.source_id, fixture.created_at),
+    DB.prepare(
+      "INSERT INTO candidates(id,source_id,generation,fields_json,issues_json,created_at,updated_at) VALUES(?,?,1,?,'[]',?,?)",
+    ).bind(
+      candidate.candidate_id,
+      fixture.source_id,
+      JSON.stringify(candidate.fields),
+      fixture.created_at,
+      fixture.created_at,
+    ),
+    DB.prepare('INSERT INTO candidate_evidence VALUES(?,?)').bind(
+      candidate.candidate_id,
+      fixture.items[0].evidence_id,
+    ),
+  ]);
+}
 const env: Env = {
   DB,
   OWNER_SUB: 'synthetic-owner',
@@ -31,6 +65,37 @@ const vite = await createViteServer({
 });
 const server = createServer(async (req, res) => {
   if (!req.url?.startsWith('/api/')) {
+    if (process.env.SYNTHETIC_PRODUCTION === '1') {
+      const root = resolve('apps/web/dist');
+      const requested = resolve(
+        root,
+        '.' +
+          decodeURIComponent(
+            new URL(req.url ?? '/', 'http://localhost').pathname,
+          ),
+      );
+      if (requested !== root && !requested.startsWith(root + sep)) {
+        res.writeHead(403).end();
+        return;
+      }
+      const path =
+        existsSync(requested) && statSync(requested).isFile()
+          ? requested
+          : resolve(root, 'index.html');
+      const types: Record<string, string> = {
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.html': 'text/html',
+        '.svg': 'image/svg+xml',
+        '.webmanifest': 'application/manifest+json',
+      };
+      res.writeHead(200, {
+        'Content-Type': types[extname(path)] ?? 'application/octet-stream',
+        'Cache-Control': 'no-cache',
+      });
+      res.end(readFileSync(path));
+      return;
+    }
     vite.middlewares(req, res);
     return;
   }

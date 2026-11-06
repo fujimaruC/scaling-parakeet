@@ -83,7 +83,7 @@ apps/web                  React + TS static PWA (cloud-facing)
 apps/worker               TS Worker + D1: auth, routes, domain, scheduler, delivery
 apps/worker/migrations    Versioned D1 SQL, no real seeds
 apps/android-companion    Kotlin listener, queue, pairing, transfer
-collectors/local/server   Local browser import/evidence UI; processing UI pending
+collectors/local          Local browser import/evidence/processing UI and private receiver
 collectors/local          Python ingest, normalize, evidence, privacy, ai, sync
 packages/contracts        Validation adapters generated from root schemas
 tests/{fixtures,contract,integration,e2e}   Synthetic only
@@ -151,4 +151,4 @@ Expected output reports 3 schemas, 5 valid fixtures/date variants, 21 rejection 
 
 ## Status
 
-Runnable local implementation and Android probe source are present. Deployment/device/account gates remain open. Evidence, incomplete features and next steps live in [STATUS](docs/STATUS.md).
+Runnable local implementation and a compiled Android debug companion are present. Deployment/device/account gates remain open. Evidence, incomplete features and next steps live in [STATUS](docs/STATUS.md).

@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import ReminderSettings from './components/ReminderSettings';
+import TaskEditor from './components/TaskEditor';
+import MonthCalendar from './components/MonthCalendar';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 const strings = {
@@ -136,7 +139,22 @@ async function api(
     });
   return j.data;
 }
-async function snapshot(write?: any): Promise<any> {
+async function taskPage(cursor?: string) {
+  const response = await fetch(
+    '/api/v1/tasks?limit=100' +
+      (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+  );
+  const value: any = await response.json();
+  if (!response.ok)
+    throw Object.assign(new Error('REQUEST_FAILED'), {
+      status: response.status,
+    });
+  return value;
+}
+async function snapshot(
+  write?: any,
+  valid: () => boolean = () => true,
+): Promise<any> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('academic-os-private', 1);
     request.onupgradeneeded = () =>
@@ -144,6 +162,11 @@ async function snapshot(write?: any): Promise<any> {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const db = request.result;
+      if (!valid()) {
+        db.close();
+        resolve(null);
+        return;
+      }
       const tx = db.transaction('snapshot', write ? 'readwrite' : 'readonly');
       const store = tx.objectStore('snapshot');
       const r = write ? store.put(write, 'owner') : store.get('owner');
@@ -162,6 +185,7 @@ async function snapshot(write?: any): Promise<any> {
   });
 }
 function App() {
+  const sessionEpoch = useRef(0);
   const [locale, setLocale] = useState<Locale>(
     (localStorage.getItem('locale') as Locale) || 'id',
   );
@@ -199,33 +223,50 @@ function App() {
     document.documentElement.lang = locale;
     localStorage.setItem('locale', locale);
   }, [locale]);
+  const [sourceAlias, setSourceAlias] = useState('');
+  const [sourceKind, setSourceKind] = useState('whatsapp_export');
+  const [briefing, setBriefing] = useState<any>(null);
+  const [taskCursor, setTaskCursor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<any>(null);
+  const [proposalEditing, setProposalEditing] = useState<any>(null);
   async function load() {
+    const epoch = sessionEpoch.current;
     setLoading(true);
     setError('');
     try {
       const me = await api('/me');
-      const [ts, cs, ps, ss] = await Promise.all([
-        api('/tasks?limit=100'),
+      const [ts, cs, ps, ss, overview] = await Promise.all([
+        taskPage(),
         api('/contexts'),
         api('/candidates'),
         api('/sources'),
+        api('/briefing'),
       ]);
-      setTasks(ts);
+      if (epoch !== sessionEpoch.current) return;
+      setTasks(ts.data);
+      setTaskCursor(ts.meta.next_cursor);
       setContexts(cs);
       setCandidates(ps);
       setSources(ss);
+      setBriefing(overview);
       setSigned(true);
       setOffline(false);
       const at = new Date().toISOString();
       setUpdated(at);
-      await snapshot({
-        owner: me.subject,
-        tasks: ts,
-        contexts: cs,
-        updated: at,
-      });
+      await snapshot(
+        {
+          owner: me.subject,
+          tasks: ts.data,
+          contexts: cs,
+          updated: at,
+          briefing: overview,
+        },
+        () => epoch === sessionEpoch.current,
+      );
     } catch (e: any) {
+      if (epoch !== sessionEpoch.current) return;
       if (e.status === 401 || e.status === 403) {
+        sessionEpoch.current++;
         indexedDB.deleteDatabase('academic-os-private');
         setSigned(false);
         setTasks([]);
@@ -235,6 +276,7 @@ function App() {
           setTasks(cache.tasks);
           setContexts(cache.contexts);
           setUpdated(cache.updated);
+          setBriefing(cache.briefing ?? null);
           setSigned(true);
           setOffline(true);
         } else setError(s.error);
@@ -254,7 +296,7 @@ function App() {
       api(page === 'history' ? '/history' : '/reminders')
         .then(setRows)
         .catch(() => setError(s.error));
-  }, [page, offline]);
+  }, [page, offline, updated]);
   async function mutate(fn: () => Promise<unknown>) {
     setBusy(true);
     setError('');
@@ -430,22 +472,24 @@ function App() {
             {page === 'today' && (
               <section className="overview" aria-label="Overview">
                 <div>
-                  <strong>{active.length}</strong>
+                  <strong>{briefing?.counts?.active ?? active.length}</strong>
                   <span>{s.tasks}</span>
                 </div>
                 <div>
-                  <strong>{candidates.length}</strong>
+                  <strong>{briefing?.pending ?? candidates.length}</strong>
                   <span>{s.pending}</span>
                 </div>
                 <div>
                   <strong>
-                    {active.filter((t) => t.due.precision === 'unknown').length}
+                    {briefing?.counts?.no_date ??
+                      active.filter((t) => t.due.precision === 'unknown')
+                        .length}
                   </strong>
                   <span>{s.nodate}</span>
                 </div>
               </section>
             )}
-            {['today', 'tasks', 'calendar'].includes(page) && (
+            {['today', 'tasks'].includes(page) && (
               <>
                 <div className="toolbar">
                   <input
@@ -467,6 +511,32 @@ function App() {
                     ))}
                   </select>
                 </div>
+                {taskCursor && (
+                  <p role="status">
+                    {locale === 'en'
+                      ? 'More tasks are available; filters currently cover loaded items.'
+                      : 'Masih ada tugas lain; filter mencakup daftar yang sudah dimuat.'}
+                    <button
+                      disabled={offline || busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          const next = await taskPage(taskCursor);
+                          setTasks((current) => [...current, ...next.data]);
+                          setTaskCursor(next.meta.next_cursor);
+                        } catch {
+                          setError(s.error);
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      {locale === 'en'
+                        ? 'Load more tasks'
+                        : 'Muat tugas lainnya'}
+                    </button>
+                  </p>
+                )}
                 <section className="task-list">
                   {!visible.length ? (
                     <div className="empty">
@@ -502,7 +572,15 @@ function App() {
                               · {s[t.status as keyof typeof s] ?? t.status}
                             </span>
                           </small>
-                          <h2>{t.title}</h2>
+                          <h2>
+                            <button
+                              className="task-title"
+                              disabled={offline}
+                              onClick={() => setEditing(t)}
+                            >
+                              {t.title}
+                            </button>
+                          </h2>
                           <p>{formatDue(t)}</p>
                         </div>
                         {page === 'calendar' && (
@@ -515,6 +593,15 @@ function App() {
                   )}
                 </section>
               </>
+            )}
+            {page === 'calendar' && (
+              <MonthCalendar
+                tasks={tasks.filter((t) => !filter || t.context_id === filter)}
+                locale={locale}
+                onOpen={(t) => {
+                  if (!offline) setEditing(t);
+                }}
+              />
             )}
             {page === 'review' && (
               <section>
@@ -536,7 +623,12 @@ function App() {
                       <div className="actions">
                         <button
                           className="primary"
-                          disabled={offline || busy}
+                          disabled={
+                            offline ||
+                            busy ||
+                            c.fields.kind === 'deadline_change' ||
+                            c.issues.length > 0
+                          }
                           onClick={() =>
                             void mutate(() =>
                               api(
@@ -571,6 +663,32 @@ function App() {
                         >
                           {s.reject}
                         </button>
+                        <button
+                          disabled={offline || busy}
+                          onClick={() => setProposalEditing(c)}
+                        >
+                          {locale === 'en' ? 'Edit & review' : 'Edit & tinjau'}
+                        </button>
+                        <button
+                          disabled={offline || busy}
+                          onClick={() =>
+                            void mutate(() =>
+                              api(
+                                '/candidates/' + c.id + '/review',
+                                'POST',
+                                {
+                                  action: 'needs_clarification',
+                                  expected_candidate_version: c.version,
+                                },
+                                { 'Idempotency-Key': crypto.randomUUID() },
+                              ),
+                            )
+                          }
+                        >
+                          {locale === 'en'
+                            ? 'Need more info'
+                            : 'Perlu informasi'}
+                        </button>
                       </div>
                     </article>
                   ))
@@ -580,6 +698,46 @@ function App() {
             {page === 'sources' && (
               <section>
                 <p className="banner">{s.partial}</p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void mutate(async () => {
+                      await api('/sources', 'POST', {
+                        display_name: sourceAlias,
+                        kind: sourceKind,
+                      });
+                      setSourceAlias('');
+                    });
+                  }}
+                >
+                  <label>
+                    {locale === 'en' ? 'Safe source alias' : 'Alias sumber'}
+                    <input
+                      required
+                      maxLength={240}
+                      value={sourceAlias}
+                      onChange={(e) => setSourceAlias(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {locale === 'en'
+                      ? 'Collection method'
+                      : 'Metode pengumpulan'}
+                    <select
+                      value={sourceKind}
+                      onChange={(e) => setSourceKind(e.target.value)}
+                    >
+                      <option value="whatsapp_export">WhatsApp export</option>
+                      <option value="whatsapp_notification">
+                        Android notification
+                      </option>
+                      <option value="moodle_ical">iCalendar</option>
+                    </select>
+                  </label>
+                  <button disabled={offline || busy}>
+                    {locale === 'en' ? 'Add source' : 'Tambah sumber'}
+                  </button>
+                </form>
                 {sources.length ? (
                   sources.map((x) => (
                     <article className="task" key={x.id}>
@@ -588,6 +746,53 @@ function App() {
                         <p>
                           {x.kind} · {x.last_sync_at ?? s.nodate}
                         </p>
+                        <small>
+                          {x.id} · generation {x.generation}
+                        </small>
+                        {!x.purged_at && (
+                          <div className="actions">
+                            <button
+                              disabled={offline || busy}
+                              onClick={() =>
+                                void mutate(async () => {
+                                  const preview = await api(
+                                    '/sources/' + x.id + '/purge-preview',
+                                    'POST',
+                                    {},
+                                  );
+                                  if (
+                                    !confirm(
+                                      (locale === 'en'
+                                        ? 'Remove this source and its evidence? Linked approved tasks will be retained as manual. Linux/phone wipes remain pending until acknowledged. Affected tasks: '
+                                        : 'Hapus sumber dan buktinya? Tugas tersimpan dipertahankan sebagai manual. Penghapusan Linux/ponsel menunggu konfirmasi. Jumlah tugas: ') +
+                                        preview.affected_tasks.length,
+                                    )
+                                  )
+                                    return;
+                                  await api(
+                                    '/sources/' + x.id + '/purge',
+                                    'POST',
+                                    {
+                                      expected_generation: preview.generation,
+                                      task_policy: 'retain_as_manual',
+                                    },
+                                  );
+                                })
+                              }
+                            >
+                              {locale === 'en'
+                                ? 'Remove source evidence'
+                                : 'Hapus bukti sumber'}
+                            </button>
+                          </div>
+                        )}
+                        {x.purged_at && (
+                          <p>
+                            {locale === 'en'
+                              ? 'Cloud purged · verify device wipe status'
+                              : 'Cloud dihapus · periksa penghapusan perangkat'}
+                          </p>
+                        )}
                       </div>
                     </article>
                   ))
@@ -604,6 +809,45 @@ function App() {
                       <div>
                         <h2>{x.event_type ?? s.inbox}</h2>
                         <p>{x.created_at}</p>
+                        {page === 'inbox' && (
+                          <div className="actions">
+                            <button
+                              disabled={offline || busy}
+                              onClick={() =>
+                                void mutate(() =>
+                                  api(
+                                    '/reminders/' + x.id + '/read',
+                                    'PATCH',
+                                    {},
+                                  ),
+                                )
+                              }
+                            >
+                              {locale === 'en' ? 'Mark read' : 'Tandai dibaca'}
+                            </button>
+                            <button
+                              disabled={offline || busy}
+                              onClick={() =>
+                                void mutate(() =>
+                                  api(
+                                    '/reminders/' + x.id + '/snooze',
+                                    'POST',
+                                    {
+                                      until: new Date(
+                                        Date.now() + 3600000,
+                                      ).toISOString(),
+                                    },
+                                    { 'Idempotency-Key': crypto.randomUUID() },
+                                  ),
+                                )
+                              }
+                            >
+                              {locale === 'en'
+                                ? 'Snooze 1 hour'
+                                : 'Tunda 1 jam'}
+                            </button>
+                          </div>
+                        )}
                         {x.after_json && (
                           <p>{JSON.parse(x.after_json).title}</p>
                         )}
@@ -657,6 +901,13 @@ function App() {
                   </button>
                 </form>
                 <hr />
+                <ReminderSettings
+                  locale={locale}
+                  api={api}
+                  offline={offline}
+                  onSaved={load}
+                />
+                <hr />
                 <button
                   disabled={offline}
                   onClick={() =>
@@ -677,6 +928,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => {
+                    sessionEpoch.current++;
                     indexedDB.deleteDatabase('academic-os-private');
                     setTasks([]);
                     setCandidates([]);
@@ -699,6 +951,55 @@ function App() {
               </span>
             </footer>
           </>
+        )}
+        {editing && (
+          <TaskEditor
+            item={editing}
+            contexts={contexts}
+            locale={locale}
+            onClose={() => setEditing(null)}
+            onSave={async (fields) => {
+              await api('/tasks/' + editing.id, 'PATCH', fields, {
+                'If-Match': String(editing.version),
+              });
+              await load();
+            }}
+            onDelete={async () => {
+              await api('/tasks/' + editing.id, 'DELETE', undefined, {
+                'If-Match': String(editing.version),
+              });
+              await load();
+            }}
+          />
+        )}
+        {proposalEditing && (
+          <TaskEditor
+            item={proposalEditing.fields}
+            contexts={contexts}
+            tasks={tasks}
+            locale={locale}
+            proposal
+            onClose={() => setProposalEditing(null)}
+            onSave={async (fields, target) => {
+              await api(
+                '/candidates/' + proposalEditing.id + '/review',
+                'POST',
+                {
+                  action: 'accept_with_edits',
+                  expected_candidate_version: proposalEditing.version,
+                  task_patch: fields,
+                  ...(target
+                    ? {
+                        target_task_id: target.id,
+                        expected_task_version: target.version,
+                      }
+                    : {}),
+                },
+                { 'Idempotency-Key': crypto.randomUUID() },
+              );
+              await load();
+            }}
+          />
         )}
         {form && (
           <div

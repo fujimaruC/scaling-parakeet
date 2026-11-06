@@ -32,3 +32,13 @@ def upload(value,url,key_id,secret):
     canonical='\n'.join(['POST','/api/v1/sync',stamp,nonce,digest]);signature=base64.urlsafe_b64encode(hmac.new(secret.encode(),canonical.encode(),hashlib.sha256).digest()).decode().rstrip('=')
     request=urllib.request.Request(url+'/sync',data=raw,headers={'Content-Type':'application/json','X-Collector-Key-Id':key_id,'X-Request-Timestamp':stamp,'X-Nonce':nonce,'X-Body-SHA256':digest,'X-Signature':signature})
     with urllib.request.urlopen(request,timeout=30) as response:return json.loads(response.read(262144))
+
+def collector_request(url,key_id,secret,path,method='GET',value=None):
+    if not url.startswith('https://') or not url.endswith('/api/v1'):raise Invalid('INVALID_CLOUD_URL')
+    raw=b'' if value is None else json.dumps(value,separators=(',',':')).encode();stamp=str(int(time.time()));nonce=uuid.uuid4().hex;digest=hashlib.sha256(raw).hexdigest();canonical='\n'.join([method,path.split('?',1)[0],stamp,nonce,digest]);signature=base64.urlsafe_b64encode(hmac.new(secret.encode(),canonical.encode(),hashlib.sha256).digest()).decode().rstrip('=')
+    request=urllib.request.Request(url[:-len('/api/v1')]+path,data=None if method=='GET' else raw,method=method,headers={'Content-Type':'application/json','X-Collector-Key-Id':key_id,'X-Request-Timestamp':stamp,'X-Nonce':nonce,'X-Body-SHA256':digest,'X-Signature':signature})
+    with urllib.request.urlopen(request,timeout=30) as response:return json.loads(response.read(262144))['data']
+def source_status(source,url,key_id,secret):
+    return collector_request(url,key_id,secret,'/api/v1/sync/status?source_id='+source)
+def purge_ack(source,generation,url,key_id,secret):
+    return collector_request(url,key_id,secret,'/api/v1/sync/purge-ack','POST',{'source_id':source,'generation':generation})

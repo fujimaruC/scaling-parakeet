@@ -19,7 +19,9 @@
     "dev:synthetic": "node --import tsx scripts/dev-synthetic.ts",
     "test:e2e": "playwright test",
     "format": "prettier --write \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\"",
-    "lint": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\""
+    "lint": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\"",
+    "test:pwa": "npm run build -w @academic-os/web && playwright test --config playwright.production.config.ts",
+    "check:secrets": "python scripts/check_placeholders.py"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261104.1",

@@ -17,7 +17,8 @@ def restore(archive,key_path,database,migration):
     if value.get('schema_version')!='2.0' or set(value['tables'])!=set(ALLOWED):raise ValueError('Unsupported canonical export')
     db=sqlite3.connect(database)
     try:
-        db.executescript(Path(migration).read_text())
+        migrations=sorted(Path(migration).glob('*.sql')) if Path(migration).is_dir() else [Path(migration)]
+        for item in migrations:db.executescript(item.read_text())
         with db:
             triggers=db.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger'").fetchall()
             for name,_ in triggers:db.execute('DROP TRIGGER "'+name+'"')
@@ -34,6 +35,8 @@ def restore(archive,key_path,database,migration):
         actual={t:[dict(zip([r[1] for r in db.execute('PRAGMA table_info('+t+')')],r)) for r in db.execute('SELECT * FROM '+t)] for t in ALLOWED}
         def digest(rows):return hashlib.sha256(json.dumps(sorted(rows,key=lambda x:json.dumps(x,sort_keys=True)),sort_keys=True).encode()).hexdigest()
         if any(digest(actual[t])!=digest(value['tables'][t]) for t in ALLOWED):raise ValueError('Restore parity failed')
+        if db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='reminder_rebuilds'").fetchone():
+            with db:db.execute("INSERT OR REPLACE INTO reminder_rebuilds SELECT id,due_revision FROM tasks WHERE deleted_at IS NULL AND status NOT IN ('done','archived')")
         return {t:len(actual[t]) for t in ALLOWED}
     finally:db.close()
 def main():

@@ -131,10 +131,18 @@ export function semanticSync(v: any) {
     throw new Invalid('INVALID_COVERAGE');
   return v;
 }
-export function reminderTimes(due: Due): string[] {
+export function reminderTimes(
+  due: Due,
+  policy: {
+    enabled: boolean;
+    offset_hours: number[];
+    date_only_hour: number;
+  } = { enabled: true, offset_hours: [24, 3], date_only_hour: 9 },
+): string[] {
+  if (!policy.enabled) return [];
   const utc = validateDue(due);
   if (utc)
-    return [24, 3].map((h) =>
+    return policy.offset_hours.map((h) =>
       new Date(Date.parse(utc) - h * 3600000).toISOString(),
     );
   if (due.precision === 'date_only') {
@@ -143,7 +151,51 @@ export function reminderTimes(due: Due): string[] {
     )
       .toISOString()
       .slice(0, 10);
-    return [toUtc(previous + 'T09:00:00', due.timezone!)];
+    return [
+      toUtc(
+        previous +
+          'T' +
+          String(policy.date_only_hour).padStart(2, '0') +
+          ':00:00',
+        due.timezone!,
+      ),
+    ];
   }
   return [];
+}
+
+export function quietHoursEnd(
+  at: string,
+  policy?: {
+    enabled: boolean;
+    start_hour: number;
+    end_hour: number;
+    timezone: string;
+  },
+): string | null {
+  if (!policy?.enabled || policy.start_hour === policy.end_hour) return null;
+  const clock = new Intl.DateTimeFormat('en-GB', {
+    timeZone: policy.timezone,
+    hour: '2-digit',
+    hourCycle: 'h23',
+  });
+  const quiet = (ms: number) => {
+    const hour = Number(clock.format(new Date(ms)));
+    return policy.start_hour < policy.end_hour
+      ? hour >= policy.start_hour && hour < policy.end_hour
+      : hour >= policy.start_hour || hour < policy.end_hour;
+  };
+  const stamp = Date.parse(at);
+  if (!quiet(stamp)) return null;
+  // Walk actual UTC instants so skipped/repeated local hours need no guessed offset.
+  // Modern timezone hour boundaries align to 15 minutes, including half/quarter-hour zones.
+  const step = 15 * 60000;
+  for (
+    let next = Math.floor(stamp / step) * step + step;
+    next <= stamp + 27 * 3600000;
+    next += step
+  ) {
+    if (!quiet(next)) return new Date(next).toISOString();
+  }
+  throw new Invalid('INVALID_QUIET_HOURS');
 }

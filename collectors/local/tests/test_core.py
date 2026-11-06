@@ -21,6 +21,9 @@ class CollectorTests(unittest.TestCase):
   ack=self.store.receive(device,batch);self.assertEqual(ack['state'],'committed');self.assertEqual(self.store.receive(device,batch),ack);self.assertEqual(len(self.store.evidence()),1)
   changed=json.loads(json.dumps(batch));changed['events'][0]['text']='changed'
   with self.assertRaises(Invalid):self.store.receive(device,changed)
+  changed['batch_id']=str(uuid.uuid4())
+  with self.assertRaisesRegex(Invalid,'EVENT_REVISION_CONFLICT'):self.store.receive(device,changed)
+  self.assertEqual(len(self.store.evidence()),1)
   self.store.purge(self.source)
   with self.assertRaises(Invalid):self.store.receive(device,batch)
   self.assertEqual(self.store.evidence(),[])
@@ -37,9 +40,9 @@ class BackupTests(unittest.TestCase):
  def test_encrypted_disposable_restore_parity_and_no_dispatch(self):
   import sqlite3
   from academic_os.backup import ALLOWED,encrypt,restore
-  migration=Path(__file__).resolve().parents[3]/'apps/worker/migrations/0001_core.sql'
+  migration=Path(__file__).resolve().parents[3]/'apps/worker/migrations'
   with tempfile.TemporaryDirectory() as temp:
-   root=Path(temp);db=sqlite3.connect(':memory:');db.row_factory=sqlite3.Row;db.executescript(migration.read_text())
+   root=Path(temp);db=sqlite3.connect(':memory:');db.row_factory=sqlite3.Row;[db.executescript(item.read_text()) for item in sorted(migration.glob('*.sql'))]
    db.execute("INSERT INTO contexts(id,type,display_name) VALUES('org','organization','Synthetic Himpunan')")
    tables={t:[dict(r) for r in db.execute('SELECT * FROM '+t)] for t in ALLOWED};db.close()
    export=root/'canonical.json';export.write_text(json.dumps({'schema_version':'2.0','tables':tables}))

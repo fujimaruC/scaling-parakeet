@@ -1,8 +1,10 @@
+import { listTasks } from './task-list';
 import { owner, sha256, hmac, equal, type AuthEnv } from './auth';
 import {
   Invalid,
   validateDue,
   reminderTimes,
+  quietHoursEnd,
   semanticSync,
   unknownDue,
   type Due,
@@ -21,8 +23,12 @@ class Http extends Error {
 }
 const now = () => new Date().toISOString();
 const uuid = () => crypto.randomUUID();
-function result(data: unknown, status = 200) {
-  const meta = { request_id: uuid(), server_time: now() };
+function result(
+  data: unknown,
+  status = 200,
+  extraMeta: Record<string, unknown> = {},
+) {
+  const meta = { request_id: uuid(), server_time: now(), ...extraMeta };
   const envelope =
     status >= 400
       ? { error: (data as { error: unknown }).error, meta }
@@ -120,28 +126,71 @@ async function getTask(db: D1Database, id: string) {
   if (!row) throw new Http(404, 'NOT_FOUND');
   return task(row);
 }
-function intents(
+async function intents(
   db: D1Database,
   id: string,
   due: Due,
   revision: number,
   guard?: string,
+  futureOnly = false,
 ) {
-  return reminderTimes(due).map((t) =>
-    guard
-      ? db
-          .prepare(
-            'INSERT OR IGNORE INTO reminder_intents(id,task_id,due_revision,scheduled_for_utc) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM tasks WHERE id=? AND mutation_id=?)',
-          )
-          .bind(uuid(), id, revision, t, id, guard)
-      : db
-          .prepare(
-            'INSERT OR IGNORE INTO reminder_intents(id,task_id,due_revision,scheduled_for_utc) VALUES(?,?,?,?)',
-          )
-          .bind(uuid(), id, revision, t),
-  );
+  const saved = await db
+    .prepare('SELECT value_json FROM settings WHERE id=1')
+    .first<any>();
+  const policy = JSON.parse(saved.value_json).reminder_policy ?? {
+    enabled: true,
+    offset_hours: [24, 3],
+    date_only_hour: 9,
+  };
+  return reminderTimes(due, policy)
+    .filter((at) => !futureOnly || Date.parse(at) > Date.now())
+    .map((t) =>
+      guard
+        ? db
+            .prepare(
+              'INSERT OR IGNORE INTO reminder_intents(id,task_id,due_revision,scheduled_for_utc) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM tasks WHERE id=? AND mutation_id=? AND due_revision=?)',
+            )
+            .bind(uuid(), id, revision, t, id, guard, revision)
+        : db
+            .prepare(
+              'INSERT OR IGNORE INTO reminder_intents(id,task_id,due_revision,scheduled_for_utc) VALUES(?,?,?,?)',
+            )
+            .bind(uuid(), id, revision, t),
+    );
 }
 export async function tick(db: D1Database, at = now()) {
+  const rebuilds = await db
+    .prepare('SELECT * FROM reminder_rebuilds LIMIT 20')
+    .all<any>();
+  for (const item of rebuilds.results) {
+    const task = await db
+      .prepare('SELECT * FROM tasks WHERE id=?')
+      .bind(item.task_id)
+      .first<any>();
+    const planned =
+      task &&
+      task.due_revision === item.due_revision &&
+      !task.deleted_at &&
+      !['done', 'archived'].includes(task.status)
+        ? await intents(
+            db,
+            task.id,
+            JSON.parse(task.due_json),
+            task.due_revision,
+            task.mutation_id,
+            true,
+          )
+        : [];
+    await db.batch([
+      ...planned,
+      db
+        .prepare(
+          'DELETE FROM reminder_rebuilds WHERE task_id=? AND due_revision=?',
+        )
+        .bind(item.task_id, item.due_revision),
+    ]);
+  }
+
   // Inbox is the durable delivery channel. One atomic transaction; external push is deliberately unconfigured.
   const cutoff = new Date(Date.parse(at) - 6 * 3600000).toISOString();
   await db
@@ -150,6 +199,31 @@ export async function tick(db: D1Database, at = now()) {
     )
     .bind(cutoff)
     .run();
+  const configuration = await db
+    .prepare('SELECT value_json FROM settings WHERE id=1')
+    .first<any>();
+  const preferences = JSON.parse(configuration.value_json);
+  const quiet = preferences.reminder_policy?.quiet_hours;
+  const until = quietHoursEnd(
+    at,
+    quiet ? { ...quiet, timezone: preferences.timezone } : undefined,
+  );
+  if (until) {
+    // Coalesce offsets falling in the same quiet window; preserve one durable alert.
+    await db.batch([
+      db
+        .prepare(
+          "UPDATE OR IGNORE reminder_intents SET scheduled_for_utc=? WHERE state='pending' AND scheduled_for_utc<=?",
+        )
+        .bind(until, at),
+      db
+        .prepare(
+          "UPDATE reminder_intents SET state='canceled' WHERE state='pending' AND scheduled_for_utc<=?",
+        )
+        .bind(at),
+    ]);
+    return 0;
+  }
   const rows = await db
     .prepare(
       "SELECT r.* FROM reminder_intents r JOIN tasks t ON t.id=r.task_id WHERE r.state='pending' AND r.scheduled_for_utc<=? AND t.deleted_at IS NULL AND t.status NOT IN ('done','archived') AND t.due_revision=r.due_revision ORDER BY scheduled_for_utc LIMIT 20",
@@ -172,14 +246,19 @@ export async function tick(db: D1Database, at = now()) {
   }
   return rows.results.length;
 }
-async function sync(req: Request, env: Env) {
-  const { raw, value: v } = await body(req);
+async function collectorAuth(
+  req: Request,
+  env: Env,
+  raw: string,
+  allowRevoked = false,
+) {
   const keyId = req.headers.get('X-Collector-Key-Id') ?? '';
   const stamp = req.headers.get('X-Request-Timestamp') ?? '';
   const nonce = req.headers.get('X-Nonce') ?? '';
   const signature = req.headers.get('X-Signature') ?? '';
   const cred = await env.DB.prepare(
-    'SELECT * FROM collector_credentials WHERE id=? AND revoked=0',
+    'SELECT * FROM collector_credentials WHERE id=?' +
+      (allowRevoked ? '' : ' AND revoked=0'),
   )
     .bind(keyId)
     .first<any>();
@@ -193,13 +272,25 @@ async function sync(req: Request, env: Env) {
   const digest = await sha256(raw);
   const expected = await hmac(
     cred.secret,
-    ['POST', '/api/v1/sync', stamp, nonce, digest].join('\n'),
+    [req.method, new URL(req.url).pathname, stamp, nonce, digest].join('\n'),
   );
   if (
     !equal(expected, signature) ||
     req.headers.get('X-Body-SHA256') !== digest
   )
     throw new Http(403, 'ACCESS_DENIED');
+  try {
+    await env.DB.prepare('INSERT INTO replay_nonces VALUES(?,?,?)')
+      .bind(keyId, nonce, Number(stamp))
+      .run();
+  } catch {
+    throw new Http(409, 'REPLAY_DETECTED');
+  }
+  return { cred, keyId, digest };
+}
+async function sync(req: Request, env: Env) {
+  const { raw, value: v } = await body(req);
+  const { cred, keyId, digest } = await collectorAuth(req, env, raw);
   semanticSync(v);
   if (v.source_id !== cred.source_id) throw new Http(403, 'ACCESS_DENIED');
   const source = await env.DB.prepare('SELECT * FROM sources WHERE id=?')
@@ -212,13 +303,6 @@ async function sync(req: Request, env: Env) {
     source.generation !== v.source_generation
   )
     throw new Http(410, 'SOURCE_REVOKED');
-  try {
-    await env.DB.prepare('INSERT INTO replay_nonces VALUES(?,?,?)')
-      .bind(keyId, nonce, Number(stamp))
-      .run();
-  } catch {
-    throw new Http(409, 'REPLAY_DETECTED');
-  }
   const scope = 'sync:' + keyId;
   const old = await env.DB.prepare(
     'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
@@ -335,6 +419,42 @@ export function createApp(authorize: typeof owner = owner) {
             : new Response('Academic OS', { status: 200 });
         if (path === '/api/v1/sync' && req.method === 'POST')
           return await sync(req, env);
+        if (path === '/api/v1/sync/status' && req.method === 'GET') {
+          const { cred } = await collectorAuth(req, env, '', true);
+          if (url.searchParams.get('source_id') !== cred.source_id)
+            throw new Http(403, 'ACCESS_DENIED');
+          const source = await env.DB.prepare(
+            'SELECT id,generation,paused,purged_at FROM sources WHERE id=?',
+          )
+            .bind(cred.source_id)
+            .first<any>();
+          return result({
+            ...source,
+            revoked: !!cred.revoked,
+            purge_required: !!source?.purged_at,
+          });
+        }
+        if (path === '/api/v1/sync/purge-ack' && req.method === 'POST') {
+          const { raw, value: v } = await body(req);
+          const { cred } = await collectorAuth(req, env, raw, true);
+          const source = await env.DB.prepare(
+            'SELECT generation,purged_at FROM sources WHERE id=?',
+          )
+            .bind(cred.source_id)
+            .first<any>();
+          if (
+            v.source_id !== cred.source_id ||
+            !source?.purged_at ||
+            v.generation !== source.generation
+          )
+            throw new Http(403, 'ACCESS_DENIED');
+          await env.DB.prepare(
+            'INSERT OR REPLACE INTO purge_acknowledgments VALUES(?,?,?,?)',
+          )
+            .bind(cred.source_id, v.generation, 'linux', now())
+            .run();
+          return result({ acknowledged: true });
+        }
         if (!(await authorize(req, env))) throw new Http(401, 'AUTH_REQUIRED');
         if (
           !['GET', 'HEAD'].includes(req.method) &&
@@ -377,20 +497,17 @@ export function createApp(authorize: typeof owner = owner) {
           (p === '/tasks' && method === 'GET') ||
           (p === '/search' && method === 'GET')
         ) {
-          const limit = Math.min(
-            100,
-            Math.max(1, Number(url.searchParams.get('limit')) || 50),
-          );
-          const q = (url.searchParams.get('q') ?? '')
-            .slice(0, 200)
-            .replace(/[\\%_]/g, '\\$&');
-          const rows = await db
-            .prepare(
-              "SELECT * FROM tasks WHERE deleted_at IS NULL AND title LIKE ? ESCAPE '\\' ORDER BY updated_at DESC,id LIMIT ?",
+          try {
+            const page = await listTasks(db, url);
+            return result(page.items, 200, { next_cursor: page.cursor });
+          } catch (e) {
+            if (
+              e instanceof Error &&
+              ['INVALID_CURSOR', 'INVALID_FILTER'].includes(e.message)
             )
-            .bind('%' + q + '%', limit)
-            .all();
-          return result(rows.results.map(task));
+              throw new Http(422, e.message);
+            throw e;
+          }
         }
         if (p === '/tasks' && method === 'POST') {
           const { raw, value: v } = await body(req);
@@ -433,7 +550,7 @@ export function createApp(authorize: typeof owner = owner) {
                 at,
                 at,
               ),
-            ...intents(db, id, fields.due, 1),
+            ...(await intents(db, id, fields.due, 1)),
           ]);
           return result(await getTask(db, id), 201);
         }
@@ -445,13 +562,18 @@ export function createApp(authorize: typeof owner = owner) {
             const expected = version(req);
             const v = method === 'PATCH' ? (await body(req)).value : {};
             const fields = taskFields({ ...current, ...v });
-            const revision = current.due_revision + 1;
+            const reschedule =
+              JSON.stringify(fields.due) !== JSON.stringify(current.due) ||
+              ['done', 'archived'].includes(fields.status) !==
+                ['done', 'archived'].includes(current.status) ||
+              method === 'DELETE';
+            const revision = current.due_revision + (reschedule ? 1 : 0);
             const at = now();
             const mutation = uuid();
             const ops = [
               db
                 .prepare(
-                  'UPDATE tasks SET title=?,description=?,context_id=?,kind=?,status=?,priority=?,due_json=?,due_at_utc=?,version=version+1,due_revision=?,mutation_id=?,updated_at=?,deleted_at=? WHERE id=? AND version=? AND deleted_at IS NULL',
+                  'UPDATE tasks SET manual_owned=1,title=?,description=?,context_id=?,kind=?,status=?,priority=?,due_json=?,due_at_utc=?,version=version+1,due_revision=?,mutation_id=?,updated_at=?,deleted_at=? WHERE id=? AND version=? AND deleted_at IS NULL',
                 )
                 .bind(
                   fields.title,
@@ -472,9 +594,12 @@ export function createApp(authorize: typeof owner = owner) {
             ];
             if (
               method === 'PATCH' &&
+              reschedule &&
               !['done', 'archived'].includes(fields.status)
             )
-              ops.push(...intents(db, tm[1], fields.due, revision, mutation));
+              ops.push(
+                ...(await intents(db, tm[1], fields.due, revision, mutation)),
+              );
             const r = await db.batch(ops);
             if (!r[0].meta.changes) throw new Http(409, 'VERSION_CONFLICT');
             return result(
@@ -628,11 +753,15 @@ export function createApp(authorize: typeof owner = owner) {
             ops.push(
               db
                 .prepare(
-                  'UPDATE tasks SET title=?,description=?,due_json=?,due_at_utc=?,version=version+1,due_revision=due_revision+1,mutation_id=?,updated_at=? WHERE id=? AND version=? AND deleted_at IS NULL AND EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
+                  'UPDATE tasks SET title=?,description=?,context_id=?,kind=?,status=?,priority=?,due_json=?,due_at_utc=?,version=version+1,due_revision=due_revision+1,mutation_id=?,updated_at=? WHERE id=? AND version=? AND deleted_at IS NULL AND EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
                 )
                 .bind(
                   fields.title,
                   fields.description,
+                  fields.context_id,
+                  fields.kind,
+                  fields.status,
+                  fields.priority,
                   JSON.stringify(fields.due),
                   fields.due_at_utc,
                   action,
@@ -650,7 +779,7 @@ export function createApp(authorize: typeof owner = owner) {
             ops.push(
               db
                 .prepare(
-                  'INSERT INTO tasks(id,context_id,title,kind,description,status,priority,due_json,due_at_utc,created_at,updated_at) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
+                  'INSERT INTO tasks(id,context_id,title,kind,description,status,priority,due_json,due_at_utc,created_at,updated_at,manual_owned) SELECT ?,?,?,?,?,?,?,?,?,?,?,0 WHERE EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
                 )
                 .bind(
                   id,
@@ -658,7 +787,7 @@ export function createApp(authorize: typeof owner = owner) {
                   fields.title,
                   fields.kind,
                   fields.description,
-                  'todo',
+                  fields.status,
                   fields.priority,
                   JSON.stringify(fields.due),
                   fields.due_at_utc,
@@ -688,15 +817,15 @@ export function createApp(authorize: typeof owner = owner) {
               )
               .bind(scope, key, digest, id, c.id, action),
           );
-          if (fields)
+          if (fields && !['done', 'archived'].includes(fields.status))
             ops.push(
-              ...intents(
+              ...(await intents(
                 db,
                 id,
                 fields.due,
                 target ? target.due_revision + 1 : 1,
                 target ? action : 'created',
-              ),
+              )),
             );
           ops.push(
             db
@@ -726,12 +855,42 @@ export function createApp(authorize: typeof owner = owner) {
             ).results,
           );
         if (p === '/briefing' && method === 'GET') {
-          const rows = await db
+          const saved = await db
+            .prepare('SELECT value_json FROM settings WHERE id=1')
+            .first<any>();
+          const timezone = JSON.parse(saved.value_json).timezone;
+          const at = now();
+          const today = new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date(at));
+          const future = new Date(Date.parse(at) + 3 * 86400000).toISOString();
+          const futureDate = new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date(future));
+          const counts = await db
             .prepare(
-              'SELECT status,count(*) count FROM tasks WHERE deleted_at IS NULL GROUP BY status',
+              "SELECT count(*) active,coalesce(sum(CASE WHEN due_at_utc<? OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date')<?) THEN 1 ELSE 0 END),0) overdue,coalesce(sum(CASE WHEN (due_at_utc>=? AND due_at_utc<=?) OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date') BETWEEN ? AND ?) THEN 1 ELSE 0 END),0) upcoming,coalesce(sum(CASE WHEN json_extract(due_json,'$.precision') IN ('unknown','approximate') THEN 1 ELSE 0 END),0) no_date FROM tasks WHERE deleted_at IS NULL AND status NOT IN ('done','archived')",
             )
-            .all();
-          return result({ counts: rows.results, generated_at: now() });
+            .bind(at, today, at, future, today, futureDate)
+            .first();
+          const pending = await db
+            .prepare(
+              "SELECT count(*) count FROM candidates WHERE review_status IN ('pending','needs_clarification')",
+            )
+            .first<any>();
+          return result({
+            counts,
+            pending: pending.count,
+            local_date: today,
+            timezone,
+            generated_at: at,
+          });
         }
         if (p === '/settings' && method === 'GET') {
           const row = await db
@@ -741,6 +900,83 @@ export function createApp(authorize: typeof owner = owner) {
             ...JSON.parse(row.value_json),
             version: row.version,
           });
+        }
+        if (p === '/settings/reminders' && method === 'PATCH') {
+          const { value: v } = await body(req);
+          if (
+            typeof v.enabled !== 'boolean' ||
+            !Array.isArray(v.offset_hours) ||
+            v.offset_hours.length > 5 ||
+            new Set(v.offset_hours).size !== v.offset_hours.length ||
+            v.offset_hours.some(
+              (h: unknown) =>
+                typeof h !== 'number' ||
+                !Number.isFinite(h) ||
+                h <= 0 ||
+                h > 168,
+            ) ||
+            !Number.isInteger(v.date_only_hour) ||
+            v.date_only_hour < 0 ||
+            v.date_only_hour > 23
+          )
+            throw new Http(422, 'INVALID_REMINDER_POLICY');
+          const expected = version(req);
+          const current = await db
+            .prepare('SELECT value_json FROM settings WHERE id=1')
+            .first<any>();
+          const saved = JSON.parse(current.value_json);
+          const quiet = v.quiet_hours;
+          if (
+            quiet !== undefined &&
+            (typeof quiet?.enabled !== 'boolean' ||
+              !Number.isInteger(quiet.start_hour) ||
+              quiet.start_hour < 0 ||
+              quiet.start_hour > 23 ||
+              !Number.isInteger(quiet.end_hour) ||
+              quiet.end_hour < 0 ||
+              quiet.end_hour > 23 ||
+              (quiet.enabled && quiet.start_hour === quiet.end_hour))
+          )
+            throw new Http(422, 'INVALID_QUIET_HOURS');
+          saved.reminder_policy = {
+            enabled: v.enabled,
+            offset_hours: v.offset_hours,
+            date_only_hour: v.date_only_hour,
+            quiet_hours:
+              quiet === undefined
+                ? saved.reminder_policy?.quiet_hours
+                : {
+                    enabled: quiet.enabled,
+                    start_hour: quiet.start_hour,
+                    end_hour: quiet.end_hour,
+                    timezone: saved.timezone,
+                  },
+          };
+          const guard = uuid(),
+            at = now();
+          await db.batch([
+            db
+              .prepare(
+                'UPDATE settings SET value_json=?,version=version+1 WHERE id=1 AND version=?',
+              )
+              .bind(JSON.stringify(saved), expected),
+            db
+              .prepare('INSERT INTO mutation_guards VALUES(?,changes())')
+              .bind(guard),
+            db
+              .prepare(
+                "UPDATE tasks SET due_revision=due_revision+1,version=version+1,updated_at=? WHERE deleted_at IS NULL AND status NOT IN ('done','archived')",
+              )
+              .bind(at),
+            db.prepare(
+              "INSERT OR REPLACE INTO reminder_rebuilds SELECT id,due_revision FROM tasks WHERE deleted_at IS NULL AND status NOT IN ('done','archived')",
+            ),
+            db.prepare('DELETE FROM mutation_guards WHERE id=?').bind(guard),
+          ]);
+          const pending = await db
+            .prepare('SELECT count(*) count FROM reminder_rebuilds')
+            .first<any>();
+          return result({ updated: true, pending_rebuilds: pending.count });
         }
         const settingsMatch = p === '/settings';
         if (settingsMatch && method === 'PATCH') {
@@ -755,12 +991,16 @@ export function createApp(authorize: typeof owner = owner) {
           } catch {
             throw new Http(422, 'INVALID_TIMEZONE');
           }
+          const oldSettings = await db
+            .prepare('SELECT value_json FROM settings WHERE id=1')
+            .first<any>();
           const r = await db
             .prepare(
               'UPDATE settings SET value_json=?,version=version+1 WHERE id=1 AND version=?',
             )
             .bind(
               JSON.stringify({
+                ...JSON.parse(oldSettings.value_json),
                 language: v.language,
                 theme: v.theme,
                 timezone: v.timezone,
@@ -771,6 +1011,65 @@ export function createApp(authorize: typeof owner = owner) {
           if (!r.meta.changes) throw new Http(409, 'VERSION_CONFLICT');
           return result({ updated: true });
         }
+        const snooze = p.match(/^\/reminders\/([^/]+)\/snooze$/);
+        if (snooze && method === 'POST') {
+          const { raw, value: v } = await body(req);
+          const at = Date.parse(v.until);
+          if (
+            !Number.isFinite(at) ||
+            at <= Date.now() ||
+            at > Date.now() + 30 * 86400000
+          )
+            throw new Http(422, 'INVALID_SNOOZE');
+          const key = text(req.headers.get('Idempotency-Key'), 128),
+            digest = await sha256(raw),
+            scope = 'snooze:' + snooze[1];
+          const previous = await db
+            .prepare(
+              'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+            )
+            .bind(scope, key)
+            .first<any>();
+          if (previous) {
+            if (previous.digest !== digest)
+              throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+            return result({ intent_id: previous.result_id });
+          }
+          const entry = await db
+            .prepare(
+              "SELECT t.* FROM notification_inbox n JOIN tasks t ON t.id=n.task_id WHERE n.id=? AND t.deleted_at IS NULL AND t.status NOT IN ('done','archived')",
+            )
+            .bind(snooze[1])
+            .first<any>();
+          if (!entry) throw new Http(409, 'TASK_INACTIVE');
+          const ident = uuid(),
+            guard = uuid();
+          await db.batch([
+            db
+              .prepare(
+                "INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM tasks WHERE id=? AND version=? AND deleted_at IS NULL AND status NOT IN ('done','archived'))",
+              )
+              .bind(guard, entry.id, entry.version),
+            db
+              .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+              .bind(scope, key, digest, ident),
+            db
+              .prepare(
+                'INSERT INTO reminder_intents(id,task_id,due_revision,scheduled_for_utc) VALUES(?,?,?,?)',
+              )
+              .bind(
+                ident,
+                entry.id,
+                entry.due_revision,
+                new Date(at).toISOString(),
+              ),
+            db
+              .prepare('UPDATE notification_inbox SET read_at=? WHERE id=?')
+              .bind(now(), snooze[1]),
+            db.prepare('DELETE FROM mutation_guards WHERE id=?').bind(guard),
+          ]);
+          return result({ intent_id: ident });
+        }
         const rm = p.match(/^\/reminders\/([^/]+)\/read$/);
         if (rm && method === 'PATCH') {
           await db
@@ -778,6 +1077,28 @@ export function createApp(authorize: typeof owner = owner) {
             .bind(now(), rm[1])
             .run();
           return result({ read: true });
+        }
+        const purgeState = p.match(/^\/sources\/([^/]+)\/purge-status$/);
+        if (purgeState && method === 'GET') {
+          const source = await db
+            .prepare('SELECT id,generation,purged_at FROM sources WHERE id=?')
+            .bind(purgeState[1])
+            .first<any>();
+          if (!source) throw new Http(404, 'NOT_FOUND');
+          const ack = await db
+            .prepare(
+              'SELECT actor,acknowledged_at FROM purge_acknowledgments WHERE source_id=? AND generation=?',
+            )
+            .bind(source.id, source.generation)
+            .all();
+          return result({
+            cloud_purged: !!source.purged_at,
+            acknowledgments: ack.results,
+            local_wipe_pending:
+              !!source.purged_at &&
+              !ack.results.some((a: any) => a.actor === 'linux'),
+            phone_wipe_status: 'verify_locally',
+          });
         }
         const purge = p.match(/^\/sources\/([^/]+)\/(purge-preview|purge)$/);
         if (purge && method === 'POST') {
@@ -810,7 +1131,7 @@ export function createApp(authorize: typeof owner = owner) {
               .bind(src.id, src.generation, at),
             db
               .prepare(
-                'UPDATE sources SET purged_at=?,generation=generation+1,paused=1 WHERE id=?',
+                "UPDATE sources SET display_name='Purged source',coverage_json=NULL,last_sync_at=NULL,purged_at=?,generation=generation+1,paused=1 WHERE id=?",
               )
               .bind(at, src.id),
             db
@@ -828,10 +1149,22 @@ export function createApp(authorize: typeof owner = owner) {
             ops.push(
               db
                 .prepare(
-                  'UPDATE tasks SET deleted_at=?,updated_at=?,version=version+1 WHERE id IN (SELECT te.task_id FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id WHERE si.source_id=?) AND NOT EXISTS(SELECT 1 FROM task_evidence te2 JOIN source_items si2 ON si2.id=te2.source_item_id WHERE te2.task_id=tasks.id AND si2.source_id<>? AND si2.removed_at IS NULL)',
+                  "UPDATE tasks SET title='Deleted responsibility',description=NULL,due_json='{}',due_at_utc=NULL,deleted_at=?,updated_at=?,version=version+1 WHERE manual_owned=0 AND id IN (SELECT te.task_id FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id WHERE si.source_id=?) AND NOT EXISTS(SELECT 1 FROM task_evidence te2 JOIN source_items si2 ON si2.id=te2.source_item_id WHERE te2.task_id=tasks.id AND si2.source_id<>? AND si2.removed_at IS NULL)",
                 )
                 .bind(at, at, src.id, src.id),
             );
+          ops.push(
+            db
+              .prepare(
+                'UPDATE tasks SET manual_owned=1 WHERE deleted_at IS NULL AND id IN(SELECT te.task_id FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id WHERE si.source_id=?)',
+              )
+              .bind(src.id),
+            db
+              .prepare(
+                "DELETE FROM task_events WHERE task_id IN(SELECT id FROM tasks WHERE deleted_at=? AND title='Deleted responsibility')",
+              )
+              .bind(at),
+          );
           ops.push(
             db
               .prepare(
@@ -881,7 +1214,11 @@ export function createApp(authorize: typeof owner = owner) {
       } catch (e) {
         if (e instanceof Http)
           return result({ error: { code: e.code } }, e.status);
-        if (e instanceof Error && e.message.includes('mutation_guards'))
+        if (
+          e instanceof Error &&
+          (e.message.includes('mutation_guards') ||
+            e.message.includes('CHECK constraint failed: ok=1'))
+        )
           return result({ error: { code: 'VERSION_CONFLICT' } }, 409);
         if (e instanceof Invalid)
           return result({ error: { code: e.message } }, 422);

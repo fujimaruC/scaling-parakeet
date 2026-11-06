@@ -1,55 +1,56 @@
 # Project status — evidence and remaining work
 
-**2026-11-06 · Asia/Makassar. Implementation started across the system; full MVP is not complete.**
+**2026-11-06 · Asia/Makassar. Whole-system implementation continues; full MVP is not complete.**
 
-Remote base: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`. The owner's latest request authorizes work across all milestones; the previous M0-only session boundary is superseded. Physical-device, account, privacy and release gates remain mandatory. No remote push, deployment, real chat import or paid provisioning performed.
+Remote base: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
 ## Implemented and exercised locally
 
 | Area | Evidence |
 |---|---|
-| Workspace/tooling | Locked npm dependencies, Python requirements lock, TS config, separate React/Worker/contracts/Python/Kotlin projects, CI definition |
-| Shared contracts | TS AJV + Python JSON Schema adapters, semantic dates/evidence; same synthetic fixtures |
-| Worker/D1 ledger | Migration, owner identity fail-closed, contexts, task create/read/edit/delete, CAS and audit, exact/date-only/unknown dates |
-| Proposal workflow | Source enrollment, scoped HMAC ingestion, nonce/idempotency, structured projection, explicit approval/rejection and transactional guards |
-| Reminders | Persistent intents, deadline revision invalidation, bounded cron, unique in-app inbox; no local-AI dependency; six-hour catch-up cancellation |
-| React app | Today/list, calendar-style agenda (not full month grid), search over fetched tasks, review approve/reject, sources, history, inbox, context setup, ID/EN/theme, canonical export |
-| Offline | IndexedDB structured snapshot and disabled writes exercised via browser; production service worker installation/cache lifecycle still needs testing |
-| Linux | Encrypted evidence store, text export parser, repeat import, local authenticated browser import UI, durable notification receipt core and generation revocation |
-| AI | Consent-gated adapter and strict structured projection; no real provider request or fully integrated processing-job UI yet |
-| Backup | Encrypted canonical export and disposable SQLite restore parity test; no secrets/raw evidence included |
-| Calendar import | Conservative ICS preview parser; recurrence/floating-time uncertainty flagged; actual ITK connection unverified |
-| Android | Source-only permission/lifecycle/filter/encrypted queue probe and official Gradle wrapper. No compiled APK or real device result |
+| Workspace | Locked npm/Python dependencies, separate React/Worker/contracts/Python/Kotlin projects, CI definition |
+| Ledger | Fail-closed owner JWT checks, contexts, task CRUD/CAS/audit, cursor pagination/filtering, exact/date-only/approximate/unknown dates |
+| Review | Scoped signed proposal ingestion, source generations, explicit approve/edit/reject/clarification, explicit deadline target and version, immutable retry |
+| PWA | Today/list, task editor, month calendar, partial-page disclosure, proposal corrections, aggregate briefing, context/source setup, history, inbox, ID/EN/themes, canonical export |
+| Reminders | Independent D1 intents/cron/inbox, enabled/offset/date-only rule editor, bounded future rebuild, stale revision cancellation, read/snooze and owner-timezone quiet hours; external push unconfigured |
+| Offline | Compiled service worker offline reload, structured IndexedDB read-only snapshot, logout deletion and stale-response write guard |
+| Linux ingest | Local authenticated import/evidence UI, repeat export deduplication, encrypted evidence, immutable signed phone receipts, generation revocation |
+| Processing | Selected evidence/preview/provider consent/extraction/projection review/encrypted job/retry UI connected; real provider remains unconfigured |
+| Phone transport | One-device expiring invitations, private HTTPS/certificate pin/hostname checks, encrypted immutable sender batches, receipt cleanup, periodic retry, revoked-source wipe; synthetic Linux HTTPS integration |
+| Android | Debug APK compiled; Android lint completed; API-28-compatible messaging-style access, permission/lifecycle/filter/encrypted queue source, backup/transfer exclusions |
+| Purge | Cloud scrubs sole-source unedited AI tasks in delete mode, preserves manual ownership; local source-status preflight/wipe acknowledgment; phone acknowledgment explicitly unverified in cloud |
+| Backup | Encrypted canonical export and disposable SQLite restore parity; future-only rebuild queued after validation; no raw evidence/credentials/old delivery intents restored |
+| Calendar import | Conservative ICS preview parser; recurrence/floating-time uncertainty flagged; actual ITK unverified |
 
-## Commands and outcomes
+## Latest commands and outcomes
 
-- `npm run check`: formatting/type checks, local D1 tests, PWA build and Worker dry-run. See final commit/run evidence for latest test counts.
-- `npm run test:e2e`: **2 passed** — create organization/context/task, reload persistence, completion, offline read-only snapshot and 360px/theme navigation.
-- `.venv/bin/python -m unittest discover -s collectors/local/tests -v`: **10 passed** — encryption, idempotent receipt/import, revocation, malformed batch rollback, consent, projection, canonical restore, ICS and local browser auth/import flow.
-- `python scripts/validate_planning.py`: passes schemas, invalid-input cases and documentation links; this is distinct from application tests.
-- PWA production bundle measured at approximately **74.34 KiB gzip JS**, **1.79 KiB gzip CSS**. Worker dry-run **79.49 KiB gzip**. No performance/device SLA implied.
-- Android `./gradlew assembleDebug --no-daemon`: **BLOCKED**. Initial Java proxy resolution fixed; Gradle downloaded. Build then failed because installed Java 17 runtime lacks JAVA_COMPILER/javac. Android SDK/device also unavailable. Source compilation and actual-device behavior remain unverified.
-- Browser installer initially received invalid archives; Playwright 1.56.1 fallback mirror succeeded. Initial E2E failures exposed development proxy origin mismatch; one-origin synthetic runner fixed it. Production Origin enforcement retained.
+All data used for automated verification was synthetic.
+
+- `npm run check`: **PASS**, including **16 local D1 integration tests**, formatting, TypeScript, static PWA build and Worker dry-run build. Formatting is the current lint check; semantic ESLint is not configured.
+- `npm run test:e2e`: **5 passed** — task persistence/completion/offline, 360px/themes, task edits/date precision/month calendar corrected proposal approval and repeated reminder-rule saves.
+- `npm run test:pwa`: **1 passed** — actual compiled service worker offline hard reload and private snapshot deletion on logout.
+- `.venv/bin/python -m unittest discover -s collectors/local/tests -v`: **19 passed** — import/encryption, receipt retry/mutation rejection, malformed transaction rollback, pairing expiry/revocation, provider consent/route changes, evidence scoping, projection retry after restart, cloud purge, TLS transport, local browser auth, restore and ICS.
+- `python scripts/validate_planning.py`: schema/examples/rejections/relative-link validation; distinct from app tests.
+- `python scripts/check_placeholders.py`: **PASS** for common private-key/provider-token formats in tracked and nonignored project files. This limited scanner is not an exhaustive secret audit.
+- `./gradlew assembleDebug lintDebug --no-daemon`: **PASS**, Java 17 / Android SDK 35, debug APK produced. JDK/SDK setup blockers from the previous checkpoint were resolved. Remaining lint warnings include custom pinned trust manager, intentional synchronous credential persistence, missing launcher icon and native translations. No actual device or emulator tests performed.
+- Latest production assets: JS approximately **79.28 KiB gzip**, CSS **2.10 KiB gzip**; Worker dry-run approximately **82.55 KiB gzip**. These sizes are not a device performance guarantee.
+
+Total: **41 automated tests passed**, plus native build/lint. CI includes these commands but has not been triggered on GitHub here. See [development instructions](18-DEVELOPMENT.md) for reproducible setup.
 
 ## Milestone truth
 
-M0 remains **PARTIAL/BLOCKED**: JS/Python foundation is runnable, Android source probe exists, but actual phone, private transport, Cloudflare account and 9Router proof are missing. Independent later-milestone implementation is allowed by the owner's expanded instruction; this does not sign off M0.
+M0 remains **PARTIAL/BLOCKED** on actual Android 9, private remote networking, Cloudflare account and 9Router evidence. Native compilation is now verified. Later work is authorized independently; it does not sign off M0. M1 is locally exercised, not release-verified. M2–M4 are connected partial implementations. M5 remains conditional with only a local ICS parser.
 
-M1 is **locally exercised, not release-verified**. M2–M4 are **partial implementations**, not completed milestones. M5 has a local ICS parser only; ITK integration remains conditional/unverified.
+## Remaining implementation and release gates
 
-## Concrete remaining implementation and verification
+1. Run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
+2. Configure the owner's private network and receiver locally. No VPN vendor/account choice or real peer pairing is claimed. Finish release UI, localized native resources, launcher icon and signed release packaging.
+3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
+4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
+5. Extend PWA server-query controls, calendar pagination across large ledgers, full labels/translations and accessibility/keyboard/screen-reader audit. Loaded subsets are disclosed. Finish device-compatible installation/update tests.
+6. Complete proactive purge-status polling when no outbound job exists, offline acknowledgment recovery and phone-status aggregation in cloud. Status must remain pending until verified. Exercise multi-source/manual-retain and backup tombstones across actual devices.
+7. Verify owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
+8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
+9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
-1. Compile Android on full JDK/SDK; run actual Android 9 lifecycle/low-RAM/metadata/filter/backup/retention matrix. Probe has no native transfer client.
-2. Complete user-confirmed private transport provider setup, one-use pairing/peer pinning, native sender, receipt polling/ack cleanup, background retry and remote actual-device test.
-3. Connect import→privacy preview→provider consent→extraction jobs→durable outbound batch retry UI. Current modules are tested independently, not a complete daily workflow.
-4. Harden review edits/clarification/deadline-target UI, pending proposal CAS revisions, cursor pagination/filter contracts, real task detail/edit, full calendar and due-oriented briefing.
-5. Implement reminder rule editing, quiet hours, snooze, device push/subscription lifecycle and on-device delivery evidence. Current scheduler delivers in-app only.
-6. Finish source purge audit scrubbing, independent-source/manual-retain distinctions, pending device acknowledgments and browser cache invalidation; verify no resurrection across all devices/backups. Current source purge route is preliminary.
-7. Production auth positive/negative test including previews; worker quota/CPU measurement; deployment with actual owner account. Credentials remain unconfigured and private APIs deny access.
-8. Production offline installation/logout/cache tests, accessibility audit, Android/browser compatibility and complete translations for remaining metadata labels.
-9. Restore into disposable D1 and regenerate future reminders safely, enforce restored tombstones before sync; current backup test is disposable SQLite only.
-10. Actual provider-route/policy verification, authorized ITK feasibility, final cost/transport ADR and seven-day owner pilot.
-
-The system cannot be declared complete from these local proofs. No original group history, physical notification delivery or ITK access is assumed. Run instructions are in 18-DEVELOPMENT.md; continue from the remaining list, preserving working slices and adding evidence.
-
-Mobile dark-mode render visually inspected after browser tests. `git diff --cached --check` passed. GitHub CI workflow is defined but has not been triggered here. All validation used synthetic data.
+Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.

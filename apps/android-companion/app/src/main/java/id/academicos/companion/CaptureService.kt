@@ -20,7 +20,7 @@ class CaptureService: NotificationListenerService() {
  private fun capture(event: StatusBarNotification){
   if(event.packageName!="com.whatsapp") return
   val settings=getSharedPreferences("capture",0)
-  if(!settings.getBoolean("enabled",false)) return
+  if(!settings.getBoolean("enabled",false) || !Transport(this).configured()) return
   val n=event.notification
   if((n.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
   // Explicit owner-tested conjunction; this is a probe, no claim of universal conversation IDs.
@@ -28,8 +28,8 @@ class CaptureService: NotificationListenerService() {
   val expected=settings.getString("title","") ?: return
   val expectedGroup=settings.getString("group","") ?: return
   if(expected.isBlank() || expectedGroup.isBlank() || title!=expected || event.groupKey!=expectedGroup) return
-  val messages=Notification.MessagingStyle.extractMessagingStyleFromNotification(n)?.messages
-  val selected=messages?.map {Pair(it.text?.toString() ?: "",if(it.timestamp>0)it.timestamp else null)}
+  val messages=try{(Notification.Builder.recoverBuilder(this,n).style as? Notification.MessagingStyle)?.messages}catch(_:Exception){null}
+  val selected=messages?.takeIf {it.isNotEmpty()}?.map {Pair(it.text?.toString() ?: "",if(it.timestamp>0)it.timestamp else null)}
    ?: listOf(Pair(n.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: "",null))
   val parts=selected.filter {it.first.isNotBlank() && it.first.length<=16000}
   if(parts.isEmpty()) {health("hidden_or_empty_preview");return}

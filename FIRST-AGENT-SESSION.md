@@ -1,28 +1,23 @@
-> Superseded session scope, 2026-11-06: the owner now authorizes implementation across the whole system. Read current STATUS and 18-DEVELOPMENT; preserve the working implementation and continue independent slices while external gates remain open. The original M0 prompt below is historical guidance, not a new restriction on this authorization.
+# Continuation handoff — Academic OS
 
-# Next-model handoff — Academic OS v0.2
+The owner authorizes implementation across the whole system. Preserve the working implementation; this is no longer an M0-only or planning-only repository. Shared materials must contain placeholders only. Configure actual keys exclusively on the owner's machine, outside the checkout. Do not deploy, provision paid services, push commits or contact real AI/LMS services without the corresponding authorization/configuration.
 
-Planning is ready. No application has been built. Use an isolated working branch and begin **M0 only**. Do not call device/account gates complete using mocks.
+## Read first
 
-## Paste this prompt into the next model
+Read AGENTS.md, README.md, docs/16-OWNER-DECISIONS.md, docs/00-MASTER-PRD.md, docs/17-WORK-PACKAGES.md, docs/STATUS.md, docs/DECISIONS.md and docs/18-DEVELOPMENT.md. Read affected subsystem contracts/tests. Current status is authoritative over historical planning/handoff claims. Inspect git status and preserve user changes.
 
-> Work in the scaling-parakeet repository. Read AGENTS.md, README.md, docs/16-OWNER-DECISIONS.md, docs/00-MASTER-PRD.md, docs/09-IMPLEMENTATION.md, docs/17-WORK-PACKAGES.md, docs/STATUS.md and docs/DECISIONS.md, then the relevant architecture/privacy/Android/transport/API/test contracts. Implement M0 packages W00–W03 incrementally. Academic and organizational responsibilities are equal. Both Android notification listener and manual export import are mandatory MVP paths. The actual Android 9 listener, filtering, encrypted queue, private remote phone→Linux receipt and recovery must be tested; prepare an owner-run kit if the device is unavailable, clearly leaving the gate blocked. Keep raw exports exclusively on Linux and raw notifications/evidence on Android/Linux. Only minimized structured proposals/tasks may sync to cloud. Every AI-extracted task requires explicit owner approval. External AI requires named provider/route consent. Use React/TS static PWA, TypeScript Worker/D1, Python collector and Kotlin companion as recommended choices, verifying compatible versions. Prefer private Tailscale/WireGuard connectivity as a feasibility candidate, not as an already approved vendor. Existing cloud tasks/reminders cannot depend on Linux or 9Router. $0 is preferred; propose justified paid options without activating billing. Linked-device/Baileys work is research only: do not link an account or implement a third adapter. Create runnable synthetic scaffolding, minimal migrations/contracts/tests and device/privacy/auth feasibility evidence. Keep missing physical/account tests visible. Update STATUS with exact commands/results, ADRs and the next smallest work package. Stop at the M0 boundary and report ready/blocked; do not silently proceed into all milestones or deploy real data.
+## Existing implementation
 
-## Expected M0 deliverables
+React/TypeScript PWA and Worker/D1 ledger, task editing/month calendar, explicit proposal review, independent reminder inbox with custom rules/snooze/quiet hours, compiled offline snapshot/logout handling; Python encrypted export/evidence store and connected consent/extraction/projection-review/durable-sync workflow; Kotlin encrypted capture and private pinned HTTPS sender with pairing/retries/receipts. Android debug build/lint and synthetic local verification pass. See STATUS for exact commands and counts; do not describe this repository as an unbuilt scaffold.
 
-- Runnable JS/Python/Kotlin skeletons and documented actual check commands.
-- Local D1 migration smoke test and shared schema validation adapters.
-- Synthetic Android probe APK/source and sanitized real-device test record, or owner-run instructions with explicit blocker.
-- Private remote transfer prototype and interrupted-ack proof, actual-phone gate separately recorded.
-- Cloud owner/collector auth design + negative tests; deployed account proof only if available/authorized.
-- Provider consent/projection design and synthetic 9Router smoke result if owner's endpoint accessible.
-- Linked-device research ADR with no enrollment/runtime implementation.
-- STATUS and decision updates; no claim of completed MVP.
+## Continue from the remaining work
 
-## Continuation
+1. Actual Android 9 listener/metadata/filter/queue/lifecycle and interrupted private remote transfer evidence. Use the debug APK and complete owner-run protocol if hardware is unavailable. Never mark this gate passed from compiler/lint or synthetic TLS tests.
+2. Web Push subscription/delivery lifecycle, source-purge status polling and phone acknowledgment aggregation; keep pending status honest. Existing in-app reminders work without Linux or AI.
+3. Server search/calendar controls for large paginated ledgers, native localization/icon/release packaging and accessibility. Current views disclose partial loaded data.
+4. Production Access positive/negative identity, D1 restore/quotas, configured synthetic 9Router route verification and cost/transport decision. Credentials remain unconfigured until the owner enters them locally.
+5. Authorized ITK feasibility and seven-day pilot. No guessed endpoint, unofficial linked-device enrollment or additional collection adapter.
 
-After M0, owner may authorize M1 or a longer scope. Follow M1→M4 with package verification; M5 is conditional LMS work. Preserve existing working code and current branch changes. Final target is functioning tested software, not mock UI. Real-device/privacy/auth failures block release even if independent development proceeds.
+Academic and organization responsibilities are equal. Both selected notification capture and manual export import are MVP requirements. Raw exports remain Linux-only; raw notification evidence remains Android/Linux-only. Every AI-created task or deadline change needs explicit owner approval, separate from local projection upload review. A local 9Router address does not prove local inference. Source generation tombstones and offline queues must prevent resurrection.
 
-## Planning baseline
-
-Base repository commit: `293525f96a473fcbcab9026df58e16d17a18d59a`. Planning branch: `docs/academic-os-v02-planning`. The local planning work has not been pushed unless a subsequent explicit status entry says otherwise. Read current git status before edits; do not assume the user's machine has these unpushed files.
+Work in complete vertical slices, use synthetic data, run relevant checks, update STATUS and ADRs, and keep missing account/device observations visible. The release is incomplete until those gates pass. Source changes are local until explicit status says pushed; inspect current git state rather than assuming GitHub contains them.

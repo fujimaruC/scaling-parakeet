@@ -16,9 +16,11 @@ jobs:
       - run: npm run check
       - run: pip install -r collectors/local/requirements.lock
       - run: python scripts/validate_planning.py
+      - run: python scripts/check_placeholders.py
       - run: python -m unittest discover -s collectors/local/tests -v
       - run: npx playwright install --with-deps chromium --only-shell
       - run: npm run test:e2e
+      - run: npm run test:pwa
   android-build:
     runs-on: ubuntu-latest
     steps:
@@ -29,5 +31,5 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - run: ./gradlew assembleDebug --no-daemon
+      - run: ./gradlew assembleDebug lintDebug --no-daemon
         working-directory: apps/android-companion
