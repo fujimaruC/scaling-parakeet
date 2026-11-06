@@ -17,10 +17,16 @@ A session-only scheduled job checks every 30 minutes at `:13` and `:43`. Each ru
 
 - First run records the current zips and `origin/main` silently. Existing archives never trigger an alert.
 - A zip is identified by `basename:size`. A re-download of the same name at a different size counts as new.
-- A new commit is compared against the last seen `origin/main` hash.
+- A new commit is compared against the last seen `origin/main` hash. Commits authored by Claude are ignored, because those are our own pushes rather than inbound work.
 - It runs from a clean environment (`env -i`) with only `/usr/bin` and `/bin` on `PATH`, so it does not depend on the interactive shell.
 
 Verified behaviour: silent baseline, `NOOP` when quiet, `NEW:` on a simulated arrival, `NOOP` again after the arrival is recorded.
+
+The script is checked in at `scripts/aos-watch.sh`; the copy at `~/.local/bin/aos-watch.sh` is the one the schedule invokes. Install with:
+
+```bash
+install -m 755 scripts/aos-watch.sh ~/.local/bin/aos-watch.sh
+```
 
 ## What this cannot do
 
