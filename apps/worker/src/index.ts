@@ -127,6 +127,61 @@ async function getTask(db: D1Database, id: string) {
   if (!row) throw new Http(404, 'NOT_FOUND');
   return task(row);
 }
+// One source for the scheduler's configured or default policy, including read UI.
+function effectiveReminderPolicy(settings: any) {
+  return (
+    settings.reminder_policy ?? {
+      enabled: true,
+      offset_hours: [24, 3],
+      date_only_hour: 9,
+    }
+  );
+}
+async function readTaskView(db: D1Database, id: string, url: URL) {
+  const before = url.searchParams.get('history_before');
+  if (
+    before !== null &&
+    (!/^[1-9][0-9]{0,14}$/.test(before) ||
+      !Number.isSafeInteger(Number(before)))
+  )
+    throw new Http(422, 'INVALID_CURSOR');
+  // D1 batch reads share a transaction: task, history, provenance and policy agree.
+  const [taskRows, events, sources, settingsRows] = await db.batch<any>([
+    db
+      .prepare('SELECT * FROM tasks WHERE id=? AND deleted_at IS NULL')
+      .bind(id),
+    db
+      .prepare(
+        'SELECT id,task_id,event_type,before_json,after_json,created_at FROM task_events WHERE task_id=?' +
+          (before ? ' AND id<?' : '') +
+          ' ORDER BY id DESC LIMIT 31',
+      )
+      .bind(id, ...(before ? [Number(before)] : [])),
+    db
+      .prepare(
+        'SELECT DISTINCT s.id,s.display_name FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id JOIN sources s ON s.id=si.source_id WHERE te.task_id=? AND si.removed_at IS NULL AND s.purged_at IS NULL AND si.generation=s.generation ORDER BY s.id',
+      )
+      .bind(id),
+    db.prepare('SELECT value_json FROM settings WHERE id=1'),
+  ]);
+  if (!taskRows.results[0]) throw new Http(404, 'NOT_FOUND');
+  const history = events.results.slice(0, 30),
+    settings = JSON.parse(settingsRows.results[0].value_json);
+  return {
+    task: task(taskRows.results[0]),
+    history,
+    next_history_cursor:
+      events.results.length > 30
+        ? String(history[history.length - 1].id)
+        : null,
+    sources: sources.results,
+    reminder_policy: effectiveReminderPolicy(settings),
+    reminder_policy_origin: settings.reminder_policy
+      ? 'configured'
+      : 'scheduler_default',
+    timezone: settings.timezone,
+  };
+}
 async function intents(
   db: D1Database,
   id: string,
@@ -138,11 +193,7 @@ async function intents(
   const saved = await db
     .prepare('SELECT value_json FROM settings WHERE id=1')
     .first<any>();
-  const policy = JSON.parse(saved.value_json).reminder_policy ?? {
-    enabled: true,
-    offset_hours: [24, 3],
-    date_only_hour: 9,
-  };
+  const policy = effectiveReminderPolicy(JSON.parse(saved.value_json));
   return reminderTimes(due, policy)
     .filter((at) => !futureOnly || Date.parse(at) > Date.now())
     .map((t) =>
@@ -578,6 +629,8 @@ export function createApp(authorize: typeof owner = owner) {
         }
         const tm = p.match(/^\/tasks\/([^/]+)$/);
         if (tm) {
+          if (method === 'GET' && url.searchParams.get('view') === 'read')
+            return result(await readTaskView(db, tm[1], url));
           const current = await getTask(db, tm[1]);
           if (method === 'GET') return result(current);
           if (method === 'PATCH' || method === 'DELETE') {

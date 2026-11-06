@@ -4,16 +4,17 @@ test('built PWA reloads offline and logout clears its private snapshot', async (
   context,
 }) => {
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'A little room to remember.' }),
+    page.getByRole('heading', { name: 'Today', exact: true }),
   ).toBeVisible();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
   await page.reload();
   await expect(
-    page.getByRole('heading', { name: 'A little room to remember.' }),
+    page.getByRole('heading', { name: 'Today', exact: true }),
   ).toBeVisible();
   await context.setOffline(true);
   await page.reload();
@@ -26,6 +27,7 @@ test('built PWA reloads offline and logout clears its private snapshot', async (
         (await document.fonts.load('500 16px "Pixelify Sans"')).length,
     ),
   ).toBeGreaterThan(0);
+  await page.locator('.shell-tools > summary').click();
   await context.setOffline(false);
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await page.getByLabel('Page', { exact: true }).selectOption('settings');

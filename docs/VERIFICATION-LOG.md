@@ -358,3 +358,61 @@ Live-stream proof without `-T 1`: started a background `adb logcat -b main -b cr
 **Minimal fix:** drop `-T 1` from the `logcat` argument list in `CrashWindow.start()`. The monitor's own token already scopes the window, so `-T` is redundant as well as harmful.
 
 **Not fixed here.** This session's role is architecture and verification, not implementation; the fix belongs in the next cloud package. It is listed as a required item in [NEXT-SLICE](NEXT-SLICE.md).
+
+
+## 9. S2 local implementation — base 6de38fd, 2026-11-06
+
+This is local synthetic evidence, not an owner/device/account session. Source
+branch build/read-only-s2, fresh clone at 6de38fd71f5237a7eda90307fe04ba47c69d922d.
+Owner-accepted S1 is preserved. S2 is ready for owner review; S3 is not started.
+No milestone is complete. Full commands, real stdout/stderr and all failing /
+restored fault outputs are in [S2-CHECKS](S2-CHECKS.md).
+
+| Command | Actual result |
+|---|---|
+| `npm ci` | exit 0 |
+| `npm run check` | exit 0; 25 Vitest: 19 D1 + 2 foundation + 4 S2, formatting/types/build/dry-run |
+| `npm run test:e2e` | exit 0; 12 passed |
+| `npm run test:pwa` | exit 0; 1 passed |
+| `.venv/bin/python scripts/validate_planning.py` | exit 0; actual counts in S2-CHECKS |
+| `.venv/bin/python -m unittest discover -s collectors/local/tests -v` | exit 0; 34 tests |
+| `cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest --no-daemon` | exit 0; API-28 surface and 6 standalone JVM policy cases; 0 errors / 4 unchanged lint warnings |
+| `.venv/bin/python scripts/check_s2_mutations.py --output-dir /absolute/synthetic/output` | exit 0; 22 baseline passes, 22 broken assertion failures, 22 restored passes |
+| `node scripts/render_s2.mjs --output-dir /absolute/synthetic/output` | exit 0; 28 synthetic review captures, Chromium 141.0.7390.37 |
+
+Environment: Node 24.22.1 / npm 11.9.0 / Python 3.12.14 / JDK 17.0.20 / Gradle
+8.11.1; platforms 28/35 and build-tools 35.0.0 installed. Missing module launchers
+were restored in a private Java runtime copy; setup details and native outputs
+are in S2-CHECKS. No new application dependency or native source changes.
+
+Crash-monitor fix: removed -T 1; the new process-boundary regression uses fake
+streams modeling the owner's experimentally observed API-28 behavior. It observes
+both token markers, excludes stale windows, and distinguishes clean vs fatal in
+that model. **BLOCKED: fresh owner phone START/END/crash-coverage observation.**
+Section 8's hardware fatal_exception_observed=null remains null and unverified.
+notification_access=false; no listener event or capture has ever run. Historical
+records above are not overwritten or upgraded by these synthetic results.
+
+Today/Tasks/Detail read real Worker/D1 data; task-scoped history pages, actual
+effective scheduler policy, precision-safe labels/grouping, owner-calendar sorting
+and loaded-subset disclosure replace guesses. Unknown/approximate completed tasks
+stay under Tanpa tanggal, following the explicit owner constraint. Exact times
+sort by stored instant through DST rollback; no timestamp is invented for a date.
+Reminder text is policy, not delivery evidence. Unknown context is unavailable,
+not Personal. 401/403 clears the private read session. A failed older-history page
+retains observed detail/events with explicit error and retry. Readonly preview
+sheets/toasts have no canonical writes or undo. See ADR-022 / 06-UI-UX.
+
+Accessibility: computed visible-leaf text contrast, both themes across all five
+new surfaces, minimum observed ratios and sample counts are in E2E output. Ledger
+targets measured at least 44×44 with 24px check boxes; modal/keyboard/Back/focus
+return and simulated doubled text were exercised locally. Real TalkBack/Chrome
+138, OS 200% scaling, native accessibility and full compliance remain unverified.
+Review images are in [design/s2](design/s2/README.md), not approved golden renders.
+
+Still NOT RUN/unverified: actual capture matrix, corrected evidence probe on the
+phone, Keystore/SQLite interruptions, actual private-peer network/reconnect,
+account/provider/push and production D1/Access. Android identity/resources/theme,
+full accessibility audit, large-ledger Calendar/server-query expansion and S3–S7
+remain open. No push, deploy, paid service, real messages, account credentials or
+signing keys are included.

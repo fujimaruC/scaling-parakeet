@@ -68,3 +68,46 @@ Briefing uses approved tasks and counts of pending proposals; no speculative dea
 Authenticated data is not embedded in static assets. Static shell cache excludes auth pages. IndexedDB contains only owner-scoped structured snapshot; logout clears it even if network logout fails. Show cached timestamp. Local evidence browser responses are no-store and never routed through the cloud PWA service worker.
 
 Test 360px phone, wide desktop, both languages/themes, keyboard, screen-reader names, text 200%, long Indonesian/Arabic labels, offline, empty, loading, conflict, permission denied and source unavailable. Real Android browser is required for install/push claims.
+
+## S2 read-only screen contract
+
+S1 is owner-accepted. S2 adds `/today` (with `/` alias), `/tasks` and
+`/tasks/:id`; tabs, detail and `?sheet=date|quick` are real history entries. Back
+closes a sheet before detail; a direct detail link returns to Tasks. Utilities and
+legacy pages remain reachable in the labeled Tools disclosure. Today has the
+pixel date/header/chips, aggregate proposal banner, due/overdue cards, next-seven-
+calendar-day rows and an always-present no-date navigation row, even at zero.
+Tasks has context filters and ordered Today/This week/Later/No date/Done groups.
+Empty groups are hidden. Dated completed tasks retain precision labels in Done;
+approximate/unknown dates remain distinct under no confirmed date even when
+completed, preserving the owner's always-under-Tanpa-tanggal requirement.
+
+Task rows have real labeled buttons, 44px hit areas around 24px boxes, context
+labels alongside colors, readable completed text, and pixel when labels. Detail
+shows the four precisions, actual effective policy with origin and no delivery
+claim, notes, and newest-event-ID-first task-scoped history with earlier-page
+loading. Missing metadata is unavailable. Data errors do not manufacture empty
+history, a precise date, or a reminder rule. Offline detail identifies its cached
+snapshot and leaves history/policy unavailable.
+
+S2 completion/add/save are disabled. Date and quick-add sheets preview fields;
+the precision selector distinguishes exact/date-only/approximate/unknown. No S3
+write or undo is implemented. Existing legacy write flows remain available outside
+these new read-only surfaces. Native dialogs handle modality with explicit
+aria-modal, focus trapping/return, Escape, backdrop and browser Back. A polite
+informational toast is not a save-success acknowledgment. One shared clock updates
+visible countdowns every 30 seconds and on return from background.
+
+Dates use the owner's saved timezone for grouping and the stored source timezone
+for exact/date-only labels. No timestamp is fabricated for date-only or uncertain
+dates. Partial pages explicitly qualify counts/groups/filters; the no-date row
+labels its loaded count. Banner/badge use aggregate pending count. This does not
+complete large-ledger pagination or the later Calendar redesign. Original visual
+reference is unchanged; readonly explanations and a precision selector are
+intentional differences. Android identity, full accessibility and actual-device
+capture validation remain open.
+
+S2 exact deadlines sort by UTC instant within their owner-calendar day, including
+repeated wall-clock hours at DST rollback. A failed older-history page preserves
+the known detail/events and offers retry with an explicit history error. Informational
+toasts are nonblocking; S2 supplies no toast mutation or undo action.

@@ -1,4 +1,4 @@
-import importlib.util,sys,tempfile,unittest,json,zipfile
+import importlib.util,sys,tempfile,unittest,json,zipfile,io,queue
 from pathlib import Path
 from unittest.mock import patch
 SCRIPTS=Path(__file__).resolve().parents[3]/'scripts'
@@ -6,6 +6,38 @@ sys.path.insert(0,str(SCRIPTS))
 import device_evidence as d
 import capture_matrix as m
 class DeviceEvidenceTests(unittest.TestCase):
+ def test_live_command_receives_its_own_markers_and_detects_in_window_crash(self):
+  # Model the owner's measured API-28 logcat behavior at the process boundary.
+  # Unlike feed-only tests this executes start/stop and the actual reader thread.
+  for crash in [False,True]:
+   class Stream:
+    def __init__(self):self.rows=queue.Queue()
+    def __iter__(self):
+     while True:
+      row=self.rows.get()
+      if row is None:return
+      yield row
+   class Process:
+    def __init__(self,args,**kwargs):
+     self.args=args;self.stdout=Stream();self.stderr=io.StringIO('')
+     self.stdout.rows.put('I/AOS-RUN( 1): stale-token START\n')
+     self.stdout.rows.put('E/AndroidRuntime( 7): FATAL EXCEPTION: old\n')
+     self.stdout.rows.put('E/AndroidRuntime( 7): Process: '+d.PKG+', PID: 7\n')
+    def terminate(self):self.stdout.rows.put(None)
+    def wait(self,timeout=None):return 0
+   monitor=d.CrashWindow()
+   def marker(*args):
+    if '-T' not in monitor.proc.args and '-t' not in monitor.proc.args:
+     monitor.proc.stdout.rows.put('I/AOS-RUN( 1): '+args[-1]+'\n')
+     if args[-1].endswith('START') and crash:
+      monitor.proc.stdout.rows.put('E/AndroidRuntime( 9): FATAL EXCEPTION: main\n')
+      monitor.proc.stdout.rows.put('E/AndroidRuntime( 9): Process: '+d.PKG+', PID: 9\n')
+    return ''
+   with patch.object(d.subprocess,'Popen',Process),patch.object(d,'adb',side_effect=marker):
+    monitor.start();result=monitor.stop()
+   self.assertTrue(monitor.started.is_set(),'live logcat missed its own START')
+   self.assertTrue(monitor.ended.is_set(),'live logcat missed its own END')
+   self.assertIs(result,crash)
  def test_install_success_is_not_issued_or_cached(self):
   for code,text,expected in [(0,'Success\n',True),(1,'Failure [TEST]',False),(None,'',None),(0,'issued',None)]:
    with patch.object(d,'command',return_value=(code,text)):self.assertIs(d.install('fixture.apk'),expected)

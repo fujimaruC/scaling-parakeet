@@ -59,7 +59,7 @@ class CrashWindow:
   if re.match(r'Process: [A-Za-z0-9_.:]+, PID: '+pid+r'\b',body):self.identified.add(pid)
   if re.match(r'Process: '+re.escape(PKG)+r'(?:\:[A-Za-z0-9_.]+)?, PID: '+pid+r'\b',body):self.target.add(pid)
  def start(self):
-  try:self.proc=subprocess.Popen(['adb',*(['-s',_serial] if _serial else []),'logcat','-b','main','-b','crash','-v','brief','-T','1','AOS-RUN:I','AndroidRuntime:E','DEBUG:F','libc:F','chatty:I','*:S'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,errors='replace')
+  try:self.proc=subprocess.Popen(['adb',*(['-s',_serial] if _serial else []),'logcat','-b','main','-b','crash','-v','brief','AOS-RUN:I','AndroidRuntime:E','DEBUG:F','libc:F','chatty:I','*:S'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,errors='replace')
   except OSError:return
   def read():
    try:

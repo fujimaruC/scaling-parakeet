@@ -59,11 +59,11 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 ## Remaining implementation and release gates
 
-1. Run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. The evidence collector now runs on hardware and reports install_ok, apk_sha256, source_commit and fatal_exception_observed (cross-checked independently, see [VERIFICATION-LOG](VERIFICATION-LOG.md) §7), but notification access is still not granted, so **no listener event has ever been received** and the matrix itself has produced no verdict. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
+1. Re-run crash-window observation on hardware after the S2 `-T 1` fix; latest hardware §8 reports fatal_exception_observed=null, not a verified clean window. Then run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. The evidence collector now runs on hardware and reports install_ok, apk_sha256, source_commit and fatal_exception_observed (cross-checked independently, see [VERIFICATION-LOG](VERIFICATION-LOG.md) §7), but notification access is still not granted, so **no listener event has ever been received** and the matrix itself has produced no verdict. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
 2. Configure the owner's private network and receiver locally. No VPN vendor/account choice or real peer pairing is claimed. Finish release UI, localized native resources, launcher icon and signed release packaging.
 3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
 4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
-5. Extend PWA server-query controls, calendar pagination across large ledgers, full labels/translations and accessibility/keyboard/screen-reader audit. Loaded subsets are disclosed. Finish device-compatible installation/update tests.
+5. S2 read-only Today/Tasks/Detail is implemented with precision-safe grouping, real policy/history, loaded-page disclosures and modal previews. Still extend PWA server-query controls, calendar pagination across large ledgers, full labels/translations and accessibility/keyboard/screen-reader audit. Loaded subsets are disclosed. Finish device-compatible installation/update tests.
 6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions and PWA status polling/pagination. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
 7. Verify owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
 8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
@@ -72,7 +72,9 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.
 
 
-## Latest hardware observation — 2026-11-06
+## Historical hardware observation (§7) — 2026-11-06
+
+Superseded for crash-coverage purposes by VERIFICATION-LOG hardware §8: later runs returned null because of the marker defect. No new hardware run is claimed by S2.
 
 `scripts/device_evidence.py` ran against the owner's CPH2015 (API 28) with the APK built from `26d7719`.
 
@@ -160,3 +162,60 @@ Node 24.22.1 / npm 11.9.0 / Python 3.12.14 / Java 17.0.20. Installed SDK platfor
 28/35 + build-tools 35.0.0 after restoring private JDK module launchers and
 selecting that runtime explicitly; Gradle 8.11.1 download used configured proxy.
 Full command output and exact limitations: DESIGN-S1-CHECKS / VERIFICATION-LOG §8.
+
+
+## S2 — read-only ledger and marker fix, base 6de38fd
+
+Fresh clone, branch build/read-only-s2. Scope W11/W41 (F03/F15/F20/F22), plus
+verified crash-monitor defect. S1 is owner accepted. S2 is the only new design
+slice: do not begin S3 before owner review. New read-only surfaces, four distinct
+precisions, owner-calendar grouping, actual policy/scoped history and preview
+sheets are described in ADR-022 and 06-UI-UX. Existing legacy writers remain;
+no optimistic updates/undo/new approval path, dependency or raw cloud data.
+
+Removed logcat -T 1. The new process-boundary test exercises actual reader threads
+with fake process streams that model the owner's measured flag failure. It can
+prove the command/marker behavior under that model only. Latest hardware access
+remains false; no listener event, capture matrix, device/account/provider/push or
+actual private-peer network test was run here. The corrected monitor needs an
+owner-run phone observation; historical null is not turned into false.
+
+Read data stays bounded. New task-scoped history and its index avoid the existing
+global last-100 cutoff; safe aliases and effective settings-based scheduler policy
+are read in the same D1 transaction. Counts never infer a full ledger from a
+partial page. Missing contexts are not guessed Personal, and no-date navigation
+clears a restrictive prior filter. Offline detail labels the saved snapshot and
+leaves unavailable history/policy explicit.
+
+Still open: Android launcher identity/resources/theme and native accessibility;
+full accessibility/real-screen-reader/Chrome 138 audit; large-ledger calendar and
+server-query expansion; S3–S7 and all remaining release gates. No milestone
+complete. Actual outputs and environment are recorded in S2-CHECKS and the
+appended verification log, rather than inherited test totals. No push/deployment,
+real chat data, account/provider access, paid provisioning or signing key delivered.
+
+
+S2 final local outcomes: `npm ci`, `npm run check` (25 Vitest: 19 D1 + 2 foundation
++ 4 S2), `npm run test:e2e` (12), `npm run test:pwa` (1),
+`.venv/bin/python scripts/validate_planning.py`, and
+`.venv/bin/python -m unittest discover -s collectors/local/tests -v` (34) exit 0.
+`cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
+--no-daemon` exits 0, including API-28 compile and 6 standalone JVM policy cases;
+lint remains 0 errors / 4 warnings. Exact real output: [S2-CHECKS](S2-CHECKS.md).
+The shipped `scripts/check_s2_mutations.py` runs 22 declared faults; every baseline
+passes, every broken version fails an assertion and every restored version passes.
+
+Node 24.22.1 / npm 11.9.0 / Python 3.12.14 / Java 17.0.20 / Gradle 8.11.1. Missing
+SDK platforms 28/35/build-tools 35.0.0 were installed with official sdkmanager;
+missing javac/jar-family launchers were restored via existing JDK modules in a
+private runtime copy selected explicitly by Gradle. No project dependency added.
+
+Do not reverse: unknown/approximate tasks stay under Tanpa tanggal even when done;
+exact instants stay chronological across DST rollback; date-only never gets a
+fabricated midnight; older-history failure must not erase known detail; informational
+toasts must not block controls; auth-denied reads clear snapshots and counters.
+The passing simulated tests do not supply the missing real phone observations.
+Corrected crash-window hardware observation is BLOCKED; latest fatal field remains
+null, notification access false, no capture/listener event ever. Relative countdowns
+use browser time; no independently verified clock-skew correction is claimed.
+S2 owner review is pending; stop here before S3. No milestone complete.

@@ -71,3 +71,16 @@ Owner read API separates intent processing state from each delivery attempt. Sno
 ## Contract tests
 
 Anonymous read/write denied; collector cannot read owner tasks; phone cannot authenticate to cloud; owner cannot use collector sync; wrong source/removed generation rejected; schema extra field raw_text rejected; unknown evidence rejected; impossible date rejected; same batch idempotently replayed; changed body conflicts; race approval single task; partial D1 failure atomic rollback; >size/count limits denied; nonce replay denied but freshly signed same-body retry works; all errors contain no source text.
+
+## S2 task read projection
+
+Owner-authenticated GET `/tasks/:id?view=read[&history_before=<positive event id>]`
+returns `task`, `history`, `next_history_cursor`, `sources` (active safe id/alias
+only), `reminder_policy`, `reminder_policy_origin` and `timezone`. A transactional
+D1 batch supplies this read snapshot. History is scoped to the existing undeleted
+task, ordered by descending event ID, capped at 30 with one-row lookahead. Invalid
+cursor is 422; missing/deleted task is 404; auth still precedes access. Normal GET
+without `view=read` is unchanged. Migration 0005 adds only a history lookup index.
+Configured policy or the scheduler's shared default is labeled explicitly; this
+is not a claim that an intent was generated or delivered. No raw evidence field,
+new write endpoint, registration or public personal-data route is added.

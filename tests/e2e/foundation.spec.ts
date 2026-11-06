@@ -74,6 +74,7 @@ test('foundation: four tabs and secondary workflows remain reachable at 360px', 
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await expect(page.locator('.main-nav button')).toHaveCount(4);
   await expect(

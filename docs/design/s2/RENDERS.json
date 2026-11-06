@@ -1,0 +1,233 @@
+{
+  "browser": "141.0.7390.37",
+  "device": "unverified; desktop Chromium viewport only",
+  "motion": "reduced",
+  "clock": "2026-11-06T04:00:00Z (synthetic)",
+  "reference": "unchanged file; external fonts replaced in memory by identical local fonts",
+  "renders": [
+    {
+      "name": "today-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "today-undated-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "tasks-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "tasks-undated-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "quick-sheet-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-datetime-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "date-sheet-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "history-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-date_only-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-approximate-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-unknown-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-today-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-tasks-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-detail-light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "today-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "today-undated-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "tasks-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "tasks-undated-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "quick-sheet-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-datetime-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "date-sheet-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "history-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-date_only-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-approximate-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "detail-unknown-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-today-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-tasks-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    },
+    {
+      "name": "reference-detail-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "synthetic": true
+    }
+  ]
+}

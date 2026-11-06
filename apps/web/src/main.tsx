@@ -11,6 +11,11 @@ import { useTheme } from './design/theme';
 import { Bitmap } from './pixel/Bitmap';
 import { ICONS } from './pixel/icons';
 import Kit from './design/Kit';
+import Ledger, { TaskDetail } from './read/Ledger';
+import { DatePreview, QuickPreview, Sheet, Toast } from './read/Sheet';
+import { useLocation } from './read/location';
+import { words } from './read/model';
+import './read/read.css';
 const strings = {
   id: {
     today: 'Hari ini',
@@ -202,7 +207,25 @@ function App() {
   );
   const s = strings[locale] ?? strings.id;
   const { theme, setTheme } = useTheme();
-  const [page, setPage] = useState<Page>('today');
+  const { route, go, back } = useLocation();
+  const page = route.page as Page;
+  const setPage = (p: Page) => go('/' + p);
+  const readPage = page === 'today' || page === 'tasks';
+  const [prefs, setPrefs] = useState<any>(null),
+    [partial, setPartial] = useState(true);
+  const [toast, setToast] = useState(''),
+    [dateTask, setDateTask] = useState<any>(null);
+  const [dateError, setDateError] = useState(false);
+  const taskTrigger = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!route.taskId && taskTrigger.current?.isConnected)
+      taskTrigger.current.focus();
+  }, [route.taskId]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(''), 4500);
+    return () => clearTimeout(timer);
+  }, [toast]);
   const [tasks, setTasks] = useState<any[]>([]),
     [contexts, setContexts] = useState<any[]>([]),
     [candidates, setCandidates] = useState<any[]>([]),
@@ -236,21 +259,101 @@ function App() {
   const [taskCursor, setTaskCursor] = useState<string | null>(null);
   const [editing, setEditing] = useState<any>(null);
   const [proposalEditing, setProposalEditing] = useState<any>(null);
+  function clearReadSession() {
+    sessionEpoch.current++;
+    indexedDB.deleteDatabase('academic-os-private');
+    setSigned(false);
+    setTasks([]);
+    setContexts([]);
+    setCandidates([]);
+    setSources([]);
+    setRows([]);
+    setBriefing(null);
+    setPrefs(null);
+    setUpdated('');
+    setTaskCursor(null);
+    setPartial(true);
+    setDateTask(null);
+    setEditing(null);
+    setProposalEditing(null);
+    setForm(false);
+    setToast('');
+  }
+  function handleReadDenial(e: any) {
+    if ([401, 403].includes(e.status)) clearReadSession();
+  }
+  async function readApi(path: string) {
+    try {
+      return await api(path);
+    } catch (e: any) {
+      handleReadDenial(e);
+      throw e;
+    }
+  }
+  useEffect(() => {
+    let live = true;
+    setDateTask(null);
+    setDateError(false);
+    if (signed && route.sheet === 'date' && route.taskId) {
+      if (offline) {
+        const cached = tasks.find((t) => t.id === route.taskId);
+        setDateTask(cached ?? null);
+        setDateError(!cached);
+      } else
+        readApi('/tasks/' + encodeURIComponent(route.taskId) + '?view=read')
+          .then((v) => {
+            if (live) setDateTask(v.task);
+          })
+          .catch(() => {
+            if (live) setDateError(true);
+          });
+    }
+    return () => {
+      live = false;
+    };
+  }, [route.sheet, route.taskId, signed, offline]);
+  async function moreTasks() {
+    if (!taskCursor || offline || busy) return;
+    const epoch = sessionEpoch.current;
+    setBusy(true);
+    try {
+      const next = await taskPage(taskCursor);
+      if (epoch !== sessionEpoch.current) return;
+      setTasks((current) => [
+        ...current,
+        ...next.data.filter((t: any) => !current.some((c) => c.id === t.id)),
+      ]);
+      setTaskCursor(next.meta.next_cursor);
+      setPartial(Boolean(next.meta.next_cursor));
+    } catch (e: any) {
+      handleReadDenial(e);
+      setError(words[locale].unavailable);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const openTask = (task: any) => {
+    taskTrigger.current = document.activeElement as HTMLElement;
+    go('/tasks/' + encodeURIComponent(task.id));
+  };
   async function load() {
     const epoch = sessionEpoch.current;
     setLoading(true);
     setError('');
     try {
       const me = await api('/me');
-      const [ts, cs, ps, ss, overview] = await Promise.all([
+      const [ts, cs, ps, ss, overview, preferences] = await Promise.all([
         taskPage(),
         api('/contexts'),
         api('/candidates'),
         api('/sources'),
         api('/briefing'),
+        api('/settings'),
       ]);
       if (epoch !== sessionEpoch.current) return;
       setTasks(ts.data);
+      setPrefs(preferences);
+      setPartial(Boolean(ts.meta.next_cursor));
       setTaskCursor(ts.meta.next_cursor);
       setContexts(cs);
       setCandidates(ps);
@@ -267,20 +370,22 @@ function App() {
           contexts: cs,
           updated: at,
           briefing: overview,
+          prefs: preferences,
+          taskCursor: ts.meta.next_cursor,
         },
         () => epoch === sessionEpoch.current,
       );
     } catch (e: any) {
       if (epoch !== sessionEpoch.current) return;
       if (e.status === 401 || e.status === 403) {
-        sessionEpoch.current++;
-        indexedDB.deleteDatabase('academic-os-private');
-        setSigned(false);
-        setTasks([]);
+        clearReadSession();
       } else {
         const cache = await snapshot().catch(() => null);
         if (cache) {
           setTasks(cache.tasks);
+          setPrefs(cache.prefs ?? null);
+          setTaskCursor(cache.taskCursor ?? null);
+          setPartial(cache.taskCursor !== null);
           setContexts(cache.contexts);
           setUpdated(cache.updated);
           setBriefing(cache.briefing ?? null);
@@ -386,786 +491,756 @@ function App() {
     'settings',
   ];
   return (
-    <div className="app">
-      <aside>
-        <a className="brand" href="/">
-          <Bitmap rows={ICONS.star} scale={3} />
-          <span>Academic OS</span>
-        </a>
-        <p className="private">● {s.secure}</p>
-        <nav
-          className="main-nav"
-          aria-label={locale === 'en' ? 'Main navigation' : 'Navigasi utama'}
-        >
-          {nav.slice(0, 4).map((p, i) => (
-            <button
-              key={p}
-              aria-current={page === p ? 'page' : undefined}
-              onClick={() => setPage(p)}
-            >
-              <span aria-hidden>
-                <Bitmap
-                  rows={[ICONS.sun, ICONS.list, ICONS.inbox, ICONS.cal][i]}
-                />
-              </span>
-              {p === 'tasks' ? s.navTasks : p === 'review' ? s.navReview : s[p]}
-              {p === 'review' && candidates.length > 0 && (
-                <b>{candidates.length}</b>
-              )}
-            </button>
-          ))}
-        </nav>
-        <div className="aside-bottom">
-          <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}>
-            {s.lang}
-          </button>
-          <button
-            onClick={() =>
-              setTheme(
-                document.documentElement.dataset.theme === 'dark'
-                  ? 'light'
-                  : 'dark',
-              )
-            }
+    <>
+      <div
+        className={`app ${readPage ? 'reading' : ''}`}
+        hidden={Boolean(signed && route.taskId)}
+      >
+        <aside>
+          <a className="brand" href="/">
+            <Bitmap rows={ICONS.star} scale={3} />
+            <span>Academic OS</span>
+          </a>
+          <p className="private">● {s.secure}</p>
+          <nav
+            className="main-nav"
+            aria-label={locale === 'en' ? 'Main navigation' : 'Navigasi utama'}
           >
-            {s.theme}
-          </button>
-          <label className="theme-choice">
-            {locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
-            <select
-              aria-label={locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
-              value={theme}
-              onChange={(e) => setTheme(e.target.value as typeof theme)}
-            >
-              <option value="system">
-                {locale === 'en' ? 'System' : 'Sistem'}
-              </option>
-              <option value="light">
-                {locale === 'en' ? 'Light' : 'Terang'}
-              </option>
-              <option value="dark">{locale === 'en' ? 'Dark' : 'Gelap'}</option>
-            </select>
-          </label>
-          <small>Asia/Makassar · UTC+8</small>
-        </div>
-      </aside>
-      {signed && ['today', 'tasks', 'calendar'].includes(page) && (
-        <button
-          className="fab"
-          aria-label={s.add}
-          disabled={offline || busy}
-          onClick={() => setForm(true)}
-        >
-          <Bitmap rows={ICONS.plus} scale={4} />
-        </button>
-      )}
-      <main>
-        <header>
-          <select
-            aria-label="Page"
-            className="mobile-pages"
-            value={page}
-            onChange={(e) => setPage(e.target.value as Page)}
-          >
-            {nav.map((p) => (
-              <option key={p} value={p}>
+            {nav.slice(0, 4).map((p, i) => (
+              <button
+                key={p}
+                aria-current={page === p ? 'page' : undefined}
+                onClick={() => setPage(p)}
+              >
+                <span aria-hidden>
+                  <Bitmap
+                    rows={[ICONS.sun, ICONS.list, ICONS.inbox, ICONS.cal][i]}
+                  />
+                </span>
                 {p === 'tasks'
                   ? s.navTasks
                   : p === 'review'
                     ? s.navReview
                     : s[p]}
-              </option>
-            ))}
-          </select>
-          <span className="eyebrow">YOUR PERSONAL MEMORY</span>
-          <button onClick={() => void load()} disabled={loading}>
-            {s.refresh}
-          </button>
-        </header>
-        {error && (
-          <p role="alert" className="banner">
-            {error}
-          </p>
-        )}
-        {offline && (
-          <p role="status" className="banner">
-            {s.offline} {updated}
-          </p>
-        )}
-        {loading ? (
-          <p role="status">Loading…</p>
-        ) : !signed ? (
-          <section className="empty">
-            <h1>Academic OS</h1>
-            <p>{s.signin}</p>
-          </section>
-        ) : (
-          <>
-            <section className="heading">
-              <div>
-                <p className="eyebrow">
-                  {new Intl.DateTimeFormat(locale, {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    timeZone: 'Asia/Makassar',
-                  }).format(new Date())}
-                </p>
-                <h1>{page === 'today' ? s.hello : s[page]}</h1>
-                <p>{s.intro}</p>
-              </div>
-              <button
-                className="primary"
-                onClick={() => setForm(true)}
-                disabled={offline}
-              >
-                + {s.add}
+                {signed &&
+                  p === 'review' &&
+                  !offline &&
+                  (briefing?.pending ?? 0) > 0 && <b>{briefing.pending}</b>}
               </button>
+            ))}
+          </nav>
+        </aside>
+        {signed && ['today', 'tasks', 'calendar'].includes(page) && (
+          <button
+            className="fab"
+            aria-label={s.add}
+            disabled={offline || busy}
+            onClick={() =>
+              readPage ? go(location.pathname + '?sheet=quick') : setForm(true)
+            }
+          >
+            <Bitmap rows={ICONS.plus} scale={4} />
+          </button>
+        )}
+        <main>
+          <details className="shell-tools">
+            <summary>
+              {locale === 'en' ? 'Tools & navigation' : 'Alat & navigasi'}
+            </summary>
+            <div className="aside-bottom">
+              <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}>
+                {s.lang}
+              </button>
+              <button
+                onClick={() =>
+                  setTheme(
+                    document.documentElement.dataset.theme === 'dark'
+                      ? 'light'
+                      : 'dark',
+                  )
+                }
+              >
+                {s.theme}
+              </button>
+              <label className="theme-choice">
+                {locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
+                <select
+                  aria-label={
+                    locale === 'en' ? 'Theme preference' : 'Pilihan tema'
+                  }
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as typeof theme)}
+                >
+                  <option value="system">
+                    {locale === 'en' ? 'System' : 'Sistem'}
+                  </option>
+                  <option value="light">
+                    {locale === 'en' ? 'Light' : 'Terang'}
+                  </option>
+                  <option value="dark">
+                    {locale === 'en' ? 'Dark' : 'Gelap'}
+                  </option>
+                </select>
+              </label>
+              <small>Asia/Makassar · UTC+8</small>
+            </div>{' '}
+            <header>
+              <select
+                aria-label="Page"
+                className="mobile-pages"
+                value={page}
+                onChange={(e) => setPage(e.target.value as Page)}
+              >
+                {nav.map((p) => (
+                  <option key={p} value={p}>
+                    {p === 'tasks'
+                      ? s.navTasks
+                      : p === 'review'
+                        ? s.navReview
+                        : s[p]}
+                  </option>
+                ))}
+              </select>
+              <span className="eyebrow">YOUR PERSONAL MEMORY</span>
+              <button onClick={() => void load()} disabled={loading}>
+                {s.refresh}
+              </button>
+            </header>
+          </details>
+          {error && (
+            <p role="alert" className="banner">
+              {error}
+            </p>
+          )}
+          {offline && (
+            <p role="status" className="banner">
+              {s.offline} {updated}
+            </p>
+          )}
+          {loading ? (
+            <p role="status">Loading…</p>
+          ) : !signed ? (
+            <section className="empty">
+              <h1>Academic OS</h1>
+              <p>{s.signin}</p>
             </section>
-            {page === 'today' && (
-              <section className="overview" aria-label="Overview">
-                <div>
-                  <strong>{briefing?.counts?.active ?? active.length}</strong>
-                  <span>{s.tasks}</span>
-                </div>
-                <div>
-                  <strong>{briefing?.pending ?? candidates.length}</strong>
-                  <span>{s.pending}</span>
-                </div>
-                <div>
-                  <strong>
-                    {briefing?.counts?.no_date ??
-                      active.filter((t) => t.due.precision === 'unknown')
-                        .length}
-                  </strong>
-                  <span>{s.nodate}</span>
-                </div>
-              </section>
-            )}
-            {['today', 'tasks'].includes(page) && (
-              <>
-                <div className="toolbar">
-                  <input
-                    aria-label={s.search}
-                    placeholder={s.search}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  <select
-                    aria-label={s.context}
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                  >
-                    <option value="">{s.all}</option>
-                    {contexts.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {taskCursor && (
-                  <p role="status">
-                    {locale === 'en'
-                      ? 'More tasks are available; filters currently cover loaded items.'
-                      : 'Masih ada tugas lain; filter mencakup daftar yang sudah dimuat.'}
+          ) : (
+            <>
+              {!readPage && (
+                <>
+                  {' '}
+                  <section className="heading">
+                    <div>
+                      <p className="eyebrow">
+                        {new Intl.DateTimeFormat(locale, {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          timeZone: 'Asia/Makassar',
+                        }).format(new Date())}
+                      </p>
+                      <h1>{s[page]}</h1>
+                      <p>{s.intro}</p>
+                    </div>
                     <button
-                      disabled={offline || busy}
-                      onClick={async () => {
-                        setBusy(true);
-                        try {
-                          const next = await taskPage(taskCursor);
-                          setTasks((current) => [...current, ...next.data]);
-                          setTaskCursor(next.meta.next_cursor);
-                        } catch {
-                          setError(s.error);
-                        } finally {
-                          setBusy(false);
-                        }
-                      }}
+                      className="primary"
+                      onClick={() => setForm(true)}
+                      disabled={offline}
                     >
-                      {locale === 'en'
-                        ? 'Load more tasks'
-                        : 'Muat tugas lainnya'}
+                      + {s.add}
                     </button>
-                  </p>
-                )}
-                <section className="task-list">
-                  {!visible.length ? (
+                  </section>
+                </>
+              )}
+              {readPage && (
+                <Ledger
+                  page={page as 'today' | 'tasks'}
+                  tasks={tasks}
+                  contexts={contexts}
+                  locale={locale}
+                  zone={
+                    prefs?.timezone ?? briefing?.timezone ?? 'Asia/Makassar'
+                  }
+                  pending={offline ? null : (briefing?.pending ?? null)}
+                  partial={partial}
+                  onMore={() => void moreTasks()}
+                  canMore={!offline && !busy && Boolean(taskCursor)}
+                  onOpen={openTask}
+                  onPage={(p) => go('/' + p)}
+                  onSheet={() => go(location.pathname + '?sheet=quick')}
+                  group={new URLSearchParams(location.search).get('group')}
+                />
+              )}
+              {page === 'calendar' && (
+                <MonthCalendar
+                  tasks={tasks.filter(
+                    (t) => !filter || t.context_id === filter,
+                  )}
+                  locale={locale}
+                  onOpen={(t) => {
+                    if (!offline) setEditing(t);
+                  }}
+                />
+              )}
+              {page === 'review' && (
+                <section>
+                  {candidates.length === 0 ? (
                     <div className="empty">
-                      <span className="empty-icon">
-                        <Bitmap rows={ICONS.star} scale={6} />
-                      </span>
                       <h2>{s.empty}</h2>
-                      <p>{s.emptyhint}</p>
                     </div>
                   ) : (
-                    visible.map((t) => (
-                      <article className="task" key={t.id}>
-                        <button
-                          className="check"
-                          aria-label={s.complete + ': ' + t.title}
-                          disabled={offline || busy || t.status === 'done'}
-                          onClick={() =>
-                            void mutate(() =>
-                              api(
-                                '/tasks/' + t.id,
-                                'PATCH',
-                                { status: 'done' },
-                                { 'If-Match': String(t.version) },
-                              ),
-                            )
-                          }
-                        >
-                          {t.status === 'done' ? '✓' : ''}
-                        </button>
-                        <div>
-                          <small>
-                            {contexts.find((c) => c.id === t.context_id)
-                              ?.display_name ?? s.personal}{' '}
-                            <span>
-                              · {s[t.status as keyof typeof s] ?? t.status}
-                            </span>
-                          </small>
-                          <h2>
-                            <button
-                              className="task-title"
-                              disabled={offline}
-                              onClick={() => setEditing(t)}
-                            >
-                              {t.title}
-                            </button>
-                          </h2>
-                          <p>{formatDue(t)}</p>
+                    candidates.map((c) => (
+                      <article className="proposal" key={c.id}>
+                        <span className="eyebrow">{s.pending}</span>
+                        <h2>{c.fields.title}</h2>
+                        <p>{s.evidence}</p>
+                        <p>
+                          {c.fields.due.local_date ??
+                            c.fields.due.local_datetime ??
+                            s.nodate}
+                        </p>
+                        <div className="actions">
+                          <button
+                            className="primary"
+                            disabled={
+                              offline ||
+                              busy ||
+                              c.fields.kind === 'deadline_change' ||
+                              c.issues.length > 0
+                            }
+                            onClick={() =>
+                              void mutate(() =>
+                                api(
+                                  '/candidates/' + c.id + '/review',
+                                  'POST',
+                                  {
+                                    action: 'accept',
+                                    expected_candidate_version: c.version,
+                                  },
+                                  { 'Idempotency-Key': crypto.randomUUID() },
+                                ),
+                              )
+                            }
+                          >
+                            {s.accept}
+                          </button>
+                          <button
+                            disabled={offline || busy}
+                            onClick={() =>
+                              void mutate(() =>
+                                api(
+                                  '/candidates/' + c.id + '/review',
+                                  'POST',
+                                  {
+                                    action: 'reject',
+                                    expected_candidate_version: c.version,
+                                  },
+                                  { 'Idempotency-Key': crypto.randomUUID() },
+                                ),
+                              )
+                            }
+                          >
+                            {s.reject}
+                          </button>
+                          <button
+                            disabled={offline || busy}
+                            onClick={() => setProposalEditing(c)}
+                          >
+                            {locale === 'en'
+                              ? 'Edit & review'
+                              : 'Edit & tinjau'}
+                          </button>
+                          <button
+                            disabled={offline || busy}
+                            onClick={() =>
+                              void mutate(() =>
+                                api(
+                                  '/candidates/' + c.id + '/review',
+                                  'POST',
+                                  {
+                                    action: 'needs_clarification',
+                                    expected_candidate_version: c.version,
+                                  },
+                                  { 'Idempotency-Key': crypto.randomUUID() },
+                                ),
+                              )
+                            }
+                          >
+                            {locale === 'en'
+                              ? 'Need more info'
+                              : 'Perlu informasi'}
+                          </button>
                         </div>
-                        {page === 'calendar' && (
-                          <span className="date-chip">
-                            {t.due.local_date?.slice(-2) ?? '—'}
-                          </span>
-                        )}
                       </article>
                     ))
                   )}
                 </section>
-              </>
-            )}
-            {page === 'calendar' && (
-              <MonthCalendar
-                tasks={tasks.filter((t) => !filter || t.context_id === filter)}
-                locale={locale}
-                onOpen={(t) => {
-                  if (!offline) setEditing(t);
-                }}
-              />
-            )}
-            {page === 'review' && (
-              <section>
-                {candidates.length === 0 ? (
-                  <div className="empty">
-                    <h2>{s.empty}</h2>
-                  </div>
-                ) : (
-                  candidates.map((c) => (
-                    <article className="proposal" key={c.id}>
-                      <span className="eyebrow">{s.pending}</span>
-                      <h2>{c.fields.title}</h2>
-                      <p>{s.evidence}</p>
-                      <p>
-                        {c.fields.due.local_date ??
-                          c.fields.due.local_datetime ??
-                          s.nodate}
-                      </p>
-                      <div className="actions">
-                        <button
-                          className="primary"
-                          disabled={
-                            offline ||
-                            busy ||
-                            c.fields.kind === 'deadline_change' ||
-                            c.issues.length > 0
-                          }
-                          onClick={() =>
-                            void mutate(() =>
-                              api(
-                                '/candidates/' + c.id + '/review',
-                                'POST',
-                                {
-                                  action: 'accept',
-                                  expected_candidate_version: c.version,
-                                },
-                                { 'Idempotency-Key': crypto.randomUUID() },
-                              ),
-                            )
-                          }
-                        >
-                          {s.accept}
-                        </button>
-                        <button
-                          disabled={offline || busy}
-                          onClick={() =>
-                            void mutate(() =>
-                              api(
-                                '/candidates/' + c.id + '/review',
-                                'POST',
-                                {
-                                  action: 'reject',
-                                  expected_candidate_version: c.version,
-                                },
-                                { 'Idempotency-Key': crypto.randomUUID() },
-                              ),
-                            )
-                          }
-                        >
-                          {s.reject}
-                        </button>
-                        <button
-                          disabled={offline || busy}
-                          onClick={() => setProposalEditing(c)}
-                        >
-                          {locale === 'en' ? 'Edit & review' : 'Edit & tinjau'}
-                        </button>
-                        <button
-                          disabled={offline || busy}
-                          onClick={() =>
-                            void mutate(() =>
-                              api(
-                                '/candidates/' + c.id + '/review',
-                                'POST',
-                                {
-                                  action: 'needs_clarification',
-                                  expected_candidate_version: c.version,
-                                },
-                                { 'Idempotency-Key': crypto.randomUUID() },
-                              ),
-                            )
-                          }
-                        >
-                          {locale === 'en'
-                            ? 'Need more info'
-                            : 'Perlu informasi'}
-                        </button>
-                      </div>
-                    </article>
-                  ))
-                )}
-              </section>
-            )}
-            {page === 'sources' && (
-              <section>
-                <p className="banner">{s.partial}</p>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void mutate(async () => {
-                      await api('/sources', 'POST', {
-                        display_name: sourceAlias,
-                        kind: sourceKind,
+              )}
+              {page === 'sources' && (
+                <section>
+                  <p className="banner">{s.partial}</p>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void mutate(async () => {
+                        await api('/sources', 'POST', {
+                          display_name: sourceAlias,
+                          kind: sourceKind,
+                        });
+                        setSourceAlias('');
                       });
-                      setSourceAlias('');
-                    });
-                  }}
-                >
+                    }}
+                  >
+                    <label>
+                      {locale === 'en' ? 'Safe source alias' : 'Alias sumber'}
+                      <input
+                        required
+                        maxLength={240}
+                        value={sourceAlias}
+                        onChange={(e) => setSourceAlias(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      {locale === 'en'
+                        ? 'Collection method'
+                        : 'Metode pengumpulan'}
+                      <select
+                        value={sourceKind}
+                        onChange={(e) => setSourceKind(e.target.value)}
+                      >
+                        <option value="whatsapp_export">WhatsApp export</option>
+                        <option value="whatsapp_notification">
+                          Android notification
+                        </option>
+                        <option value="moodle_ical">iCalendar</option>
+                      </select>
+                    </label>
+                    <button disabled={offline || busy}>
+                      {locale === 'en' ? 'Add source' : 'Tambah sumber'}
+                    </button>
+                  </form>
+                  {sources.length ? (
+                    sources.map((x) => (
+                      <article className="task" key={x.id}>
+                        <div>
+                          <h2>{x.display_name}</h2>
+                          <p>
+                            {x.kind} · {x.last_sync_at ?? s.nodate}
+                          </p>
+                          <small>
+                            {x.id} · generation {x.generation}
+                          </small>
+                          {!x.purged_at && (
+                            <div className="actions">
+                              <button
+                                disabled={offline || busy}
+                                onClick={() =>
+                                  void mutate(async () => {
+                                    const preview = await api(
+                                      '/sources/' + x.id + '/purge-preview',
+                                      'POST',
+                                      {},
+                                    );
+                                    if (
+                                      !confirm(
+                                        (locale === 'en'
+                                          ? 'Remove this source and its evidence? Linked approved tasks will be retained as manual. Linux/phone wipes remain pending until acknowledged. Affected tasks: '
+                                          : 'Hapus sumber dan buktinya? Tugas tersimpan dipertahankan sebagai manual. Penghapusan Linux/ponsel menunggu konfirmasi. Jumlah tugas: ') +
+                                          preview.affected_tasks.length,
+                                      )
+                                    )
+                                      return;
+                                    await api(
+                                      '/sources/' + x.id + '/purge',
+                                      'POST',
+                                      {
+                                        expected_generation: preview.generation,
+                                        task_policy: 'retain_as_manual',
+                                      },
+                                    );
+                                  })
+                                }
+                              >
+                                {locale === 'en'
+                                  ? 'Remove source evidence'
+                                  : 'Hapus bukti sumber'}
+                              </button>
+                            </div>
+                          )}
+                          <DeviceActions source={x.id} api={api} />
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <p className="empty">{s.sourceempty}</p>
+                  )}
+                </section>
+              )}
+              {['history', 'inbox'].includes(page) && (
+                <section>
+                  {rows.length ? (
+                    rows.map((x) => (
+                      <article className="task" key={x.id}>
+                        <div>
+                          <h2>{x.event_type ?? s.inbox}</h2>
+                          <p>{x.created_at}</p>
+                          {page === 'inbox' && (
+                            <div className="actions">
+                              <button
+                                disabled={offline || busy}
+                                onClick={() =>
+                                  void mutate(() =>
+                                    api(
+                                      '/reminders/' + x.id + '/read',
+                                      'PATCH',
+                                      {},
+                                    ),
+                                  )
+                                }
+                              >
+                                {locale === 'en'
+                                  ? 'Mark read'
+                                  : 'Tandai dibaca'}
+                              </button>
+                              <button
+                                disabled={offline || busy}
+                                onClick={() =>
+                                  void mutate(() =>
+                                    api(
+                                      '/reminders/' + x.id + '/snooze',
+                                      'POST',
+                                      {
+                                        until: new Date(
+                                          Date.now() + 3600000,
+                                        ).toISOString(),
+                                      },
+                                      {
+                                        'Idempotency-Key': crypto.randomUUID(),
+                                      },
+                                    ),
+                                  )
+                                }
+                              >
+                                {locale === 'en'
+                                  ? 'Snooze 1 hour'
+                                  : 'Tunda 1 jam'}
+                              </button>
+                            </div>
+                          )}
+                          {x.after_json && (
+                            <p>{JSON.parse(x.after_json).title}</p>
+                          )}
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <p className="empty">{s.empty}</p>
+                  )}
+                </section>
+              )}
+              {page === 'settings' && (
+                <section className="settings">
+                  <h2>{s.createcontext}</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void mutate(async () => {
+                        await api('/contexts', 'POST', {
+                          type: newType,
+                          display_name: newContext,
+                        });
+                        setNewContext('');
+                      });
+                    }}
+                  >
+                    <label>
+                      {s.context}
+                      <input
+                        required
+                        maxLength={240}
+                        value={newContext}
+                        onChange={(e) => setNewContext(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      {s.type}
+                      <select
+                        value={newType}
+                        onChange={(e) => setNewType(e.target.value)}
+                      >
+                        {['academic', 'organization', 'personal'].map((x) => (
+                          <option key={x} value={x}>
+                            {s[x as keyof typeof s]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button disabled={offline || busy} type="submit">
+                      {s.save}
+                    </button>
+                  </form>
+                  <hr />
+                  <ReminderSettings
+                    locale={locale}
+                    api={api}
+                    offline={offline}
+                    onSaved={load}
+                  />
+                  <hr />
+                  <button
+                    disabled={offline}
+                    onClick={() =>
+                      void api('/export').then((v) => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(
+                          new Blob([JSON.stringify(v, null, 2)], {
+                            type: 'application/json',
+                          }),
+                        );
+                        a.download = 'academic-os-export.json';
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                      })
+                    }
+                  >
+                    {s.export}
+                  </button>
+                  <button
+                    onClick={() => {
+                      sessionEpoch.current++;
+                      indexedDB.deleteDatabase('academic-os-private');
+                      setTasks([]);
+                      setCandidates([]);
+                      setSigned(false);
+                      location.assign('/cdn-cgi/access/logout');
+                    }}
+                  >
+                    {s.logout}
+                  </button>
+                </section>
+              )}
+              <footer>
+                Academic OS{' '}
+                <span>
+                  {updated &&
+                    new Intl.DateTimeFormat(locale, {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    }).format(new Date(updated))}
+                </span>
+              </footer>
+            </>
+          )}
+          {editing && (
+            <TaskEditor
+              item={editing}
+              contexts={contexts}
+              locale={locale}
+              onClose={() => setEditing(null)}
+              onSave={async (fields) => {
+                await api('/tasks/' + editing.id, 'PATCH', fields, {
+                  'If-Match': String(editing.version),
+                });
+                await load();
+              }}
+              onDelete={async () => {
+                await api('/tasks/' + editing.id, 'DELETE', undefined, {
+                  'If-Match': String(editing.version),
+                });
+                await load();
+              }}
+            />
+          )}
+          {proposalEditing && (
+            <TaskEditor
+              item={proposalEditing.fields}
+              contexts={contexts}
+              tasks={tasks}
+              locale={locale}
+              proposal
+              onClose={() => setProposalEditing(null)}
+              onSave={async (fields, target) => {
+                await api(
+                  '/candidates/' + proposalEditing.id + '/review',
+                  'POST',
+                  {
+                    action: 'accept_with_edits',
+                    expected_candidate_version: proposalEditing.version,
+                    task_patch: fields,
+                    ...(target
+                      ? {
+                          target_task_id: target.id,
+                          expected_task_version: target.version,
+                        }
+                      : {}),
+                  },
+                  { 'Idempotency-Key': crypto.randomUUID() },
+                );
+                await load();
+              }}
+            />
+          )}
+          {form && (
+            <div
+              className="modal"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setForm(false);
+                  return;
+                }
+                if (e.key === 'Tab') {
+                  const nodes = e.currentTarget.querySelectorAll<HTMLElement>(
+                    'button:not(:disabled),input:not(:disabled),select:not(:disabled)',
+                  );
+                  if (e.shiftKey && document.activeElement === nodes[0]) {
+                    e.preventDefault();
+                    nodes[nodes.length - 1]?.focus();
+                  } else if (
+                    !e.shiftKey &&
+                    document.activeElement === nodes[nodes.length - 1]
+                  ) {
+                    e.preventDefault();
+                    nodes[0]?.focus();
+                  }
+                }
+              }}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title"
+              >
+                <h2 id="dialog-title">{s.add}</h2>
+                <form onSubmit={save}>
                   <label>
-                    {locale === 'en' ? 'Safe source alias' : 'Alias sumber'}
+                    {s.title}
                     <input
+                      autoFocus
                       required
                       maxLength={240}
-                      value={sourceAlias}
-                      onChange={(e) => setSourceAlias(e.target.value)}
+                      value={draft.title}
+                      onChange={(e) =>
+                        setDraft({ ...draft, title: e.target.value })
+                      }
                     />
                   </label>
-                  <label>
-                    {locale === 'en'
-                      ? 'Collection method'
-                      : 'Metode pengumpulan'}
-                    <select
-                      value={sourceKind}
-                      onChange={(e) => setSourceKind(e.target.value)}
-                    >
-                      <option value="whatsapp_export">WhatsApp export</option>
-                      <option value="whatsapp_notification">
-                        Android notification
-                      </option>
-                      <option value="moodle_ical">iCalendar</option>
-                    </select>
-                  </label>
-                  <button disabled={offline || busy}>
-                    {locale === 'en' ? 'Add source' : 'Tambah sumber'}
-                  </button>
-                </form>
-                {sources.length ? (
-                  sources.map((x) => (
-                    <article className="task" key={x.id}>
-                      <div>
-                        <h2>{x.display_name}</h2>
-                        <p>
-                          {x.kind} · {x.last_sync_at ?? s.nodate}
-                        </p>
-                        <small>
-                          {x.id} · generation {x.generation}
-                        </small>
-                        {!x.purged_at && (
-                          <div className="actions">
-                            <button
-                              disabled={offline || busy}
-                              onClick={() =>
-                                void mutate(async () => {
-                                  const preview = await api(
-                                    '/sources/' + x.id + '/purge-preview',
-                                    'POST',
-                                    {},
-                                  );
-                                  if (
-                                    !confirm(
-                                      (locale === 'en'
-                                        ? 'Remove this source and its evidence? Linked approved tasks will be retained as manual. Linux/phone wipes remain pending until acknowledged. Affected tasks: '
-                                        : 'Hapus sumber dan buktinya? Tugas tersimpan dipertahankan sebagai manual. Penghapusan Linux/ponsel menunggu konfirmasi. Jumlah tugas: ') +
-                                        preview.affected_tasks.length,
-                                    )
-                                  )
-                                    return;
-                                  await api(
-                                    '/sources/' + x.id + '/purge',
-                                    'POST',
-                                    {
-                                      expected_generation: preview.generation,
-                                      task_policy: 'retain_as_manual',
-                                    },
-                                  );
-                                })
-                              }
-                            >
-                              {locale === 'en'
-                                ? 'Remove source evidence'
-                                : 'Hapus bukti sumber'}
-                            </button>
-                          </div>
-                        )}
-                        <DeviceActions source={x.id} api={api} />
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <p className="empty">{s.sourceempty}</p>
-                )}
-              </section>
-            )}
-            {['history', 'inbox'].includes(page) && (
-              <section>
-                {rows.length ? (
-                  rows.map((x) => (
-                    <article className="task" key={x.id}>
-                      <div>
-                        <h2>{x.event_type ?? s.inbox}</h2>
-                        <p>{x.created_at}</p>
-                        {page === 'inbox' && (
-                          <div className="actions">
-                            <button
-                              disabled={offline || busy}
-                              onClick={() =>
-                                void mutate(() =>
-                                  api(
-                                    '/reminders/' + x.id + '/read',
-                                    'PATCH',
-                                    {},
-                                  ),
-                                )
-                              }
-                            >
-                              {locale === 'en' ? 'Mark read' : 'Tandai dibaca'}
-                            </button>
-                            <button
-                              disabled={offline || busy}
-                              onClick={() =>
-                                void mutate(() =>
-                                  api(
-                                    '/reminders/' + x.id + '/snooze',
-                                    'POST',
-                                    {
-                                      until: new Date(
-                                        Date.now() + 3600000,
-                                      ).toISOString(),
-                                    },
-                                    { 'Idempotency-Key': crypto.randomUUID() },
-                                  ),
-                                )
-                              }
-                            >
-                              {locale === 'en'
-                                ? 'Snooze 1 hour'
-                                : 'Tunda 1 jam'}
-                            </button>
-                          </div>
-                        )}
-                        {x.after_json && (
-                          <p>{JSON.parse(x.after_json).title}</p>
-                        )}
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <p className="empty">{s.empty}</p>
-                )}
-              </section>
-            )}
-            {page === 'settings' && (
-              <section className="settings">
-                <h2>{s.createcontext}</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void mutate(async () => {
-                      await api('/contexts', 'POST', {
-                        type: newType,
-                        display_name: newContext,
-                      });
-                      setNewContext('');
-                    });
-                  }}
-                >
                   <label>
                     {s.context}
-                    <input
-                      required
-                      maxLength={240}
-                      value={newContext}
-                      onChange={(e) => setNewContext(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    {s.type}
                     <select
-                      value={newType}
-                      onChange={(e) => setNewType(e.target.value)}
+                      value={draft.context_id}
+                      onChange={(e) =>
+                        setDraft({ ...draft, context_id: e.target.value })
+                      }
                     >
-                      {['academic', 'organization', 'personal'].map((x) => (
-                        <option key={x} value={x}>
-                          {s[x as keyof typeof s]}
+                      <option value="">{s.personal}</option>
+                      {contexts.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.display_name}
                         </option>
                       ))}
                     </select>
                   </label>
-                  <button disabled={offline || busy} type="submit">
-                    {s.save}
-                  </button>
-                </form>
-                <hr />
-                <ReminderSettings
-                  locale={locale}
-                  api={api}
-                  offline={offline}
-                  onSaved={load}
-                />
-                <hr />
-                <button
-                  disabled={offline}
-                  onClick={() =>
-                    void api('/export').then((v) => {
-                      const a = document.createElement('a');
-                      a.href = URL.createObjectURL(
-                        new Blob([JSON.stringify(v, null, 2)], {
-                          type: 'application/json',
-                        }),
-                      );
-                      a.download = 'academic-os-export.json';
-                      a.click();
-                      URL.revokeObjectURL(a.href);
-                    })
-                  }
-                >
-                  {s.export}
-                </button>
-                <button
-                  onClick={() => {
-                    sessionEpoch.current++;
-                    indexedDB.deleteDatabase('academic-os-private');
-                    setTasks([]);
-                    setCandidates([]);
-                    setSigned(false);
-                    location.assign('/cdn-cgi/access/logout');
-                  }}
-                >
-                  {s.logout}
-                </button>
-              </section>
-            )}
-            <footer>
-              Academic OS{' '}
-              <span>
-                {updated &&
-                  new Intl.DateTimeFormat(locale, {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                  }).format(new Date(updated))}
-              </span>
-            </footer>
-          </>
-        )}
-        {editing && (
-          <TaskEditor
-            item={editing}
-            contexts={contexts}
-            locale={locale}
-            onClose={() => setEditing(null)}
-            onSave={async (fields) => {
-              await api('/tasks/' + editing.id, 'PATCH', fields, {
-                'If-Match': String(editing.version),
-              });
-              await load();
-            }}
-            onDelete={async () => {
-              await api('/tasks/' + editing.id, 'DELETE', undefined, {
-                'If-Match': String(editing.version),
-              });
-              await load();
-            }}
-          />
-        )}
-        {proposalEditing && (
-          <TaskEditor
-            item={proposalEditing.fields}
-            contexts={contexts}
-            tasks={tasks}
-            locale={locale}
-            proposal
-            onClose={() => setProposalEditing(null)}
-            onSave={async (fields, target) => {
-              await api(
-                '/candidates/' + proposalEditing.id + '/review',
-                'POST',
-                {
-                  action: 'accept_with_edits',
-                  expected_candidate_version: proposalEditing.version,
-                  task_patch: fields,
-                  ...(target
-                    ? {
-                        target_task_id: target.id,
-                        expected_task_version: target.version,
+                  <label>
+                    {s.type}
+                    <select
+                      value={draft.kind}
+                      onChange={(e) =>
+                        setDraft({ ...draft, kind: e.target.value })
                       }
-                    : {}),
-                },
-                { 'Idempotency-Key': crypto.randomUUID() },
-              );
-              await load();
+                    >
+                      <option value="assignment">{s.academic}</option>
+                      <option value="organizational_duty">
+                        {s.organization}
+                      </option>
+                      <option value="personal_action">{s.personal}</option>
+                      <option value="meeting">Meeting</option>
+                      <option value="exam">Exam</option>
+                    </select>
+                  </label>
+                  <label>
+                    {s.date}
+                    <input
+                      type="date"
+                      value={draft.date}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          date: e.target.value,
+                          time: e.target.value ? draft.time : '',
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    {s.time}
+                    <input
+                      type="time"
+                      disabled={!draft.date}
+                      value={draft.time}
+                      onChange={(e) =>
+                        setDraft({ ...draft, time: e.target.value })
+                      }
+                    />
+                  </label>
+                  <div className="actions">
+                    <button className="primary" type="submit" disabled={busy}>
+                      {s.save}
+                    </button>
+                    <button type="button" onClick={() => setForm(false)}>
+                      {s.cancel}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          )}
+        </main>
+      </div>
+      {signed && route.taskId && (
+        <TaskDetail
+          key={route.taskId}
+          id={route.taskId}
+          initial={tasks.find((t) => t.id === route.taskId)}
+          contexts={contexts}
+          locale={locale}
+          zone={prefs?.timezone ?? briefing?.timezone ?? 'Asia/Makassar'}
+          offline={offline}
+          api={readApi}
+          onClose={back}
+          onDate={() => go(location.pathname + '?sheet=date')}
+          observedAt={updated}
+        />
+      )}
+      {signed &&
+        route.sheet === 'date' &&
+        route.taskId &&
+        (dateTask?.id === route.taskId ? (
+          <DatePreview
+            task={dateTask}
+            locale={locale}
+            onClose={() => {
+              back();
+              setToast(words[locale].readOnly);
             }}
           />
-        )}
-        {form && (
-          <div
-            className="modal"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setForm(false);
-                return;
-              }
-              if (e.key === 'Tab') {
-                const nodes = e.currentTarget.querySelectorAll<HTMLElement>(
-                  'button:not(:disabled),input:not(:disabled),select:not(:disabled)',
-                );
-                if (e.shiftKey && document.activeElement === nodes[0]) {
-                  e.preventDefault();
-                  nodes[nodes.length - 1]?.focus();
-                } else if (
-                  !e.shiftKey &&
-                  document.activeElement === nodes[nodes.length - 1]
-                ) {
-                  e.preventDefault();
-                  nodes[0]?.focus();
-                }
-              }
-            }}
-          >
-            <section
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dialog-title"
-            >
-              <h2 id="dialog-title">{s.add}</h2>
-              <form onSubmit={save}>
-                <label>
-                  {s.title}
-                  <input
-                    autoFocus
-                    required
-                    maxLength={240}
-                    value={draft.title}
-                    onChange={(e) =>
-                      setDraft({ ...draft, title: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  {s.context}
-                  <select
-                    value={draft.context_id}
-                    onChange={(e) =>
-                      setDraft({ ...draft, context_id: e.target.value })
-                    }
-                  >
-                    <option value="">{s.personal}</option>
-                    {contexts.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  {s.type}
-                  <select
-                    value={draft.kind}
-                    onChange={(e) =>
-                      setDraft({ ...draft, kind: e.target.value })
-                    }
-                  >
-                    <option value="assignment">{s.academic}</option>
-                    <option value="organizational_duty">
-                      {s.organization}
-                    </option>
-                    <option value="personal_action">{s.personal}</option>
-                    <option value="meeting">Meeting</option>
-                    <option value="exam">Exam</option>
-                  </select>
-                </label>
-                <label>
-                  {s.date}
-                  <input
-                    type="date"
-                    value={draft.date}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        date: e.target.value,
-                        time: e.target.value ? draft.time : '',
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  {s.time}
-                  <input
-                    type="time"
-                    disabled={!draft.date}
-                    value={draft.time}
-                    onChange={(e) =>
-                      setDraft({ ...draft, time: e.target.value })
-                    }
-                  />
-                </label>
-                <div className="actions">
-                  <button className="primary" type="submit" disabled={busy}>
-                    {s.save}
-                  </button>
-                  <button type="button" onClick={() => setForm(false)}>
-                    {s.cancel}
-                  </button>
-                </div>
-              </form>
-            </section>
-          </div>
-        )}
-      </main>
-    </div>
+        ) : dateError ? (
+          <Sheet title={words[locale].dateSheet} locale={locale} onClose={back}>
+            <p>{words[locale].unavailable}</p>
+          </Sheet>
+        ) : (
+          <Toast message={words[locale].loading} />
+        ))}
+      {signed && route.sheet === 'quick' && (
+        <QuickPreview
+          locale={locale}
+          onClose={() => {
+            back();
+            setToast(words[locale].readOnly);
+          }}
+        />
+      )}
+      {toast && <Toast message={toast} />}
+    </>
   );
 }
 createRoot(document.getElementById('root')!).render(

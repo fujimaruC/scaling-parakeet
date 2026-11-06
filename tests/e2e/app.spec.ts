@@ -4,9 +4,10 @@ test('organization context, task persistence, completion and offline snapshot', 
   context,
 }) => {
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'A little room to remember.' }),
+    page.getByRole('heading', { name: 'Today', exact: true }),
   ).toBeVisible();
   await page.getByLabel('Page', { exact: true }).selectOption('settings');
   await page.getByLabel('Context', { exact: true }).fill('Himpunan');
@@ -38,28 +39,49 @@ test('organization context, task persistence, completion and offline snapshot', 
   await expect(
     page.getByRole('heading', { name: 'Prepare Himpunan event' }),
   ).toBeVisible();
+  await page.locator('.shell-tools > summary').click();
   await context.setOffline(true);
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(
     page.getByText(/Offline · showing a saved snapshot/),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: '+ Add task', exact: true }),
+    page.getByRole('button', { name: 'Add task', exact: true }),
   ).toBeDisabled();
+  await page
+    .getByRole('article', { name: 'Prepare Himpunan event', exact: true })
+    .getByRole('button')
+    .last()
+    .click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Saved snapshot' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await context.setOffline(false);
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: '+ Add task', exact: true }),
+    page.getByRole('button', { name: 'Add task', exact: true }),
   ).toBeEnabled();
-  await page
-    .getByRole('button', {
-      name: 'Complete: Prepare Himpunan event',
-      exact: true,
-    })
-    .click();
   await expect(
     page.getByRole('button', {
-      name: 'Complete: Prepare Himpunan event',
+      name: 'Mark complete: Prepare Himpunan event',
+      exact: true,
+    }),
+  ).toBeDisabled();
+  // Existing write path outside S2 is preserved, not newly implemented here.
+  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Prepare Himpunan event', exact: true })
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('combobox', { name: 'Status', exact: true })
+    .selectOption('done');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click();
+  await expect(
+    page.getByRole('button', {
+      name: 'Undo completion: Prepare Himpunan event',
       exact: true,
     }),
   ).toBeDisabled();
@@ -67,6 +89,7 @@ test('organization context, task persistence, completion and offline snapshot', 
 test('360px navigation and both themes fit the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByRole('button', { name: 'Switch theme' }).click();
   await page.getByLabel('Page', { exact: true }).selectOption('settings');
@@ -85,6 +108,7 @@ test('360px navigation and both themes fit the viewport', async ({ page }) => {
 });
 test('save reminder rules twice with quiet hours', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByLabel('Page', { exact: true }).selectOption('settings');
   await page.getByLabel('Defer new inbox reminders during quiet hours').check();
@@ -111,7 +135,9 @@ test('edit task, keep date-only precision and navigate month calendar', async ({
   page,
 }) => {
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
+  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
   await page.getByRole('button', { name: '+ Add task', exact: true }).click();
   await page.getByLabel('Task title').fill('Calendar responsibility');
   await page
@@ -146,8 +172,9 @@ test('edit task, keep date-only precision and navigate month calendar', async ({
 });
 test('correct a proposal before approval', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: 'Review', exact: true }).click();
+  await page.getByRole('button', { name: /^Review(?: \d+)?$/ }).click();
   const proposal = page.locator('article.proposal').filter({
     has: page.getByRole('heading', { name: 'Synthetic proposal for review' }),
   });

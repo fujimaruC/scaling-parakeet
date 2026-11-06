@@ -1,0 +1,10 @@
+[
+ {"title":"Synthetic overdue duty","context":"organization","due":{"precision":"datetime","local_date":null,"local_datetime":"2026-11-05T17:00:00","timezone":"Asia/Makassar"}},
+ {"title":"Synthetic exact deadline","context":"academic","due":{"precision":"datetime","local_date":null,"local_datetime":"2026-11-06T23:59:00","timezone":"Asia/Makassar"}},
+ {"title":"Synthetic date-only deadline","context":"academic","due":{"precision":"date_only","local_date":"2026-11-06","local_datetime":null,"timezone":"Asia/Makassar"}},
+ {"title":"Synthetic weekly meeting","context":"organization","due":{"precision":"date_only","local_date":"2026-11-08","local_datetime":null,"timezone":"Asia/Makassar"}},
+ {"title":"Synthetic later exam","context":"academic","due":{"precision":"date_only","local_date":"2026-11-20","local_datetime":null,"timezone":"Asia/Makassar"}},
+ {"title":"Synthetic approximate duty","context":"organization","due":{"precision":"approximate","local_date":null,"local_datetime":null,"timezone":null}},
+ {"title":"Synthetic unknown duty","context":"organization","due":{"precision":"unknown","local_date":null,"local_datetime":null,"timezone":null}},
+ {"title":"Synthetic completed task","context":"personal","status":"done","due":{"precision":"date_only","local_date":"2026-11-20","local_datetime":null,"timezone":"Asia/Makassar"}}
+]

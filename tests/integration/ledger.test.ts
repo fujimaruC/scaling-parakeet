@@ -873,3 +873,81 @@ it('durable Linux receipt is queued until phone explicitly reports cleanup', asy
   expect((await send('applied'))[0].status).toBe('confirmed');
   expect((await send('queued'))[0].status).toBe('confirmed');
 });
+
+it('read detail scopes and paginates task history and exposes scheduler policy without writing', async () => {
+  const make = async (title: string) =>
+    data(
+      await call(
+        '/tasks',
+        'POST',
+        { title, due: unknownDue },
+        { 'Idempotency-Key': crypto.randomUUID() },
+      ),
+    );
+  const own = await make('Synthetic scoped history'),
+    foreign = await make('Synthetic foreign history');
+  const events = [];
+  for (let i = 0; i < 35; i++)
+    events.push(
+      db
+        .prepare(
+          "INSERT INTO task_events(task_id,event_type,after_json,created_at) VALUES(?,'updated','{}',?)",
+        )
+        .bind(own.id, `2026-11-06T00:${String(i).padStart(2, '0')}:00Z`),
+    );
+  for (let i = 0; i < 111; i++)
+    events.push(
+      db
+        .prepare(
+          "INSERT INTO task_events(task_id,event_type,after_json,created_at) VALUES(?,'updated','{}','2026-11-06T01:00:00Z')",
+        )
+        .bind(foreign.id),
+    );
+  await db.batch(events);
+  const settings = await data(await call('/settings'));
+  await data(
+    await call(
+      '/settings/reminders',
+      'PATCH',
+      { enabled: true, offset_hours: [7, 1], date_only_hour: 11 },
+      { 'If-Match': String(settings.version) },
+    ),
+  );
+  const before = await db
+    .prepare('SELECT count(*) n FROM task_events')
+    .first<any>();
+  const page = await data(await call('/tasks/' + own.id + '?view=read'));
+  expect(page.task.id).toBe(own.id);
+  expect(page.history).toHaveLength(30);
+  expect(page.history.every((e: any) => e.task_id === own.id)).toBe(true);
+  expect(page.history.map((e: any) => e.id)).toEqual(
+    page.history.map((e: any) => e.id).sort((a: number, b: number) => b - a),
+  );
+  expect(page.reminder_policy.offset_hours).toEqual([7, 1]);
+  expect(page.reminder_policy_origin).toBe('configured');
+  const next = await data(
+    await call(
+      '/tasks/' +
+        own.id +
+        '?view=read&history_before=' +
+        page.next_history_cursor,
+    ),
+  );
+  expect(next.history).toHaveLength(7);
+  expect(next.next_history_cursor).toBeNull();
+  expect(
+    new Set([...page.history, ...next.history].map((e) => e.id)).size,
+  ).toBe(37);
+  expect(
+    (await db.prepare('SELECT count(*) n FROM task_events').first<any>()).n,
+  ).toBe(before.n);
+  expect(
+    (await call('/tasks/' + own.id + '?view=read&history_before=invalid'))
+      .status,
+  ).toBe(422);
+  const denied = await createApp().fetch(
+    new Request('https://academic.test/api/v1/tasks/' + own.id + '?view=read'),
+    env,
+  );
+  expect(denied.status).toBe(401);
+});

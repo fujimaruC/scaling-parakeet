@@ -120,3 +120,69 @@ unverified. No GitHub push, deployment, provider/account/device operation or pai
 provisioning performed.
 
 Rollback: revert the S1 commit(s) and restore the former shell without changing stored data. The owner delegated resolution; S1 is implemented with its actual checks recorded in STATUS/VERIFICATION-LOG. Later slices remain subject to the design spec review checkpoints.
+
+## ADR-022 — S2 read models and marker coverage (2026-11-06)
+
+Accepted implementation decision within the owner's explicit S2 scope; not a
+milestone or device verdict. W11/W41, F03/F15/F20/F22; source base `6de38fd`.
+
+Remove logcat `-T 1` rather than clear logs or alter the null policy: the owner's
+API-28 experiment shows the flag hides the monitor's own markers, and fresh run
+tokens already bound coverage. Keep both markers on one stream and unknown for
+incomplete coverage. A process-boundary fake exercises start/stop/reader threads;
+this models the measured failure but does not replace an owner-run hardware check.
+
+Use `GET /tasks/:id?view=read` with one transactional D1 read batch for canonical
+fields, active safe source aliases, effective scheduler policy and task-scoped
+history (30 rows plus lookahead). Reusing global last-100 history could omit this
+task entirely or mix another task's events. Cursor by monotonic event ID avoids
+clock-based reordering; index migration 0005 bounds the lookup. On a later-page
+version change the UI reloads the latest first page instead of mixing revisions.
+The repository implements reminder policy in `settings.reminder_policy`, not a
+`reminder_rules` table; expose that effective policy with configured/default
+origin using the scheduler's shared default function. Do not invent another table
+or copy suggested reminder text into the UI. Policy is never delivery evidence.
+
+Compare exact instants in the configured owner's calendar for grouping; keep
+date-only values as local calendar dates and sort them after timed entries on that
+date, without synthesizing a deadline instant. Within a date, sort exact values
+by their stored UTC instants so a DST clock rollback cannot reverse them. Compute
+each sort key once, rather than formatting it repeatedly in the comparator. Approximate labels stay generic:
+the original expression is prohibited in cloud projection. Approximate and
+unknown tasks share the no-confirmed-date group and retain distinct labels, even
+when completed: the explicit owner requirement to keep unknown dates under
+Tanpa tanggal takes precedence over the prototype's done-first grouping. Dated
+completed tasks are in Done. Archived tasks
+stay out of the active groups. Missing context metadata is unavailable, not
+implicitly Personal. Personal remains a supported fourth filter under ADR-021.
+
+Use existing bounded task pages and disclose loaded-subset counts, including the
+no-date row; do not load a year eagerly or infer missing tasks. Banner/badge counts
+come from the aggregate briefing, not the bounded candidate page. The no-date
+navigation resets previous context/search filters before scrolling to that group.
+Large-ledger calendar/server-query expansion remains a separate outstanding gate.
+
+S2 is read-only, overriding active write controls in the visual reference for this
+slice. Completion/save/add controls are disabled with an explanation. Precision
+and quick-add sheets are previews, not functioning writes. Existing writers on
+legacy Calendar/Settings/Review surfaces remain unchanged; their preservation is
+not S3 implementation. No optimistic write, undo, haptics or new approval path.
+Use browser History for tabs/detail/sheet entries and native modal dialogs with
+focus return; keep the full-screen background hidden while detail is active.
+One shared visible-page clock drives countdowns. Keep cached task detail visibly
+labeled with its snapshot timestamp; unavailable history/policy never becomes an
+empty or fabricated result.
+
+Contrast outranks literal token use: use a darker red text token on paper and an
+appropriate dark-theme foreground on filled chips. Keep original urgency segment
+colors. Completed text uses readable muted ink and strike-through, not 50%
+opacity. Scope automated geometry/contrast evidence to the tested surfaces and
+pinned Chromium. TalkBack/real Chrome 138 and full accessibility audit remain
+unverified; no dependency, account, provider, deployment or raw-data path added.
+
+History-page failures retain the known task and prior events, with an explicit
+error beside history and a retry control. Treating a failed older-page read as a
+missing task would conceal valid observations. A simulated 503/retry browser test
+protects this distinction. Informational toasts do not intercept underlying
+controls; there is no interactive toast action or undo in S2. Relative countdowns
+use the browser clock, not an independently verified trusted clock.

@@ -133,3 +133,32 @@ passing restored run; finally restores bytes, and a lock prevents duplicate runn
 instances. The design's next slice is S2, only after owner review of S1. Android
 identity/accessibility and large-ledger pagination from the original polish brief
 remain open; this foundation does not silently complete them.
+
+## S2 regression checks
+
+```bash
+.venv/bin/python scripts/check_s2_mutations.py --output-dir /absolute/synthetic/output
+```
+
+Use an isolated Git checkout, with no concurrent app build/test/edit. The runner
+prints its actual CASES count and retains every baseline/broken/restored command
+output. It restores bytes in finally, locks duplicate runs, isolates Python caches
+and requires an assertion failure rather than a setup error. No adb/device call is
+made by these tests. S2 UI reads the existing real Worker in the synthetic harness;
+its fixtures are confined to tests/fixtures and dev/test code. All S2 add/save/
+completion controls are previews/disabled; existing legacy writes elsewhere are
+preserved. Do not label them newly implemented S3 features. Stop for owner review
+before S3, and run the corrected evidence tool on the real phone separately.
+
+For reproducible synthetic S2 review renders (an isolated temporary Worker, never
+an owner/account session):
+
+```bash
+node scripts/render_s2.mjs --output-dir /absolute/synthetic/render-output
+```
+
+Run without another synthetic server on port 4173. The manifest states the actual
+browser, synthetic clock, viewport, reduced-motion setting and captures. Reference
+font calls are replaced in memory with the same local fonts; the reference file
+is unchanged. These are review images, not approved pixel-equality baselines or
+real Android evidence. Do not use this renderer with personal data.
