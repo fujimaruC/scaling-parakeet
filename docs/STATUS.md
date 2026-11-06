@@ -59,7 +59,7 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 ## Remaining implementation and release gates
 
-1. Run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
+1. Run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. The evidence collector now runs on hardware and reports install_ok, apk_sha256, source_commit and fatal_exception_observed (cross-checked independently, see [VERIFICATION-LOG](VERIFICATION-LOG.md) §7), but notification access is still not granted, so **no listener event has ever been received** and the matrix itself has produced no verdict. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
 2. Configure the owner's private network and receiver locally. No VPN vendor/account choice or real peer pairing is claimed. Finish release UI, localized native resources, launcher icon and signed release packaging.
 3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
 4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
@@ -71,6 +71,18 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.
 
+
+## Latest hardware observation — 2026-11-06
+
+`scripts/device_evidence.py` ran against the owner's CPH2015 (API 28) with the APK built from `26d7719`.
+
+Observed: `install_ok=true`, `launch_stays_open=true`, `reopen_ok=true`, `fatal_exception_observed=false`, `queue_count=0`, `repair_required=false`, `low_ram=false`, `notification_access=false`, `source_commit=26d77198…`, `apk_sha256=beecd4e4…`.
+
+Independently cross-checked, not taken from the tool's own output: the APK hash matches `sha256sum` of the local build, the revision matches `git rev-parse HEAD`, and a separate `logcat` scan found 0 fatal exceptions.
+
+`capture_matrix.py` was started against the phone and correctly refused to proceed without an owner present — it blocked at the first interactive prompt, left a 0-byte journal, and `--verify` rejected it as `Incomplete journal`. That is fail-closed behaviour, not a failure.
+
+Still unproven: capture, filtering, queue durability, transport, key-loss recovery, backup exclusion. `smoke_result` remains `unverified` because process presence is not a smoke verdict.
 
 ## Focused-session environment and verification
 

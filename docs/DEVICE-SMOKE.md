@@ -133,3 +133,62 @@ The journal is fsync'd and HMAC-chained with an explicit final seal. Editing/reo
 Cold start requires a successful force-stop and observed process absence before launch. Warm resume requires the actual resumed-activity field and the same cold-run process or a fresh probe token; an activity mentioned in history cannot satisfy it. Bounded retries accommodate ColorOS's first-launch interception. Uncertain launch observations stay null. install/fatal status is not cached across samples. The app may be force-stopped/relaunched by the standalone smoke probe; the matrix uses passive per-case observations so it does not restart the phone mid-lifecycle case. Scope journal crash windows to the cases actually run, and inspect unavailable values before drawing conclusions. Overall smoke_result remains unverified; the tool does not claim the entire matrix passed.
 
 Device selection is pinned with adb -s for the process lifetime; the serial is kept only in memory and never emitted. Boot identity is checked around lifecycle observations, also only in memory. Missing identity aborts matrix collection; changed/unknown boot identity leaves lifecycle fields null. A disconnected/replaced default adb target cannot silently satisfy a warm-resume check.
+
+---
+
+## Hardware record — build `26d7719`, 2026-11-06
+
+Produced by `scripts/device_evidence.py --apk <app-debug.apk>`. First run of this collector on real hardware.
+
+```text
+source_commit=26d77198a772d243daafb0e5d0ac1f990ba98544
+apk_sha256=beecd4e47d7968c2a9d574a4f9d14eee30cae1d0c0ed5b5cdbfa202ac1ae7f79
+version=0.1-probe
+device_model=CPH2015
+android_api=28
+device_build=CPH2015EX_11_A.67
+install_ok=true
+launch_stays_open=true
+reopen_ok=true
+notification_access=false
+low_ram=false
+queue_count=0
+observed_gap_count=0
+repair_required=false
+repair_code=unavailable
+owner_reset_performed=unavailable
+fatal_exception_observed=false
+smoke_result=unverified
+capture=not_run
+transport=not_run
+key_loss_recovery=not_run
+backup_exclusion=not_run
+```
+
+### Reading this record
+
+`install_ok`, `fatal_exception_observed`, `apk_sha256` and `source_commit` were null in every earlier run. They are now observed, and each was cross-checked independently: the APK hash matches `sha256sum` of the local build, the revision matches `git rev-parse HEAD`, and a separate `logcat` scan found 0 fatal exceptions.
+
+`smoke_result` stays `unverified` on purpose. Process presence is not a smoke verdict, and the tool refuses to promote one into the other.
+
+### What the owner must still do
+
+1. Grant notification access: **Settings → Notification access → Academic OS Capture**. Until this is on, no listener event has ever been received and every capture claim is unproven.
+2. Run the capture matrix by hand:
+
+   ```bash
+   .venv/bin/python scripts/capture_matrix.py \
+     --apk /abs/path/app-debug.apk \
+     --output /abs/private/new-matrix-directory
+   ```
+
+   The directory must be new and outside the repository. The harness prompts before each case; it cannot run unattended, and that is deliberate.
+3. Verify the sealed journal afterwards:
+
+   ```bash
+   .venv/bin/python scripts/capture_matrix.py --output /abs/private/new-matrix-directory --verify
+   ```
+
+   Only `grant` and `revoke` can return `PASS`, and only with a real observed permission transition, an unchanged APK hash and a complete crash window. Every other case returns `UNVERIFIED` — the available sensors cannot prove filtering, transport or recovery.
+
+Keep `local-verification.key` private and on Linux. The seal detects accidental editing; it does not defend against a malicious owner holding the key.

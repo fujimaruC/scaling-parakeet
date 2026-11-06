@@ -174,3 +174,59 @@ Environment reused from the previous local toolchain: Java/compiler 17.0.20, Gra
 Clean-build provenance check: actual APK asset declared source_commit=e65775873cfcf80fcd6e12b327ee6b4d91e5170d with source_dirty=false, matching that clean checkout exactly. Assertion passed after native acceptance exit 0. Later observer/verification changes do not alter the Android provenance producer tested by that build. This is a local build check, NOT an installed-device observation or independent binary-source attestation. Full actual output, including all ten broken/restored runs and their clean baselines, is pasted in [EVIDENCE-CHECKS](EVIDENCE-CHECKS.md). The shipped CASES list has exactly ten faults; no hand-run extra faults are included in that count.
 
 Final observer hardening pins adb device selection and checks private in-memory boot identity. Missing identity refuses matrix collection, and stale boot cannot satisfy lifecycle evidence. Full Python discovery remains 33 tests; the shipped CASES list and final runner output now declare ten faults, each with baseline/pass, broken/fail and restored/pass. No new hardware observation was made.
+
+---
+
+## 7. Hardware run of the evidence tool — 2026-11-06
+
+First hardware execution of the collector built in slice `55d268a`, on the owner's OPPO CPH2015 (Android 9 / API 28) over ADB.
+
+```bash
+.venv/bin/python scripts/device_evidence.py --apk <abs>/app-debug.apk
+```
+
+```json
+{"android_api": 28,
+ "apk_sha256": "beecd4e47d7968c2a9d574a4f9d14eee30cae1d0c0ed5b5cdbfa202ac1ae7f79",
+ "device_build": "CPH2015EX_11_A.67", "device_model": "CPH2015",
+ "fatal_exception_observed": false, "install_ok": true, "launch_stays_open": true,
+ "low_ram": false, "notification_access": false, "queue_count": 0,
+ "observed_gap_count": 0, "reopen_ok": true, "repair_required": false,
+ "source_commit": "26d77198a772d243daafb0e5d0ac1f990ba98544", "version": "0.1-probe",
+ "smoke_result": "unverified", "capture": "not_run", "transport": "not_run",
+ "key_loss_recovery": "not_run", "backup_exclusion": "not_run",
+ "unavailable": ["repair_code", "owner_reset_performed"]}
+```
+
+### The four previously-null fields are now observed
+
+| Field | Value | Why it can be trusted |
+|---|---|---|
+| `install_ok` | `true` | Requires literal `Success` in `adb install` output, not merely an issued command |
+| `fatal_exception_observed` | `false` | Continuous token-bounded crash stream; ambiguous coverage reports unknown, not false |
+| `apk_sha256` | `beecd4e4…` | Pulled from the **installed** package (`pm path` + `adb pull`), then hashed |
+| `source_commit` | `26d77198…` | Read from `assets/academic-os-build.json` inside the installed APK, only when `source_dirty:false` |
+
+**Independent cross-checks performed here, not taken from the tool's own output:**
+
+- `sha256sum` of the local built APK → `beecd4e47d7968c2a9d574a4f9d14eee30cae1d0c0ed5b5cdbfa202ac1ae7f79` — **identical** to the reported value.
+- `git rev-parse HEAD` → `26d77198a772d243daafb0e5d0ac1f990ba98544` — **identical** to the reported `source_commit`.
+- `adb logcat -d | grep -c 'FATAL EXCEPTION'` → **0**.
+- Process alive: pid 20817; `AOS-PROBE` → `lowRam=false granted=false listener=unknown queue=0 gaps=0`.
+
+### Capture matrix harness: fail-closed behaviour confirmed
+
+`scripts/capture_matrix.py --apk … --output /tmp/matrix-1` was started against the phone. It created the journal directory (`0700`), wrote `local-verification.key` (32 bytes, `0600`), then stopped at the first interactive prompt:
+
+```text
+input('Case ' + case + ': Enter to begin; perform ONLY synthetic owner-controlled case. ')
+EOFError: EOF when reading a line
+```
+
+This is correct. The harness requires the owner to physically perform each case; it cannot be driven headlessly, which is precisely what stops an agent from manufacturing a matrix result. The resulting `record.jsonl` is **0 bytes** and carries no `sealed` row, so `--verify` rejects it as `Incomplete journal`.
+
+The matrix therefore has **not** produced a verdict. It remains NOT RUN.
+
+### Still not proven by any of this
+
+`notification_access=false`. No capture has ever run on hardware. `capture`, `transport`, `key_loss_recovery` and `backup_exclusion` are all `not_run`. `smoke_result` stays `unverified` — the tool refuses to infer a verdict from process presence, which is the correct choice.
