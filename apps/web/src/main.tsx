@@ -5,9 +5,17 @@ import MonthCalendar from './components/MonthCalendar';
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
+import './design/tokens.css';
+import './design/foundation.css';
+import { useTheme } from './design/theme';
+import { Bitmap } from './pixel/Bitmap';
+import { ICONS } from './pixel/icons';
+import Kit from './design/Kit';
 const strings = {
   id: {
     today: 'Hari ini',
+    navTasks: 'Tugas',
+    navReview: 'Tinjau',
     tasks: 'Tanggung jawab',
     review: 'Perlu ditinjau',
     calendar: 'Kalender',
@@ -61,6 +69,8 @@ const strings = {
   },
   en: {
     today: 'Today',
+    navTasks: 'Tasks',
+    navReview: 'Review',
     tasks: 'Responsibilities',
     review: 'Review inbox',
     calendar: 'Calendar',
@@ -191,7 +201,7 @@ function App() {
     (localStorage.getItem('locale') as Locale) || 'id',
   );
   const s = strings[locale] ?? strings.id;
-  const [dark, setDark] = useState(localStorage.getItem('theme') === 'dark');
+  const { theme, setTheme } = useTheme();
   const [page, setPage] = useState<Page>('today');
   const [tasks, setTasks] = useState<any[]>([]),
     [contexts, setContexts] = useState<any[]>([]),
@@ -216,10 +226,6 @@ function App() {
   });
   const [newContext, setNewContext] = useState(''),
     [newType, setNewType] = useState('academic');
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
-  }, [dark]);
   useEffect(() => {
     document.documentElement.lang = locale;
     localStorage.setItem('locale', locale);
@@ -383,20 +389,26 @@ function App() {
     <div className="app">
       <aside>
         <a className="brand" href="/">
-          a<span>Academic OS</span>
+          <Bitmap rows={ICONS.star} scale={3} />
+          <span>Academic OS</span>
         </a>
         <p className="private">● {s.secure}</p>
-        <nav aria-label="Navigation">
-          {nav.map((p, i) => (
+        <nav
+          className="main-nav"
+          aria-label={locale === 'en' ? 'Main navigation' : 'Navigasi utama'}
+        >
+          {nav.slice(0, 4).map((p, i) => (
             <button
               key={p}
               aria-current={page === p ? 'page' : undefined}
               onClick={() => setPage(p)}
             >
               <span aria-hidden>
-                {['◷', '✓', '◇', '▦', '↗', '↶', '♧', '⚙'][i]}
+                <Bitmap
+                  rows={[ICONS.sun, ICONS.list, ICONS.inbox, ICONS.cal][i]}
+                />
               </span>
-              {s[p]}
+              {p === 'tasks' ? s.navTasks : p === 'review' ? s.navReview : s[p]}
               {p === 'review' && candidates.length > 0 && (
                 <b>{candidates.length}</b>
               )}
@@ -407,10 +419,46 @@ function App() {
           <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}>
             {s.lang}
           </button>
-          <button onClick={() => setDark(!dark)}>{s.theme}</button>
+          <button
+            onClick={() =>
+              setTheme(
+                document.documentElement.dataset.theme === 'dark'
+                  ? 'light'
+                  : 'dark',
+              )
+            }
+          >
+            {s.theme}
+          </button>
+          <label className="theme-choice">
+            {locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
+            <select
+              aria-label={locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as typeof theme)}
+            >
+              <option value="system">
+                {locale === 'en' ? 'System' : 'Sistem'}
+              </option>
+              <option value="light">
+                {locale === 'en' ? 'Light' : 'Terang'}
+              </option>
+              <option value="dark">{locale === 'en' ? 'Dark' : 'Gelap'}</option>
+            </select>
+          </label>
           <small>Asia/Makassar · UTC+8</small>
         </div>
       </aside>
+      {signed && ['today', 'tasks', 'calendar'].includes(page) && (
+        <button
+          className="fab"
+          aria-label={s.add}
+          disabled={offline || busy}
+          onClick={() => setForm(true)}
+        >
+          <Bitmap rows={ICONS.plus} scale={4} />
+        </button>
+      )}
       <main>
         <header>
           <select
@@ -421,7 +469,11 @@ function App() {
           >
             {nav.map((p) => (
               <option key={p} value={p}>
-                {s[p]}
+                {p === 'tasks'
+                  ? s.navTasks
+                  : p === 'review'
+                    ? s.navReview
+                    : s[p]}
               </option>
             ))}
           </select>
@@ -541,7 +593,9 @@ function App() {
                 <section className="task-list">
                   {!visible.length ? (
                     <div className="empty">
-                      <span className="empty-icon">✓</span>
+                      <span className="empty-icon">
+                        <Bitmap rows={ICONS.star} scale={6} />
+                      </span>
                       <h2>{s.empty}</h2>
                       <p>{s.emptyhint}</p>
                     </div>
@@ -1114,6 +1168,8 @@ function App() {
     </div>
   );
 }
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+  import.meta.env.DEV && location.pathname === '/__kit' ? <Kit /> : <App />,
+);
 if ('serviceWorker' in navigator && import.meta.env.PROD)
   navigator.serviceWorker.register('/sw.js');

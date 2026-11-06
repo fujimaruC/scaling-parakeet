@@ -311,17 +311,7 @@ footer {
   background: var(--soft);
   border-radius: 8px;
 }
-[data-theme='dark'] {
-  color-scheme: dark;
-  --surface: #192823;
-  --muted: #b2c3b9;
-  --line: #384b41;
-  --accent: #97d3b5;
-  --soft: #2c3c30;
-  --ink: #e4eee6;
-  background: #14201b;
-  color: var(--ink);
-}
+
 [data-theme='dark'] .primary {
   background: #2d7559;
   color: #fff;

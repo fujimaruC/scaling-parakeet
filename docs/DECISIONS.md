@@ -65,3 +65,58 @@ A local adb observation collector with strict field projection was chosen over u
 Read back and hash the installed single APK at both ends rather than trusting the local requested file. Install success needs an observed successful install response plus readback match. Stamp a source revision into the APK only from a clean Git checkout; the observer reads that declaration instead of guessing from its own checkout. This is declared provenance, not proof against an untrusted builder or concurrent source edits. Dirty/unknown/ambiguous observations remain null.
 
 Use a token-bounded continuous crash stream rather than a log tail or device-clock cutoff. Incomplete/ambiguous attribution stays unknown. Foreground/process lifecycle evidence replaces activity-history matching. A local HMAC-sealed begin/end journal prevents accidental retroactive PASS edits; the owner/root with the key remains outside that integrity claim. Only mechanically proven permission transitions can automatically pass; other matrix cases are recorded but UNVERIFIED. No new dependency or physical capture claim is introduced.
+
+
+## ADR-021 — Pixel-paper UI contract reconciliation (2026-11-06)
+
+Status: **Accepted engineering resolution under explicit owner delegation** ("Refine it yourself"), following
+[owner-supplied design instructions](design/UI-DESIGN-AGENT.md) §0.
+Base: `5ae9583`. This record is a proposal, not an implemented or verified feature.
+
+The attached [prototype](design/reference/app.html) is preserved byte-for-byte.
+It is a synthetic design reference only, not production data or a deployed app.
+Opening that unmodified prototype requests Google Fonts; production must instead
+self-host fonts and must not copy its external font calls or in-memory mutations.
+
+### Contract differences requiring explicit resolution
+
+| Topic | Current contract | New supplied design | Proposed resolution |
+|---|---|---|---|
+| Desktop navigation | docs/06-UI-UX.md: slim sidebar | §2/§4: centered 430px column and bottom navigation | Adopt new phone-first centered column on all sizes; retain access to search, sources, history and settings through a labeled menu. |
+| Appearance | docs/06-UI-UX.md: proposed teal/system-font/rounded baseline | §1–§2: blue, self-hosted Inter/Pixelify Sans, square ink borders and hard shadows | New pixel-paper reference supersedes the earlier proposed visual baseline. |
+| Write feedback | docs/06-UI-UX.md: save success only after server acknowledgment | §6/§8: optimistic toggles and mutations | Pending feedback may be immediate, but final success and counts reconcile only after server acknowledgment; failure restores canonical state and preserves retry identity. Offline writes stay disabled. |
+| Undo | docs/10-API-CONTRACTS.md has no compensating review action | §5.4: durable compensating undo | Implement only in S4 with an explicit versioned API/database contract, source-generation checks and concurrency tests; never restore a client-side snapshot over server history. |
+
+### Engineering interpretation proposed for subsequent slices
+
+Preserve existing module layout and authentication/offline/privacy machinery.
+Use existing React, browser History/URL, fetch and IndexedDB rather than adding
+React Router, TanStack Query, Zustand or idb just to match suggested stack names.
+Those packages are not necessary to achieve the requested behaviors; this avoids
+a rewrite and follows the session's dependency limit. No new dependency added.
+
+Do not store or display original approximate-date expressions in the cloud; show
+a localized approximate-precision label and safe issue codes instead. Date-only
+ordering remains local-calendar ordering, never a fabricated exact UTC deadline.
+Retain personal contexts and existing search/history/source workflows, even where
+the prototype illustrates only academic and organizational tasks.
+
+Contrast and text resizing outrank literal inaccessible prototype values: dark
+accent fills need an appropriate contrasting foreground; completed text must not
+be faded below the required contrast. Warning color remains decorative only.
+
+### Scope, rollout, evidence and rollback
+
+Affected: PWA interface/offline F20 and offline-write exclusion F30; Android
+identity/accessibility from the original product-polish brief. No feature or test
+ID is invented by this note. Interface contract reconciled below, then follow
+S1–S7 from the supplied spec, stopping for owner review after each slice. Android
+identity/accessibility and large-ledger pagination remain authorized outstanding
+work; importing this design does not quietly cancel them.
+
+This intake initially changed documentation only. Subsequent S1 changes and actual check results are recorded in STATUS/VERIFICATION-LOG; this ADR does not itself certify them. No milestone complete. Last recorded notification_access is
+false; no listener event or capture matrix has ever run. New capture status is
+unverified. No GitHub push, deployment, provider/account/device operation or paid
+provisioning performed.
+
+Rollback: revert the S1 commit(s) and restore the former shell without changing stored data. The owner delegated resolution; S1 is implemented with its actual checks recorded in STATUS/VERIFICATION-LOG. Later slices remain subject to the design spec review checkpoints.

@@ -8,7 +8,7 @@ test('organization context, task persistence, completion and offline snapshot', 
   await expect(
     page.getByRole('heading', { name: 'A little room to remember.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Page', { exact: true }).selectOption('settings');
   await page.getByLabel('Context', { exact: true }).fill('Himpunan');
   await page
     .getByRole('combobox', { name: 'Type', exact: true })
@@ -26,9 +26,7 @@ test('organization context, task persistence, completion and offline snapshot', 
     .selectOption('organizational_duty');
   await page.getByRole('button', { name: 'Save', exact: true }).last().click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Responsibilities', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Prepare Himpunan event' }),
   ).toBeVisible();
@@ -36,9 +34,7 @@ test('organization context, task persistence, completion and offline snapshot', 
     page.getByText('No date yet', { exact: true }).last(),
   ).toBeVisible();
   await page.reload();
-  await page
-    .getByRole('button', { name: 'Responsibilities', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Prepare Himpunan event' }),
   ).toBeVisible();
@@ -90,7 +86,7 @@ test('360px navigation and both themes fit the viewport', async ({ page }) => {
 test('save reminder rules twice with quiet hours', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Page', { exact: true }).selectOption('settings');
   await page.getByLabel('Defer new inbox reminders during quiet hours').check();
   await page
     .getByRole('button', { name: 'Save reminder rules', exact: true })
@@ -151,7 +147,7 @@ test('edit task, keep date-only precision and navigate month calendar', async ({
 test('correct a proposal before approval', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: /Review inbox/ }).click();
+  await page.getByRole('button', { name: 'Review', exact: true }).click();
   const proposal = page.locator('article.proposal').filter({
     has: page.getByRole('heading', { name: 'Synthetic proposal for review' }),
   });
@@ -160,9 +156,7 @@ test('correct a proposal before approval', async ({ page }) => {
   await dialog.getByLabel('Task title').fill('Owner corrected synthetic duty');
   await dialog.getByRole('button', { name: 'Approve changes' }).click();
   await expect(dialog).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Responsibilities', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Owner corrected synthetic duty' }),
   ).toBeVisible();

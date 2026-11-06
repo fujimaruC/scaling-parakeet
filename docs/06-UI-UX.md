@@ -23,9 +23,31 @@ Responsive PWA is the primary product. Companion UI is limited to collection/set
 
 ## Navigation and design tokens
 
-Phone bottom navigation: Today, Tasks, Review, Calendar. Menu includes search, sources, history, settings. Desktop slim sidebar. Both academic and organizational contexts appear in the same flow with accessible labeled filters.
+The owner-supplied [design contract](design/UI-DESIGN-AGENT.md) and unchanged
+[synthetic reference](design/reference/app.html) supersede the former proposed
+teal/rounded/system-font appearance. See ADR-021 for reconciliation.
 
-Proposed visual baseline: neutral surfaces, teal primary action, amber uncertainty, red critical due/error; labels/icons supplement color. System font, body 16px+, 44px controls, visible focus, clear 8px spacing rhythm, restrained 12px corner radius. Light/dark contrast target WCAG AA; respect reduced motion. Avoid card grids for long task lists. All visible text uses translation keys; Indonesian default suggested, owner can choose English. Store preference, do not infer language from message content.
+S1 foundation: warm paper/ink surfaces, square borders, hard shadows, local
+Pixelify Sans headings/controls and Inter body, decorative bitmap icons, dotted
+background. Four fixed bottom tabs on phone and desktop, with a centered 430px
+column. Existing sources/history/reminders/settings remain accessible through the
+labeled page selector; task search remains in the list toolbar. System/light/dark
+preference persists locally and system mode responds to OS changes. Quick-add
+floating button appears on Today/Tasks/Calendar only, disabled offline/busy.
+Native tasks and private-source content boundaries do not change.
+
+The development-only `/__kit` showcases Box/Chip/Tag/Button/Bitmap/UrgencyBar;
+production never routes to that kit. Precise-instant urgency has sixteen
+segments, is decorative, and is withheld for date-only/approximate/unknown due
+values. It is a primitive pending real screen integration in S2.
+
+S2–S7 are not implemented by S1: detailed reference layouts/grouping, history-based
+routing/sheets, swipe/keyboard decisions, compensating undo, shared visible ticker,
+full translations, calendar redesign and the full accessibility audit remain due.
+Existing real-data views and approval flows remain operational under the new shell.
+Write success follows server acknowledgment; no optimistic success or snapshot
+rollback can erase history. Source-generation and version conflicts must remain
+visible. New libraries are unnecessary for this foundation.
 
 ## Review details
 

@@ -116,3 +116,20 @@ Run the normal acceptance suites, including npm run test:e2e and npm run test:pw
 ```
 
 The script declares its full fault list and prints the actual count. It never runs adb or a device. Gradle's preBuild produces assets/academic-os-build.json; only a clean Git checkout can name source_commit, while dirty builds stamp null. Metadata is a build declaration, not independent binary provenance proof. Owner-local adb collection and matrix commands/limits are in DEVICE-SMOKE. Keep generated audit directories and local verification keys outside the repository and cloud backups.
+
+## Pixel-paper S1 foundation
+
+`npm run dev:synthetic` serves the existing synthetic app and `/__kit`. The kit is
+DEV-gated; production builds do not expose it. Local fonts/licenses live under
+apps/web/public/fonts and are precached; do not add Google Fonts runtime calls.
+
+```bash
+.venv/bin/python scripts/check_foundation_mutations.py --output-dir /absolute/synthetic/fault-output
+```
+
+Run in an isolated checkout with no concurrent web build/test/edit. Four declared
+faults each require a clean baseline, an assertion failure when broken, and a
+passing restored run; finally restores bytes, and a lock prevents duplicate runner
+instances. The design's next slice is S2, only after owner review of S1. Android
+identity/accessibility and large-ledger pagination from the original polish brief
+remain open; this foundation does not silently complete them.

@@ -1,0 +1,52 @@
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('/fonts/pixelifysans.woff') format('woff');
+  font-weight: 500 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url('/fonts/inter.woff') format('woff');
+  font-weight: 400 600;
+  font-display: swap;
+}
+:root {
+  --bg: #f4f2ec;
+  --card: #fff;
+  --ink: #1b1b1f;
+  --muted: #66635b;
+  --accent: #2f54eb;
+  --urgent: #d6402a;
+  --warn: #e09a1a;
+  --course: #2f54eb;
+  --org: #8a4fd6;
+  --ok: #1f8a5b;
+  --track: rgba(27, 27, 31, 0.12);
+  --dots: #d8d6d0;
+  --on-accent: #fff;
+  --pix: 'Pixelify Sans', monospace;
+  --sans: Inter, system-ui, sans-serif;
+  --surface: var(--card);
+  --line: var(--ink);
+  --soft: var(--bg);
+  color-scheme: light;
+  color: var(--ink);
+  background: var(--bg);
+  font: 16px/1.5 var(--sans);
+}
+:root[data-theme='dark'] {
+  --bg: #16161a;
+  --card: #202026;
+  --ink: #f2f0ea;
+  --muted: #a9a69d;
+  --accent: #7c95ff;
+  --urgent: #ff7a63;
+  --warn: #f2b64a;
+  --course: #7c95ff;
+  --org: #b98bff;
+  --ok: #4cd39a;
+  --track: rgba(242, 240, 234, 0.16);
+  --dots: #343438;
+  --on-accent: #16161a;
+  color-scheme: dark;
+}

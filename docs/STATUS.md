@@ -120,3 +120,43 @@ The one-command matrix journal records actual begin/end intervals and strict pas
 A mutation-run overlap during development exposed missing runner isolation. The shipped evidence fault runner now locks against concurrent runs, asserts failures are real test assertions and restores files in finally. Final suites and mutation checks are rerun sequentially; discarded overlapping-run output is not used as acceptance evidence. Full actual results are recorded in VERIFICATION-LOG and EVIDENCE-CHECKS.
 
 Final evidence-slice outcomes: npm ci/check exit 0 (18 D1 tests), npm run test:e2e 5 passed, npm run test:pwa 1 passed, Python discovery 33 passed, Android build/lint/API-28/JVM checks pass (6 JVM tests), ten scripted faults fail then restore/pass with clean baselines. Both actual dirty-build null provenance and clean-build exact-revision asset checks passed locally. Full outputs are in [EVIDENCE-CHECKS](EVIDENCE-CHECKS.md); factual record updated in [VERIFICATION-LOG](VERIFICATION-LOG.md). Existing JDK 17 and SDK 28/35/build-tools 35.0.0 were reused, not newly provisioned. New adb/matrix tooling remains NOT RUN on hardware. No capture has ever run; notification_access=false is the last real observation.
+
+## Pixel-paper design S1 — base 5ae9583, 2026-11-06
+
+Owner attached UI-DESIGN-AGENT.md and app.html, then explicitly delegated conflict
+resolution: “Refine it yourself”. ADR-021 adopts centered pixel-paper design while
+preserving all workflows, server-confirmed success, date precision and privacy.
+Scope W11/W41, F22 foundation; S1 only. The supplied design instruction §11 ends
+each slice with an owner-review stop; this is not completion of the earlier full
+product-polish brief or the whole app.
+
+Implemented local fonts and licenses, bitmap/icons and Box/Chip/Tag/Button/exact
+UrgencyBar primitives, theme preference responding to OS changes, four-tab shell,
+quick-add FAB and retained secondary-page selector. `/__kit` is development-only;
+no synthetic tasks enter production. Original reference is unchanged under
+`docs/design/reference`. No dependency or backend/data/approval change.
+
+Remaining: S2–S7 screen fidelity, routing/back/sheets, date grouping, swipe and
+compensating undo, translations, full accessibility audit; Android launcher icon,
+strings/theme/accessibility and fewer native lint warnings; large-ledger calendar
+and server pagination. Existing native warnings are not suppressed or fixed by
+this web-foundation slice. Do not reverse privacy, approval, generation, offline
+write or server-ack safeguards to implement prototype interactions.
+
+Last owner record still has notification_access=false and no listener event ever
+received. No capture matrix was run here. Device/Android Chrome/TalkBack/account/
+provider/real network/push and full accessibility compliance remain unverified.
+No milestone complete. Acceptance commands and actual outputs for this S1 are
+recorded in VERIFICATION-LOG and DESIGN-S1-CHECKS, including development failures
+and subsequent restored checks where applicable.
+
+S1 final outcomes: npm ci/check exit 0 (20 Vitest tests: 18 D1 + 2 foundation),
+E2E 7 passed, compiled PWA offline 1 passed, Python 33 passed, planning validation
+80 links / schemas/fixtures/rejections PASS. Four scripted faults each baseline
+pass / broken assertion fail / restored pass. Android assembleDebug/lint/
+testDebugUnitTest exit 0, API-28 surface compile and 6 JVM policy tests; lint still
+0 errors / 4 warnings, so original warning-reduction acceptance remains unmet.
+Node 24.22.1 / npm 11.9.0 / Python 3.12.14 / Java 17.0.20. Installed SDK platforms
+28/35 + build-tools 35.0.0 after restoring private JDK module launchers and
+selecting that runtime explicitly; Gradle 8.11.1 download used configured proxy.
+Full command output and exact limitations: DESIGN-S1-CHECKS / VERIFICATION-LOG §8.

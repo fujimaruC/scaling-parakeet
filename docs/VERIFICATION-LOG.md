@@ -230,3 +230,87 @@ The matrix therefore has **not** produced a verdict. It remains NOT RUN.
 ### Still not proven by any of this
 
 `notification_access=false`. No capture has ever run on hardware. `capture`, `transport`, `key_loss_recovery` and `backup_exclusion` are all `not_run`. `smoke_result` stays `unverified` — the tool refuses to infer a verdict from process presence, which is the correct choice.
+
+## 8. Pixel-paper S1 foundation — base 5ae9583, 2026-11-06
+
+Owner supplied a new design/prototype and delegated refinement. Implemented S1
+only, stopping before S2 for the review checkpoint in design/UI-DESIGN-AGENT.md
+§11. Original product-polish brief is not fully satisfied by this slice. Android
+UI/resources/icon/accessibility, reduced native warnings and large-ledger
+pagination remain outstanding. No milestone complete.
+
+| Command / observation | Actual result |
+|---|---|
+| `npm ci` | exit 0; 170 packages installed |
+| `npm run check` | exit 0; 20 Vitest tests (18 D1 + 2 foundation), types/format/build/dry-run |
+| `npm run test:e2e` | 7 passed; existing 5 workflows plus 2 foundation browser tests |
+| `npm run test:pwa` | 1 passed; offline hard reload, local display font load and logout snapshot clearing |
+| `.venv/bin/python scripts/validate_planning.py` | PASS; actual output in DESIGN-S1-CHECKS |
+| `.venv/bin/python -m unittest discover -s collectors/local/tests -v` | 33 passed, synthetic only |
+| `.venv/bin/python scripts/check_foundation_mutations.py --output-dir ...` | 4 declared faults, each baseline exit 0 / broken assertion exit 1 / restored exit 0 |
+| `cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest --no-daemon` | BUILD SUCCESSFUL; API-28 compile guard; 6 JVM policy tests; 0 errors, 4 warnings |
+| `npx playwright test tests/e2e/foundation.spec.ts` | 2 passed; synthetic 390×844 light/dark renders inspected |
+| Compiled production kit scan | PASS; development-only kit content absent from built JS |
+| `scripts/check_placeholders.py`, `git diff --check` | PASS |
+| New Android install, Chrome 138, TalkBack, capture, real account/provider/network/push | NOT RUN / unverified |
+
+Retained raw command output, baseline/broken/restored faults and environment are
+pasted in [DESIGN-S1-CHECKS](DESIGN-S1-CHECKS.md). Counts are discovered by shipped
+suites/CASES, not manually added checks. Existing workflow selectors now follow
+the secondary-page selector and short tab labels; assertions on persistence,
+proposal approval, reminders and offline behavior remain intact.
+
+### Accessibility evidence and its limits
+
+The foundation browser checks exercise system theme changes, a persisted manual
+override, local font loading with zero third-party requests on the kit, decorative
+urgency, reduced-motion transition disabling, one keyboard Tab focus, and doubled
+computed text sizes at 360/390/1280 widths **on the kit only**. Secondary routes
+are exercised at 360px. This is not a full keyboard traversal, screen-reader test,
+axe audit, contrast certification, browser text-zoom equivalence or every-screen
+200% audit. These remain unverified. Screenshot inspection exposed a wrapped
+“Responsibilities” bottom-tab label; shorter localized labels fixed that layout.
+Current read-only screens remain the existing layouts under foundation styling,
+not pixel-complete reference implementations. No visual-regression baseline has
+been approved yet; images in docs/design/evidence are review captures, not a claim
+of pixel equality. Existing 28px completion controls now have 44px hit areas.
+
+Native static/lint evidence still includes MissingApplicationIcon, ApplySharedPref,
+CustomX509TrustManager and SetTextI18n. Thus the original brief's “fewer warnings”
+acceptance is **not met** in S1. Immediate durable credential commit and the pinned
+trust manager retain existing safety reasons; do not replace them with async loss
+or accept-all TLS just to remove warnings. Icon/resources/native accessibility
+remain for the native follow-up; TalkBack has not run.
+
+### Toolchain and development findings
+
+Node 24.22.1, npm 11.9.0, Python 3.12.14. Playwright pinned headless Chromium and
+FFmpeg installed (one download mirror initially returned a truncated ZIP; a
+supported mirror succeeded). Existing JDK 17.0.20 modules had no compiler launcher;
+restored standard module launchers in a private runtime copy and verified javac.
+Downloaded Android CLI archive 12266719 and installed platforms 28/35 plus
+build-tools 35.0.0 through sdkmanager. Gradle 8.11.1 was downloaded through the
+configured proxy after direct resolution failed. Explicit private Gradle toolchain
+properties prevent selecting the incomplete system JRE. Native build then passed.
+No toolchain, signing key, APK, cache or runtime key is delivered.
+
+Full fonts were converted losslessly to WOFF with already-installed fontTools;
+WOFF2 conversion lacked Brotli, so no package was added. Bundled font assets total
+487948 bytes (documented individual sizes and hashes in public/fonts/README.txt).
+They are precached and licensed; production makes no Google Fonts calls. Original
+prototype retains external font URLs because the owner required unchanged bytes;
+it is documentation only, never served as production UI.
+
+During development, old Settings button selectors and the kit's ambiguous implicit
+Theme label caused browser failures. Selectors now follow real navigation, and
+new theme selects have explicit localized accessible names (kit English label).
+The mutation runner initially rejected ANSI-colored assertion output despite a
+real failed expectation; it now strips ANSI before classifying failures. Finally
+restoration preserved source. Final checks above are subsequent reruns, not those
+failed development runs. No capture has ever run on the phone; last real access
+value is false. All historical null/NOT RUN entries remain unchanged.
+
+Archive cross-check found that git am normalizes CRLF in the upstream Pixelify
+license, causing a tree mismatch. Normalized that license to LF without changing
+its text; the owner-supplied reference/instruction files remain byte-identical.
+The final round-trip is rerun against 5ae9583 before delivery.
