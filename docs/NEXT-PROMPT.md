@@ -1,254 +1,194 @@
-# Next prompt — make S3–S7 real
+# Next prompt — native Android migration plan
 
 **How to use:** Part 1 is for the owner. Part 2 is the brief — paste it whole.
 
-Code base: `1a9c8c7`. `main` may be newer; that is expected. Confirm `1a9c8c7` appears in `git log --oneline -15`.
+Repo state: `main` = `07a7ee8`, clean, pushed. Confirm with `git log --oneline -1`.
 
 ---
 
 ## Part 1 — Why this scope
 
-S3–S7 wrote 3,846 lines across 34 files with **zero tests of its own**. Verified mechanically: `git diff --name-only 11a08eb d748479 -- tests/` returns nothing at all.
+The owner reversed the platform: the product should be a native Android app, not a PWA.
+Four documents record the PWA as the plan, including the owner's own first commit
+(`293525f`), so the reversal is real and the code does not match it.
 
-So the code compiles, and every existing test predates it. Those tests assert S2-era read-only behaviour. Their passing proves S2 did not regress. It proves nothing about completion, undo, the review stack, calendar paging, the offline snapshot or the service worker.
+The owner chose **plan before code**. That is correct, because three blockers currently make
+a native client impossible without a design decision first:
 
-That gap was measurable. The moment the old suites were finally pointed at the new UI they produced six real defects — three accessibility name collisions, a panel that collapsed on every page change, and two mutation cases that could never fail. None were compile errors. All six had passed typecheck, lint, bundling and every test that existed.
+1. **No native auth path exists.** `apps/worker/src/auth.ts` accepts only a
+   `Cf-Access-Jwt-Assertion` header, which Cloudflare Access sets for a browser session. The
+   only other credential is `X-Collector-Key-Id` HMAC, scoped to one `source_id` and accepted
+   only on `/sync`. There is nothing a Kotlin app can present to reach `/tasks`.
+2. **The Origin gate blocks native writes.** `apps/worker/src/index.ts:716` rejects any
+   non-GET whose `Origin` header is not the Worker's own origin with `403 INVALID_ORIGIN`.
+   A native HTTP client sends no `Origin`.
+3. **Compose cannot build.** `app/build.gradle.kts` runs `verifyApi28`, which invokes
+   `K2JVMCompiler` directly with `-no-jdk` and no Compose plugin, so every `androidx.compose`
+   import fails there, and that task gates `assembleDebug`. Verified by probe: the plugin
+   resolves and the build reaches `assembleDebug`, then fails on 11 unresolved Compose
+   references inside `verifyApi28`.
 
-The eight areas below are where a wrong value stays invisible: undo races, cross-tab logout, cache state after purge, pending writes across reconnect. A fake pass there is worse than a known gap, because it retires the worry without removing the risk.
-
-Android identity and large-ledger pagination stay authorized and queued. Not cancelled.
+None of those is a coding problem. Each is a decision about security or build policy, and
+the plan has to make the decision and defend it.
 
 ---
 
 ## Part 2 — Paste this
 
 ```text
-You are the verification agent for Academic OS: a private, single-owner academic and
+You are the architecture agent for Academic OS, a private single-owner academic and
 organizational memory system. One user. No teams, no registration, no public personal-data
 endpoint.
 
-Your job this session is to find out what is actually true about the S3-S7 code and make the
-false parts false no longer — not to produce a green report, and not to add features.
+The owner has decided the product should be a native Android app, not a PWA. You are NOT
+writing application code this session. You are producing the migration plan that makes that
+decision executable, and you are expected to say where it cannot be.
 
 REPOSITORY
   https://github.com/fujimaruC/scaling-parakeet
   Branch: main
-  Code base: 1a9c8c781b3ac264ae9216cd8e86fae2f4c7af2b
-
-  Before writing code:
-    git log --oneline -15
-  Confirm that 1a9c8c7 is present, with the subject
-  "test: verify S3-S7 on the real suites and fix what they found".
-  Your HEAD may be newer than that commit, because this brief is itself a commit. That is
-  expected. If 1a9c8c7 is absent, STOP and say so.
-
-  The S3-S7 work is already merged into main. Do NOT re-apply any patch from an older
-  handoff zip; you would duplicate work that is already here.
+  Current commit: 07a7ee8
+  Verify: git log --oneline -1
 
 READ FIRST, IN THIS ORDER
   AGENTS.md
-  docs/16-OWNER-DECISIONS.md        owner's decisions outrank comments and other docs
-  docs/DECISIONS.md                 ADR-021/022/023 record what S3-S7 chose and why
-  docs/S3-S7-HANDOFF.md             the verification targets, in more detail
-  docs/STATUS.md                    what is claimed and what is disclaimed
-  docs/VERIFICATION-LOG.md          section 11 is the last run; do not overwrite it
-  docs/design/UI-DESIGN-AGENT.md    the S1-S7 slice contract
-  docs/02-DATA-MODEL.md  docs/10-API-CONTRACTS.md  docs/07-SECURITY-PRIVACY.md
-  docs/11-TEST-STRATEGY.md  docs/18-DEVELOPMENT.md
+  docs/DECISIONS.md                 ADR-006 auth, ADR-021 the design contract
+  docs/16-OWNER-DECISIONS.md        read the provenance warning at the top
+  docs/07-SECURITY-PRIVACY.md
+  docs/10-API-CONTRACTS.md
+  docs/02-DATA-MODEL.md
+  docs/14-ANDROID-COMPANION.md
+  docs/STATUS.md
+  docs/06-UI-UX.md
+  docs/design/UI-DESIGN-AGENT.md
+  apps/worker/src/auth.ts
+  apps/worker/src/index.ts         (routes, the Origin gate near line 716)
+  apps/android-companion/app/build.gradle.kts
+  apps/android-companion/app/src/main/java/id/academicos/companion/MainActivity.kt
 
-WHAT IS TRUE AT 1a9c8c7 — synthetic data only, Chromium only, no device
+WHAT EXISTS AND WORKS TODAY
 
-  npm run check                        exit 0 (prettier, tsc, Vitest, Vite build, Worker dry-run)
-  npm test                             25 passed, 3 files
-  npm run test:e2e                     12 passed, 3 files
-  scripts/check_s2_mutations.py        PASS: 22 declared faults; every baseline passed, every
-                                       broken version failed a real assertion, every restored
-                                       version passed. 0 survivors. 66/66 logs.
-  python unittest discover (collector) 34 tests OK
-  scripts/validate_planning.py         PASS: 3 schemas, 5 fixtures, 21 rejections, 84 links,
-                                       30 features, 34 test IDs
-  npm run test:pwa                     NOT run at this commit
-  Gradle assembleDebug/lint/unitTest   NOT run at this commit
+  apps/web           React 19 + TypeScript PWA, 3,891 lines across eight screens:
+                     Today, Tasks, Task detail, Review, Calendar, Settings, editor, sheets.
+                     Design system in apps/web/src/design and src/pixel, self-hosted fonts.
+  apps/worker        TypeScript Worker + D1, migrations 0001-0006.
+  collectors/local   Python, including a new ITK Moodle collector.
+  apps/android-companion  Kotlin, 381 lines total. It is a notification listener and encrypted
+                     queue. Its UI is a 63-line probe in MainActivity.kt using stock Android
+                     widgets and Theme.Material.Light.NoActionBar. It is NOT a task UI, and it
+                     installs, launches and runs on the owner's OPPO CPH2015 / Android 9.
 
-Reproduce these yourself. Do not inherit them as yours.
+  Verified on hardware 2026-11-07: install_ok, launch_stays_open, reopen_ok all true; the
+  installed APK hash matches the built one; no fatal exception in the observed window.
+  notification access is NOT granted, so the listener has never run and no capture has
+  ever occurred. That is a release gate, not something you can plan around.
 
-THE FACT THAT MAKES THIS SESSION WORTH DOING
+WORKER API — what a native client would have to speak
 
-S3-S7 shipped 3,846 lines across 34 files with zero tests of its own:
-  git diff --name-only 11a08eb d748479 -- tests/
-returns nothing. The only file it adds outside source is scripts/generate_pwa_icons.py,
-a build helper that is not a test.
+  Routes: /me /health /tasks /search /contexts /briefing /candidates /history /sources
+          /settings /settings/reminders /reminders /export /collector-credentials
+          /sync /sync/status /sync/device-actions /sync/purge-ack
 
-Every test in this repository predates that code. So "the suite is green" only means S2 did
-not regress. It says nothing about completion, undo, quick-add, the review stack, calendar
-paging, the offline snapshot or the service worker.
+  Tasks carry id, context_id, title, kind, description, status, priority, due_json,
+  due_at_utc, version, due_revision, mutation_id, timestamps, deleted_at.
+  Writes are optimistic-versioned: POST /tasks and PATCH-style updates require an
+  Idempotency-Key and compare versions. due_revision changes cancel reminder intents.
+  Date precision is inside due_json and must stay four distinct things: exact timestamp,
+  date-only, approximate, unknown. Unknown and approximate never acquire a deadline instant.
 
-Pointing those old suites at the new UI immediately produced six defects:
-  1. The Preferences save button was named "Save", colliding with the context form on the
-     same screen. Ambiguous to a user and to assistive technology.
-  2. The date precision select had no accessible name.
-  3. The QuickSheet task-type group borrowed the context label, so the group and the context
-     select were both announced as "Context".
-  4. Fixing 3 left the context select still colliding.
-  5. The Tools disclosure sat inside <main key={page}>, so every page change remounted it and
-     silently collapsed the panel mid-session.
-  6. Moved outside <main>, it lost the horizontal padding.
+THREE BLOCKERS — the plan must resolve each one explicitly
 
-None were compile errors. All six had passed typecheck, lint, bundling and every existing
-test. Assume that class of defect is still in there. Two of the 22 fault cases were also
-unsound — one an equivalent mutation that could never change behaviour, one aimed at a route
-that renders no toast — and both were repaired. A case that cannot fail is worse than no case,
-because it reads as coverage.
+  A. NO NATIVE AUTH PATH.
+     apps/worker/src/auth.ts accepts only the Cf-Access-Jwt-Assertion header that Cloudflare
+     Access sets for a browser. X-Collector-Key-Id is scoped to one source_id and accepted
+     only on /sync. Nothing a Kotlin app can send reaches /tasks.
+     Choose a design and defend it. Candidate approaches, none assumed correct:
+       - Owner-side long-lived device credential, hashed at rest in D1, revocable, scoped to
+         the same owner and not to a source. Requires new Worker auth and a new migration.
+       - OIDC device flow so the phone obtains a token as the owner. Requires an identity
+         provider and changes the deployment assumptions.
+       - Keep Access and have the phone open a browser once to capture the JWT, then store it.
+         Cheap, but consider token lifetime, revocation and what happens when it expires.
+     Whichever you choose, state what it protects, what it fails to protect, how it is
+     revoked, and what an attacker with the phone's storage can do. Do not invent an auth
+     scheme that trusts an arbitrary header.
 
-WHAT TO MAKE TRUE THIS SESSION
+  B. ORIGIN GATE.
+     index.ts rejects non-GET requests whose Origin is not the Worker origin. That guard
+     exists to stop cross-site writes from a browser. A native client has no Origin.
+     Decide: exempt authenticated non-browser clients, add a distinct authenticated route,
+     or something better. If you loosen this check, you must show what still prevents a
+     malicious web page from writing data. Do not delete the guard because it is in the way.
 
-You are not required to use my list. If you can prove the same guarantees a better way, do
-that and say why. The guarantees are what matter:
+  C. COMPOSE VERSUS verifyApi28.
+     Gradle compiles all Kotlin against android-28 stubs with -no-jdk, no stdlib and no
+     Compose plugin, and assembleDebug depends on it. Measured: adding the Compose plugin
+     and a trivial @Composable reaches assembleDebug, then fails with 11 unresolved references
+     inside verifyApi28: Column, Composable, Modifier, Text, dp, and six androidx.compose
+     imports.
+     Options: build the UI with plain Android Views and no dependency (already proven to
+     compile under this gate); make verifyApi28 Compose-aware; or narrow verifyApi28 to the
+     packages that actually need API-28 stub checking.
+     verifyApi28 exists because a real Android 9 defect once shipped: Queue did not
+     implement AutoCloseable, so use{} threw ClassCastException and the app crashed on
+     launch while every other check passed. Do not weaken it without replacing what it
+     catches.
 
-  A. Undo is safe under concurrency. A compensating undo cannot overwrite a later edit, cannot
-     resurrect a purged source, cannot be replayed twice into two effects, and cannot be
-     revived by restoring a backup. History is appended, never deleted. Inverse and audit data
-     are scrubbed when their source is purged, while event identity and time survive.
-  B. Writes converge. After any interruption — lost response, reload, retry, quota failure,
-     auth loss, second tab — the visible state is either the canonical state or an explicitly
-     pending one. Never a wrong value presented as settled, never a background write on
-     reconnect, never two tasks from one pending create.
-  C. Approval is never inferred. No keystroke, no date edit, no swipe, no default target
-     approves anything. A rejection without a chosen target records an audit and invents no
-     task association.
-  D. Absence is stated, not simulated. Unloaded, loading, unavailable, empty and partial are
-     five distinct states and the UI must not render one as another. This is the property most
-     likely to be quietly false, because "0 tasks" is a very plausible-looking lie.
-  E. Migration 0006 is correct on a disposable migrated D1, including owner, collector and
-     anonymous authorization, origin checks, CAS rollback and idempotency collisions.
-  F. The compiled PWA cannot leak or resurrect. Cache Storage holds public build-matched bytes
-     only — never API responses, Access-protected content, personal navigation or login HTML.
-     A purge or an authenticated generation change invalidates what it should. A saved pending
-     write is never sent by the service worker or by reconnect.
-  G. It works at 360px, at 200% text, in both themes, in Indonesian and English, by keyboard,
-     and with correct roles, names, targets and focus behaviour. Section 7 of the design
-     contract is a contract, not polish.
-  H. Every guarantee above that you can defend with a test, you also prove bites: revert the
-     fix, show the test fail, restore, show it pass, paste both.
+WHAT THE PLAN MUST CONTAIN
 
-For each guarantee you touch, say what it actually protects before you choose how to test it.
-Consider more than one approach. Correctness on the edge case beats elegance on the happy
-path — this system handles privacy boundaries, a phone that loses power mid-write, and a
-laptop switched off for days.
+  1. A decision on A, B and C, each with the alternative you rejected and why.
+  2. Screen-by-screen port scope. For each of Today, Tasks, Task detail, Review, Calendar,
+     Settings, editor and sheets: keep, redesign or drop. Say what is lost.
+  3. An honest size estimate. The React UI is 3,891 lines. State the expected Kotlin range
+     and mark it an estimate, not a promise.
+  4. The fate of the React PWA. Options include: deleted after native parity; kept local as a
+     laptop surface; kept as the deployment target. Pick one and give the consequence. Note
+     that the Worker serves the PWA as static assets from apps/web/dist today, so deleting it
+     changes what the Worker ships.
+  5. Ordering that keeps the app usable throughout. The owner must be able to open something
+     and act on it after each step, not only at the end.
+  6. What remains unverifiable without the owner's phone, stated as a list.
+  7. A one-page risk register: the three or four things most likely to make this fail, each
+     with the cheapest early test that would reveal it.
 
-Prefer the smallest design that fully proves the property. Do not cripple a test to keep it
-short, and do not build a harness for a need that does not exist.
+HOW TO THINK
 
-A passing suite proves nothing about behaviour. Three defects in this project were found only
-by real device testing after every automated check passed. A fourth was inside the evidence
-tool: it reported reopen_ok=false for a working app. A fifth made fatal_exception_observed
-permanently null because a logcat flag hid the tool's own START marker. A plausible-but-wrong
-value is worse than an absent one, and that is the specific failure this session exists to
-prevent.
+  The owner's target is a fully working, comfortable, secure app they can use daily. Comfort
+  and security are both requirements, not trade-offs to be resolved later by someone else.
 
-WHAT HAPPENED BEFORE YOU
+  Prefer the smallest change that makes the native app real. The three blockers are security
+  decisions, so take the conservative option unless you can show the other is equally safe.
 
-A previous agent ran locally on the owner's Linux machine against the tree that is now
-1a9c8c7. It applied the pending S3-S7 patch, ran the suites, found and fixed the six defects
-above, repaired the two unsound fault cases, then fast-forwarded main to 1a9c8c7 and pushed.
-Before that push, every line of S3-S7 existed only as an unpushed local branch — which is why
-this code was invisible for a while.
+  A passing test proves nothing about behaviour. Three defects in this project were found
+  only by real device testing after every automated check had passed, and two more were
+  inside the evidence tooling itself. Where you cannot verify something, write unverified.
 
-Environment it used: Node 24.22.1, npm 11.9.0, Python 3.12.14, JDK 17 at
-~/.local/opt/jdk-17.0.21+9, ANDROID_HOME=/home/riko/Android/Sdk with platforms 28 and 35 and
-build-tools 35.0.0, Gradle 8.11.1, Playwright Chromium headless shell 1248.
-Linux and Chromium only. No Safari, no Firefox, no real Android browser.
+  Do not invent APIs, versions or platform capabilities. If a decision depends on a Cloudflare
+  or Android behaviour you cannot confirm from the repo, say so and name what to check.
 
-Its mistakes, because they are your traps:
-  - It first reported "10,599 lines with zero tests". The zero-test claim was right; the line
-    count was wrong. 10,599 was the whole 6de38fd..d748479 delta including S2. S3-S7 alone is
-    3,846 insertions across 34 files. Check which commit range a number came from.
-  - `npm run lint` returned exit 2 with "JSON parse failed". That was an output-condensing
-    wrapper failing to parse ESLint output, not the linter. Through the wrapper's proxy the
-    same command returned exit 0. A tool that transforms output can manufacture a failure.
-  - It wrote a brief telling the next agent to expect exactly five commits with 1a9c8c7
-    newest. Committing the brief moved HEAD, so that check would fail on a correct tree. A
-    verification instruction must not assume it is the last commit.
-
-What it did NOT do, and you cannot either: no device test, no real account, no provider, no
-deployment, no notification access. `adb devices` returned zero devices on every check and the
-Academic OS package never appeared in `enabled_notification_listeners`. Every real-phone
-observation in this repository predates S3-S7 and belongs to an earlier build.
-
-HARD LIMITS — not negotiable, not open to reinterpretation
+HARD LIMITS
 
   One owner. No registration, no sharing, no public personal-data endpoint.
-  Raw notification text, chat exports, quotations, message bodies and raw-content hashes never
-  leave Android/Linux. Not to the Worker, D1, public assets, cloud object storage, crash
-  reports or cloud backups. Raw export files stay exclusively on Linux.
-  Every AI-derived task requires explicit owner approval before any canonical mutation. A
-  model's needs_review field cannot override that.
-  Never weaken an approval, privacy or dual-ingestion rule to make a test pass. If a test only
-  passes because a guard was loosened, the test is wrong and you say so.
-  No new dependency. If one seems unavoidable, stop and ask instead of adding it.
-  Do not push to GitHub, deploy, or provision any paid service.
-  Never claim a device, account, network or push test passed. You have no device and no
-  account. That is a boundary on what you may claim, not a blocker on your work.
-  Never convert an unverified field into a verified one by assertion.
+  Raw notification text, chat exports, quotations and raw-content hashes never leave
+  Android/Linux. Not to the Worker, D1, public assets, cloud object storage, crash reports
+  or cloud backups.
+  Every AI-derived task needs explicit owner approval before any canonical mutation.
+  Never weaken an approval, privacy or dual-ingestion rule to make a plan tidier.
+  No new dependency in this session. If the plan requires one, name it and justify it, but do
+  not add it.
+  Do not push, deploy or provision anything.
 
-NOT THIS SESSION
+DELIVERABLE
 
-  Android launcher icon, localized native strings, native theme, native accessibility.
-  Server-side pagination beyond making existing bounded paging honest.
-  Any new product surface, any dependency, any real account, provider or deployment.
-  These are authorized and outstanding. Do not half-do them here.
+  One document, docs/PLAN-NATIVE.md, and no other changes. It must be readable by an owner
+  who is not a Kotlin developer: short sentences, decisions first, alternatives after.
 
-ACCEPTANCE — run these and paste real output, not your summary of it
+REPORT
 
-  npm ci
-  npm run check
-  npm run test:e2e
-  npm run test:pwa
-  .venv/bin/python scripts/validate_planning.py
-  .venv/bin/python -m unittest discover -s collectors/local/tests -v
-  .venv/bin/python scripts/check_s2_mutations.py --output-dir <outside the checkout>
-  cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
+  State the three decisions plainly at the top. Then list every assumption you could not
+  verify, and every question the owner must answer before implementation starts.
 
-  Android needs JDK 17, build-tools 35.0.0 and platforms 28 and 35; verifyApi28 requires
-  android-28. The last Gradle lint run, at the S2 slice and NOT at this commit, reported
-  0 errors and 4 warnings. Treat that as the bar: do not exceed it, and report the number
-  your own run prints. If something is missing, install it and state exactly what you did.
-
-  For any guarantee you add, show the test failing with the fix reverted and passing with it in
-  place. Two outputs, not one claim.
-
-REPORTING
-
-  Paste command output, not paraphrase. Counts are whatever your run printed.
-  Write "unverified" where something is unverified. If blocked, write BLOCKED and name the
-  exact missing observation. If you chose one approach over another, say why in a line or two.
-  If you find a defect, report it rather than quietly working around it.
-  "Looks fine" is not evidence. A screenshot is not an accessibility audit.
-
-UPDATE THESE FILES
-
-  docs/VERIFICATION-LOG.md   add a new numbered section with what you ran and its real outcome
-  docs/STATUS.md             make the gate language match what you actually observed
-  docs/06-UI-UX.md           only if the screen contract changed
-  docs/DECISIONS.md          add an ADR for any decision this session forces
-
-  Do not mark a milestone complete. Do not close a release gate without the observation that
-  closes it. Do not edit VERIFICATION-LOG section 11; it records a different run.
-
-DELIVERABLE — one zip
-
-  Academic-OS-System-<short sha>.zip containing:
-    source/                 full working tree
-    academic-os.patch       git am --3way compatible against 1a9c8c7
-    APPLY.md                base commit, what changed, why, what you could not verify
-
-  Keep source/ and the patch consistent; we apply the patch and diff it against source/ as a
-  cross-check. If APPLY.md states a test or fault count, the shipped scripts must reproduce
-  that exact number. Earlier packages claimed more than their scripts contained. That is the
-  specific failure to avoid.
-
-STOP AND REPORT WHEN DONE
-
-Do not begin Android identity work. Do not begin pagination work. Finish, report what is now
-proven and what is still not, and stop.
+DO NOT
+  Write application code. Do not modify the Worker, the PWA or the Android module. Do not
+  mark any milestone complete. Do not claim device, account or provider verification.
 ```
