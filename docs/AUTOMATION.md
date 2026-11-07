@@ -17,8 +17,8 @@ A session-only scheduled job checks every 30 minutes at `:13` and `:43`. Each ru
 
 - First run records the current zips and `origin/main` silently. Existing archives never trigger an alert.
 - A zip is identified by `basename:size`. A re-download of the same name at a different size counts as new.
-- A new commit is compared against the last seen `origin/main` hash. Commits authored by Claude are ignored, because those are our own pushes rather than inbound work.
-- It runs from a clean environment (`env -i`) with only `/usr/bin` and `/bin` on `PATH`, so it does not depend on the interactive shell.
+- A new commit is compared against the last seen `origin/main` hash. A range whose tip is authored by Claude is treated as our own push and recorded silently, because the cloud agent never authors as Claude. Filtering merely per-commit is not enough: one of our pushes also carries older non-Claude commits that are new only to this watcher, and reporting those reads as an inbound delivery. `scripts/test_aos_watch.sh` proves all three cases.
+- It needs only `bash`, `git` and the coreutils in `basename`, `stat`, `sed`, `grep`, `printf`. Nothing sources an interactive shell profile, so it behaves the same from the scheduler as from a terminal. There is no `env -i` wrapper; do not claim one.
 
 Verified behaviour: silent baseline, `NOOP` when quiet, `NEW:` on a simulated arrival, `NOOP` again after the arrival is recorded.
 
