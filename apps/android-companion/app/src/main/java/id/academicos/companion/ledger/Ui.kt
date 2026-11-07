@@ -38,6 +38,11 @@ class Ui(val activity:Activity) {
     fun column(padding:Int=12)=LinearLayout(activity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(padding),dp(padding),dp(padding),dp(padding));layoutParams=ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT)}
     fun row()=LinearLayout(activity).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;layoutParams=ViewGroup.LayoutParams(-1,-2)}
     fun border(fill:Int=card,stroke:Int=ink)=GradientDrawable().apply{setColor(fill);setStroke(dp(2),stroke)}
+    fun calendarBorder(selected:Boolean,today:Boolean):StateListDrawable {
+        val fill=if(selected)accent else card
+        val focus=border(fill,if(selected)onAccent else accent).apply{setStroke(dp(3),if(selected)onAccent else accent)}
+        return StateListDrawable().apply{addState(intArrayOf(android.R.attr.state_focused),focus);addState(intArrayOf(),border(fill,if(today&&!selected)accent else ink))}
+    }
     fun focusBorder()=StateListDrawable().apply{addState(intArrayOf(android.R.attr.state_focused),border(card,accent));addState(intArrayOf(),border())}
     fun box():AccessibleBox=AccessibleBox(activity).apply{
         orientation=LinearLayout.VERTICAL;layoutParams=ViewGroup.LayoutParams(-1,-2)

@@ -125,3 +125,39 @@ refer only to approved structured requests, never raw messages. New inverse
 storage is not exported. The new journal applies to S3 task writes, review/Undo,
 settings timezone and purge. Existing utility context/source creation and reminder
 controls retain their prior flows; do not claim a new universal offline outbox.
+
+## Native owner namespace — migration 0007
+
+`/api/device/v1/*` authenticates a per-install opaque owner bearer. It rejects
+**any** Origin header, Cookie, Access assertion or collector-key header. Missing,
+expired, revoked, wrong-owner or wrong-scope credentials reveal no personal data.
+The browser `/api/v1/*` retains verified Access and the existing same-origin write
+guard; neither missing Origin nor a User-Agent is an authentication mechanism.
+
+- Browser-only `GET /api/v1/owner-devices`, `POST .../owner-devices/grants`,
+  `POST .../owner-devices/{id}/activate` and `POST .../{id}/revoke` administer
+  installations. `/owner-devices` is the protected recovery page. Activation
+  requires the full matching fingerprint, not grant possession alone.
+- Native `POST /api/device/v1/enroll` accepts exactly `client_id`, `grant` and
+  `secret`, with a 4 KiB body bound. Grant lifetime is five minutes; enrollment
+  is bounded to 40 requests/minute globally and eight failed attempts per grant.
+  Grant consumption plus pending-client creation is one guarded transaction.
+  Identical retries recover the pending receipt; another secret cannot reuse it.
+- `GET .../enrollment` is the pending/active status check. Pending installations
+  cannot read tasks. Activation starts a 90-day credential lifetime. Auth uses
+  primary D1 reads and no positive authorization cache.
+- `DELETE .../session` revokes only the calling install. Daily routes are
+  explicitly allowlisted by path/method in `device-auth.ts`. Source ingestion,
+  collector credential minting and owner-device administration are excluded.
+- Canonical route handlers are shared. `due` is the wire field, not `due_json`.
+  Existing CAS, idempotency, approval, reminder revisions and purge remain in
+  force. Context/source creation and reminder-policy writes now also support
+  durable idempotency receipts; legacy browser calls remain compatible.
+- A committed snooze receipt is replayed before checking whether its requested
+  time has passed. A lost acknowledgment must not turn a committed action into
+  an apparent validation failure after a long offline interval.
+
+The token and grant tables contain random-secret hashes only and are excluded
+from canonical export/backup allowlists. No raw content or message hash is added
+to these protocols. Production Access path isolation, aliases, quotas and actual
+D1 migration application remain account gates. See NATIVE-OWNER-RUN.

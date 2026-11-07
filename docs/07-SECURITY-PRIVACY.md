@@ -49,3 +49,30 @@ Source purge revokes generation and credentials, withdraws unsupported proposals
 ## Required adversarial tests
 
 Anonymous/forged identity, owner acting as collector, collector reading tasks, device reading cloud, nonce replay, same key/different body, oversize payload, stale generation, malicious source HTML, model instruction injection, invalid evidence, provider consent change, raw-text sink scan, Android backup restore, interrupted receipt ack, lost phone credential and purge with offline device. No real chats before these gates pass with synthetic data.
+
+## Native owner credential boundary — 2026-11-08
+
+The accepted PLAN-NATIVE design is implemented in migration 0007 and the
+separate `/api/device/v1/*` authenticator. The install credential has owner daily
+scope, expiry, activation and revocation. It is not a collector key and never
+confers authority to enroll other devices. The browser Origin guard is retained.
+Origin-bearing or mixed-authority native requests fail closed.
+
+Android task credentials, structured observations, drafts and immutable online
+request journals use a separate Keystore AES-GCM alias and SQLite database.
+They do not reuse raw queue/pairing keys. Missing task-store keys over ciphertext
+require visible repair and an explicit ledger-only wipe. Task logout/denial
+clears private ledger state without wiping capture data. A non-content boolean
+retains an uncertain-send warning when auth loss requires deleting its journal.
+No receipt is invented on timeout and no reconnect sends a mutation by itself.
+
+This does not protect an unlocked/compromised live process or prove hardware-
+backed key storage. Offline revocation cannot erase an offline snapshot. Device
+key invalidation, abrupt power loss, OEM backups and all capture behavior remain
+unverified. FLAG_SECURE, disabled backups and HTTPS-only release configuration
+are implemented controls, not a device-test result.
+
+Cloud source data remains structured-only. Credential hashes identify random
+secrets, never message content. Authentication tables are excluded from canonical
+exports/backups. External AI still requires explicit configured provider/privacy
+consent on Linux; every derived canonical mutation still requires owner approval.

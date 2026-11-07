@@ -93,7 +93,7 @@ class NativeRepository private constructor(context:Context) {
         val out=try{get(path)}catch(t:Exception){Observation(null,LoadState.UNAVAILABLE,code=(t as? ApiFailure)?.code?:"REQUEST_FAILED")}
         main.post{if(e==epoch.get()||credentials==null)done(out)}
     }}
-    fun boundary(done:(String?)->Unit){val e=epoch.get();executor.execute{
+    fun boundary(done:(String?)->Unit){boundaryChecked=false;val e=epoch.get();executor.execute{
         var code:String?=null
         try {
             if(!online())throw ApiFailure(0,"NETWORK_UNAVAILABLE")

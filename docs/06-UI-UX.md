@@ -156,3 +156,27 @@ contains only public hash-matched shell/fonts/icons; API data is never cached by
 the service worker. Motion/haptics are optional and reduced-motion is respected.
 No test, visual baseline, accessibility audit or device validation was run for
 this continuation. See S3-S7-HANDOFF before treating any behavior as verified.
+
+## Native Android implementation contract — 2026-11-08
+
+The owner now selects native Android as the primary daily surface, per
+PLAN-NATIVE and BRIEF-ASTRA. The React PWA remains deployed until native parity
+and owner acceptance, and is not deleted by this implementation. This supersedes
+older statements that the task UI must remain browser-only.
+
+Platform Views retain the pixel-paper palette, licensed local fonts, four tabs,
+Today/Tasks/detail/Review/Calendar/Settings, the full editor and quick/date/proposal
+panels. Native targets are at least 48dp and text uses sp. ID/EN, explicit themes,
+keyboard focus, labels and reduced/no-motion behavior are implemented. Physical
+200% layout, TalkBack and visual acceptance remain unverified.
+
+Approval is an explicit native button followed by confirmation. Swipe, keypress,
+date edit, local draft save and an inferred/default conflict target never approve
+or reject. This intentionally overrides the old web prototype's committing swipe
+mechanism. Conflict targets require explicit selection and version checking.
+
+Dialogs replace web bottom-sheet geometry. Feedback scrolls at large text sizes.
+Offline views identify cached observation times; missing observations are not
+empty lists. Retained online requests require explicit immutable same-key retry.
+Native enrollment and Capture remain separate; task logout/repair never wipes raw
+capture data or pairing. Follow NATIVE-OWNER-RUN for owner acceptance.

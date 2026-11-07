@@ -74,7 +74,7 @@ class MainActivity:Activity() {
     fun refresh(){if(repo.busy)return;notice=null;val ticket=++generation
         repo.boundary{code->if(isDestroyed||ticket!=generation)return@boundary;notice=code;observations.clear();loadCommon();loadScreen();render()}
     }
-    private fun loadCommon(){fetch("/contexts"){o->if(o.data is JSONArray)contexts=o.data as JSONArray};fetch("/settings"){o->if(o.data is JSONObject)preferences=o.data as JSONObject}}
+    private fun loadCommon(){fetch("/contexts"){o->if(o.data is JSONArray)contexts=o.data as JSONArray};fetch("/settings"){o->val previous=zone;if(o.data is JSONObject)preferences=o.data as JSONObject;if(page=="calendar"&&zone!=previous)fetch(calendarPath())}}
     fun fetch(path:String,done:((Observation)->Unit)?=null){
         val ticket=generation;observations[path]=Observation(observations[path]?.envelope,LoadState.LOADING)
         repo.read(path){out->if(isDestroyed||ticket!=generation)return@read;observations[path]=out;done?.invoke(out);render()}
@@ -147,7 +147,7 @@ class MainActivity:Activity() {
         root=ui.column(0);root.setBackgroundColor(ui.bg)
         val header=ui.row();header.setPadding(ui.dp(12),ui.dp(8),ui.dp(12),ui.dp(4))
         header.addView(ui.icon("back"){onBackPressed()})
-        header.addView(ui.text("Academic OS",24f,true).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
+        header.addView(ui.text(ui.t("app_name"),24f,true).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
         header.addView(ui.icon("settings"){navigate("settings")})
         root.addView(header)
         list=ListView(this).apply{divider=null;setPadding(ui.dp(12),0,ui.dp(12),ui.dp(12));clipToPadding=false;isSaveEnabled=false;descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS}

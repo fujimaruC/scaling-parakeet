@@ -56,8 +56,9 @@ class NativeScreens(private val a:MainActivity) {
         title("today");val briefing=status("/briefing").data as? JSONObject
         briefing?.let{b->val counts=b.getJSONObject("counts");note(u.t("review")+": "+b.getInt("pending")+" · "+u.t("undated")+": "+counts.optInt("no_date"));if(b.getInt("pending")>0)action("review"){a.navigate("review")}}
         val path=a.taskPath();val obs=status(path)
-        if(a.preferences==null){note(u.t("timezone")+" · "+u.t("unavailable"));return}
+        if(a.preferences==null){note(u.t("timezone")+" · "+u.t("unavailable"));action("undated"){a.navigate("tasks");a.navigation.put("group","undated");a.persist();a.render()};return}
         val today=LocalDate.now(ZoneId.of(a.zone));val tasks=parsed(path).filter{it.status!="archived"}.sortedBy{it.sortKey(a.zone)}
+        if(obs.envelope!=null){note(u.t("due_today")+": "+tasks.count{it.status!="done"&&it.day(a.zone)==today}+" · "+u.t("loaded"));note(u.t("week")+": "+tasks.count{it.status!="done"&&it.group(today,a.zone)=="week"}+" · "+u.t("loaded"))}
         title("due_today");val due=tasks.filter{it.day(a.zone)?.let{day->day<=today&&(it.status!="done"||day==today)}==true}.sortedWith(compareBy<Task>{it.status=="done"}.thenBy{it.sortKey(a.zone)});if(due.isEmpty()&&obs.envelope!=null&&obs.state in listOf(LoadState.READY,LoadState.EMPTY))note(u.t("no_today"))
         for(t in due){rows.add(Row{
             val box=u.box();box.addView(u.button(t.title,action={a.navigate("detail",t.id)}).apply{typeface=u.body;textSize=20f});box.addView(u.message(context(t)+" · "+t.due.label(u.locale,u.id)))
@@ -81,9 +82,9 @@ class NativeScreens(private val a:MainActivity) {
             val q=u.field(box,"search",a.navigation.optString("query_draft",a.navigation.optString("query")));bind(q,"query_draft");box.addView(u.button(u.t("search_action")){a.navigation.put("query",q.text.toString().take(200));a.persist();a.fetch(a.taskPath());a.render()});box
         })
         val path=a.taskPath();status(path);if(a.preferences==null){note(u.t("timezone")+" · "+u.t("unavailable"));return}
-        val tasks=parsed(path).filter{it.status!="archived"}.sortedBy{it.sortKey(a.zone)};val today=LocalDate.now(ZoneId.of(a.zone))
+        val tasks=parsed(path).filter{it.status!="archived"||it.due.precision in listOf("unknown","approximate")}.sortedBy{it.sortKey(a.zone)};val today=LocalDate.now(ZoneId.of(a.zone))
         for(key in listOf("today","week","later","undated","done")){val group=tasks.filter{it.group(today,a.zone)==key};if(group.isNotEmpty()){title(key);group.forEach{task(it,path)}}}
-        val archived=parsed(path).filter{it.status=="archived"};if(archived.isNotEmpty()){title("archived");archived.forEach{task(it,path)}}
+        val archived=parsed(path).filter{it.status=="archived"&&it.due.precision !in listOf("unknown","approximate")}.sortedBy{it.sortKey(a.zone)};if(archived.isNotEmpty()){title("archived");archived.forEach{task(it,path)}}
         more(path);action("add",a.writable){a.forms.quick()}
     }
     private fun detail(){
@@ -175,7 +176,13 @@ class NativeScreens(private val a:MainActivity) {
             val offset=month.dayOfWeek.value-1;var line=u.row();repeat(offset){line.addView(View(a),LinearLayout.LayoutParams(u.dp(48),u.dp(48)))}
             for(number in 1..month.lengthOfMonth()){
                 val day=month.withDayOfMonth(number);val found=tasks.filter{it.day(a.zone)==day&&it.status!="archived"};val label=day.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy",u.locale))+" · "+if(o.envelope==null)u.t("unavailable")else "${found.size} "+u.t("tasks")+" · "+found.map{context(it)}.distinct().joinToString(", ")+(if(o.cursor!=null)" · "+u.t("loaded")else"")
-                val button=u.button(number.toString()+if(found.any{it.status!="done"})"\n▪" else "",action={a.navigation.put("day",day.toString());a.persist();a.render()}).apply{contentDescription=label+(if(day==today)" · "+u.t("today")else"");isSelected=day==selected;if(day==selected){setTextColor(u.onAccent);background=u.border(u.accent)}else if(day==today)background=u.border(u.card,u.accent);textSize=16f;setPadding(0,u.dp(4),0,u.dp(4));layoutParams=LinearLayout.LayoutParams(u.dp(48),-2)}
+                val button=u.button(number.toString(),action={a.navigation.put("day",day.toString());a.persist();a.render()}).apply{contentDescription=label+(if(day==today)" · "+u.t("today")else"");isSelected=day==selected;if(day==selected)setTextColor(u.onAccent);background=u.calendarBorder(day==selected,day==today);textSize=16f;setPadding(0,u.dp(4),0,u.dp(4));layoutParams=LinearLayout.LayoutParams(u.dp(48),-2)}
+                val types=found.filter{it.status!="done"}.map{t->a.contexts.objects().find{it.optString("id")==t.context}?.optString("type")?:"personal"}.distinct().take(3)
+                if(types.isNotEmpty()){
+                    val bitmap=android.graphics.Bitmap.createBitmap(types.size*6,4,android.graphics.Bitmap.Config.ARGB_8888)
+                    types.forEachIndexed{index,type->val color=if(day==selected)u.onAccent else when(type){"academic"->u.accent;"organization"->Color.parseColor(if(u.dark)"#b98bff"else"#8a4fd6");else->u.muted};repeat(4){y->repeat(4){x->bitmap.setPixel(index*6+x,y,color)}}}
+                    val dots=android.graphics.drawable.BitmapDrawable(a.resources,bitmap).apply{isFilterBitmap=false;setBounds(0,0,u.dp(types.size*6),u.dp(4))};button.setCompoundDrawables(null,null,null,dots)
+                }
                 line.addView(button);if((offset+number)%7==0){grid.addView(line);line=u.row()}
             };if(line.childCount>0)grid.addView(line);horizontal.addView(grid);horizontal
         })

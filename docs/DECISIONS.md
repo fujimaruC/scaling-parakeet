@@ -243,3 +243,24 @@ Motion, optional haptics, native buttons/modals, readable accept/reject text,
 keyboard equivalents, labels and reduced-motion rules are implementation work.
 They are not accessibility, visual-regression, browser or hardware evidence.
 All behavioral validation is delegated and NOT RUN here. No milestone complete.
+
+## ADR-024 — Implement accepted native A/B/C without retiring the PWA
+
+2026-11-08. Implements the owner's accepted PLAN-NATIVE and BRIEF-ASTRA on base
+6bbfa26. Per-install expiring/revocable owner authority (0007), an Origin-rejecting
+native namespace, and platform Views are retained. No new dependency or identity
+provider is added. Canonical Worker handlers remain shared with the PWA.
+
+The standalone API-28 compiler needed the generated application R constants once
+UI resources existed. Its classpath now adds only that R.jar, and it depends on
+resource generation. API-28 stubs, no-host-JDK flags, full-source coverage and
+assemble/lint prerequisites remain. An inventory assertion rejects production
+Kotlin outside the checked source tree. Narrowing the check was rejected.
+
+Native review uses an explicit button and confirmation. Swipes reveal guidance;
+keystrokes, date edits and draft saves do not approve/reject. This follows the
+latest owner constraint rather than the old prototype's committing swipe. Local
+request recovery uses immutable same-key retries and a transactional receipt plus
+form/journal invalidation; reconnect only reads. The PWA remains until real native
+parity and owner acceptance. Account path isolation and phone acceptance are
+unverified gates, not waived by this implementation.
