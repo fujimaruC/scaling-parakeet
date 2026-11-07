@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-07 · Asia/Makassar. S3–S7 implementation/build handoff; all behavioral verification delegated. Full MVP is not complete.**
+**2026-11-08 · Asia/Makassar. Native Android implementation handoff, base 6bbfa26. All eight surfaces are implemented; phone/account behavior and release parity are unverified. The PWA remains. No milestone is complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -59,13 +59,13 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 ## Remaining implementation and release gates
 
-1. Re-run crash-window observation on hardware after the S2 `-T 1` fix; latest hardware §8 reports fatal_exception_observed=null, not a verified clean window. Then run the full actual Android 9 lifecycle/low-RAM/metadata/filter/queue/restart/retention/interrupted-ack matrix. The evidence collector now runs on hardware and reports install_ok, apk_sha256, source_commit and fatal_exception_observed (cross-checked independently, see [VERIFICATION-LOG](VERIFICATION-LOG.md) §7), but notification access is still not granted, so **no listener event has ever been received** and the matrix itself has produced no verdict. Test native HTTPS pin rejection, private overlay/VPN coexistence, remote recovery and platform background retry. Compiler/lint and synthetic Linux HTTPS tests do not prove phone behavior.
-2. Configure the owner's private network and receiver locally. No VPN vendor/account choice or real peer pairing is claimed. Finish release UI, localized native resources, launcher icon and signed release packaging.
+1. The owner's latest recorded smoke (VERIFICATION-LOG §12) was the earlier build d748479 on OPPO CPH2015/API 28: install/launch/reopen true and no app fatal exception observed in that window. It is not evidence for the new native task APK. Run the one-minute DEVICE-SMOKE on this APK first, then the full actual-device lifecycle/metadata/filter/queue/restart/retention/interrupted-ack matrix. Notification access remains last recorded false; **no listener event or capture has ever occurred**. Native HTTPS/private pin rejection, pairing, power loss and platform background behavior are still unverified.
+2. Configure the owner's private network/receiver locally. No VPN/vendor/account choice or real peer pairing is claimed. Native task UI, localized resources, launcher icon and themes are implemented; signed update continuity, visual acceptance, real 200% layout, TalkBack and release packaging still require owner observations. Do not uninstall a signature-mismatched APK and lose a queue; rebuild with the existing local signing identity.
 3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
 4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
-5. S3–S7 web implementation now adds real versioned task writes, manual retry journal, review stack/conflicts/compensating Undo, bounded calendar and server context/title queries, settings/purge, offline observations, public PWA shell/icons and motion/haptics. The owner reserved ALL tests for another agent: behavior, large-ledger pagination, translations, accessibility/keyboard/screen-reader audit, visual acceptance and device installation/update remain unverified. This is a compiled implementation handoff, not a passed release gate.
-6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions and PWA status polling/pagination. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
-7. Verify owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
+5. Native Today, Tasks, detail, Review, Calendar, Settings, full editor and quick/date/proposal panels now use the real shared Worker handlers. Completion/add/edit/delete, explicit review/Undo, immutable online-request recovery, encrypted observations/drafts, source status and export are implemented. Local API/policy/compiler/browser results are in NATIVE-CHECKS and VERIFICATION-LOG §13. Native behavior, large-ledger performance, accessibility and owner acceptance remain unverified. Keep the PWA until native parity and owner acceptance; a passing browser suite is not a native UI test.
+6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
+7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
 8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
@@ -288,3 +288,67 @@ granted, no listener event has ever been received, so capture, filtering, queue
 durability, retention, restart survival and interrupted-ack recovery remain
 unverified. A debug APK was built and installed for this run. Full record:
 [VERIFICATION-LOG](VERIFICATION-LOG.md) section 12.
+
+
+## Native implementation — base 6bbfa26, 2026-11-08
+
+Fresh main clone verified `6bbfa26 docs: add the native migration plan and the
+implementation brief`. Work is on build/native-android. A workspace restart
+removed the first local build directory. The durable INPROGRESS checkpoint was
+restored, subsequent fixes reconstructed, and checks rerun. Only retained outputs
+for this recovered tree are counted below. No push, deployment, paid provision,
+real data, account, provider or device test was performed.
+
+Implements the accepted A/B/C: migration 0007 with expiring/revocable hashed
+per-install credentials; pending enrollment plus explicit full-fingerprint
+activation; `/api/device/v1/*` with no Origin/ambient credentials and an explicit
+route/method allowlist; unchanged browser same-origin guard; shared canonical
+handlers; platform Views and no new dependency. The generated app R.jar was
+required by the standalone API-28 compiler. Its API-28 stubs/no-JDK flags and
+all-source coverage remain, with an added source-inventory assertion.
+
+All eight native surfaces and Capture entry are reachable in the implementation.
+The separate task store encrypts credentials, observations, drafts and immutable
+request journals. A durable receipt atomically removes journal/editing form and
+invalidates views. Reconnect only reads; retries are explicit and use the same
+body/version/key. Auth loss retains a non-content uncertainty warning before
+clearing sensitive ledger data. Raw queue, transport, capture service and their
+keys are preserved. No notification access is granted by enrollment.
+
+Do not silently reverse: explicit confirm-button approval, no swipe/key/date/draft
+approval; four precisions, including completed unknown/approximate tasks in
+Tanpa tanggal; owner-clock countdowns are estimates; stale generations and CAS
+remain server-authoritative; missing encryption key over ciphertext requires
+owner repair; no assumed success on timeout; no automatic reconnect write;
+queued/delivered/applied/expired/retired-unconfirmed are different; no credential
+metadata in canonical backups/exports; PWA retirement requires owner acceptance.
+
+Code contact findings: original context/source creation and reminder-policy
+updates lacked recoverable receipts, so shared handlers gained idempotency
+support. Existing snooze validation rejected a committed retry once its requested
+time passed; receipt replay now precedes temporal validation. Native draft and
+journal cleanup share a transaction to avoid duplicate quick-add after process
+death. Native committing swipes from the old web prototype were deliberately
+replaced by guidance plus explicit approval confirmation, per the latest brief.
+
+Actual commands/output, toolchain setup, failures and final outcomes are in
+[NATIVE-CHECKS](NATIVE-CHECKS.md) and [VERIFICATION-LOG](VERIFICATION-LOG.md) §13.
+Follow [NATIVE-OWNER-RUN](NATIVE-OWNER-RUN.md) for signing, account enrollment and
+all eight owner acceptance paths. M0 remains PARTIAL/BLOCKED; no milestone is
+complete. Actual capture, phone storage/Keystore, runtime recovery, private
+network, account/provider/push and native accessibility remain unverified.
+
+Retained local outcomes for this native handoff: `npm ci --ignore-scripts` exit0;
+`npm run check` exit0 with36 Vitest; `npm run test:e2e` exit0 with12 PWA tests;
+`npm run test:pwa` exit0 with1 PWA offline test; `.venv/bin/python -m unittest
+discover -s collectors/local/tests -v` exit0 with40; `.venv/bin/python
+scripts/validate_planning.py` exit0 (planning only); `.venv/bin/python
+scripts/check_placeholders.py` exit0. `./gradlew clean assembleDebug lint
+testDebugUnitTest verifyApi28` with the explicit Java properties in §13 exits0
+in43s on isolated code d2f24e4; lint0errors/2existing warnings, 6QueuePrivacy and
+5NativePolicy standalone JVM cases. The shipped native mutation script exits0
+with10 intended failures and10 restored passes. Actual complete outputs ship in
+docs/native-checks. Node24.22.1/npm11.9.0/Python3.12.14/OpenJDK17.0.20;
+Gradle8.11.1/Kotlin2.1.21/AGP8.9.2; SDK platforms28/35 and build-tools35.0.0.
+These are local/synthetic results. All native runtime/device/account gates above
+remain unverified; none is silently converted to complete.

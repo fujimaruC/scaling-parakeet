@@ -1,0 +1,46 @@
+# Actual native-check outputs
+
+All data are synthetic. No device/account result is implied.
+
+- [npm-ci.txt](npm-ci.txt)
+- [npm-check.txt](npm-check.txt)
+- [native-worker.txt](native-worker.txt)
+- [e2e.txt](e2e.txt)
+- [pwa.txt](pwa.txt)
+- [python-tests.txt](python-tests.txt)
+- [mutations-summary.txt](mutations-summary.txt)
+- [adb-inventory.txt](adb-inventory.txt)
+- [placeholders.txt](placeholders.txt)
+- [android-recovered.txt](android-recovered.txt)
+- [android-final.txt](android-final.txt)
+- [android-verified.txt](android-verified.txt)
+- [android-lint.txt](android-lint.txt)
+
+## Broken and restored fault runs
+
+- [device-pending-authority-baseline.log](mutations/device-pending-authority-baseline.log)
+- [device-pending-authority-broken.log](mutations/device-pending-authority-broken.log)
+- [device-pending-authority-restored.log](mutations/device-pending-authority-restored.log)
+- [device-scope-bypass-broken.log](mutations/device-scope-bypass-broken.log)
+- [device-scope-bypass-restored.log](mutations/device-scope-bypass-restored.log)
+- [native-discard-uncertain-request-broken.log](mutations/native-discard-uncertain-request-broken.log)
+- [native-discard-uncertain-request-restored.log](mutations/native-discard-uncertain-request-restored.log)
+- [native-host-jdk-broken.log](mutations/native-host-jdk-broken.log)
+- [native-host-jdk-restored.log](mutations/native-host-jdk-restored.log)
+- [native-inherited-autocloseable-baseline.log](mutations/native-inherited-autocloseable-baseline.log)
+- [native-inherited-autocloseable-broken.log](mutations/native-inherited-autocloseable-broken.log)
+- [native-inherited-autocloseable-restored.log](mutations/native-inherited-autocloseable-restored.log)
+- [native-newer-android-broken.log](mutations/native-newer-android-broken.log)
+- [native-newer-android-restored.log](mutations/native-newer-android-restored.log)
+- [native-precision-collapse-baseline.log](mutations/native-precision-collapse-baseline.log)
+- [native-precision-collapse-broken.log](mutations/native-precision-collapse-broken.log)
+- [native-precision-collapse-restored.log](mutations/native-precision-collapse-restored.log)
+- [native-unavailable-is-empty-broken.log](mutations/native-unavailable-is-empty-broken.log)
+- [native-unavailable-is-empty-restored.log](mutations/native-unavailable-is-empty-restored.log)
+- [native-undated-done-broken.log](mutations/native-undated-done-broken.log)
+- [native-undated-done-restored.log](mutations/native-undated-done-restored.log)
+- [snooze-expired-receipt-broken.log](mutations/snooze-expired-receipt-broken.log)
+- [snooze-expired-receipt-restored.log](mutations/snooze-expired-receipt-restored.log)
+
+- [planning.txt](planning.txt)
+- [placeholders-final.txt](placeholders-final.txt)

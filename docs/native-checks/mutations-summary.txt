@@ -1,0 +1,24 @@
+native-inherited-autocloseable-baseline: exit 0
+native-inherited-autocloseable-broken: exit 1
+native-inherited-autocloseable-restored: exit 0
+native-newer-android-broken: exit 1
+native-newer-android-restored: exit 0
+native-host-jdk-broken: exit 1
+native-host-jdk-restored: exit 0
+native-precision-collapse-baseline: exit 0
+native-precision-collapse-broken: exit 1
+native-precision-collapse-restored: exit 0
+native-undated-done-broken: exit 1
+native-undated-done-restored: exit 0
+native-discard-uncertain-request-broken: exit 1
+native-discard-uncertain-request-restored: exit 0
+native-unavailable-is-empty-broken: exit 1
+native-unavailable-is-empty-restored: exit 0
+device-pending-authority-baseline: exit 0
+device-pending-authority-broken: exit 1
+device-pending-authority-restored: exit 0
+device-scope-bypass-broken: exit 1
+device-scope-bypass-restored: exit 0
+snooze-expired-receipt-broken: exit 1
+snooze-expired-receipt-restored: exit 0
+PASS: 10 intended failures; 10 restored passes. Source restored. No device/account.

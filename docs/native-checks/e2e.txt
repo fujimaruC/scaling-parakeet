@@ -1,0 +1,46 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test:e2e
+> playwright test
+
+[2m[WebServer] [22m(node:210) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22mnpm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[2m[WebServer] [22m(node:223) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:223) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:223) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 12 tests using 1 worker
+
+(node:278) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:278) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/e2e/app.spec.ts:2:1 › organization context, task persistence, completion and offline snapshot (4.0s)
+  ✓   2 tests/e2e/app.spec.ts:131:1 › 360px navigation and both themes fit the viewport (594ms)
+  ✓   3 tests/e2e/app.spec.ts:160:1 › save reminder rules twice with quiet hours (1.4s)
+  ✓   4 tests/e2e/app.spec.ts:194:1 › edit task, keep date-only precision and navigate month calendar (2.8s)
+  ✓   5 tests/e2e/app.spec.ts:274:1 › correct a proposal before approval (1.6s)
+  ✓   6 tests/e2e/foundation.spec.ts:2:1 › foundation: fonts stay local, theme follows system and override, reduced motion and 200% text (739ms)
+  ✓   7 tests/e2e/foundation.spec.ts:68:1 › foundation: four tabs and secondary workflows remain reachable at 360px (713ms)
+  ✓   8 tests/e2e/s2.spec.ts:143:1 › S2 read-only routes, distinct dates, real policy, live clock and modal history (1.4s)
+S2 contrast observations {"screen":"Today","theme":"light","samples":24,"min_ratio":5.851817390466204}
+S2 contrast observations {"screen":"Today","theme":"dark","samples":24,"min_ratio":6.339454211981419}
+S2 contrast observations {"screen":"Tasks","theme":"light","samples":43,"min_ratio":5.998700193644534}
+S2 contrast observations {"screen":"Tasks","theme":"dark","samples":43,"min_ratio":6.6576395847258585}
+S2 target observations {"samples":28,"min_width":44,"min_height":44}
+S2 contrast observations {"screen":"Detail","theme":"light","samples":19,"min_ratio":5.358466738754086}
+S2 contrast observations {"screen":"Detail","theme":"dark","samples":19,"min_ratio":6.530358026876049}
+S2 contrast observations {"screen":"Date sheet","theme":"light","samples":5,"min_ratio":5.851817390466204}
+S2 contrast observations {"screen":"Date sheet","theme":"dark","samples":5,"min_ratio":6.530358026876049}
+S2 contrast observations {"screen":"Quick sheet","theme":"light","samples":8,"min_ratio":5.998700193644534}
+S2 contrast observations {"screen":"Quick sheet","theme":"dark","samples":8,"min_ratio":6.6576395847258585}
+  ✓   9 tests/e2e/s2.spec.ts:320:1 › S2 360px, doubled text, target sizes, foreground contrast and deep-link availability (1.8s)
+  ✓  10 tests/e2e/s2.spec.ts:399:1 › S2 keeps partial disclosure until existing bounded pages actually reach unknown tasks (7.0s)
+  ✓  11 tests/e2e/s2.spec.ts:445:1 › S2 authorization denial clears the read session instead of retaining cached owner data (790ms)
+  ✓  12 tests/e2e/s2.spec.ts:507:1 › S2 history paging failure preserves known detail and retries a bounded page (2.0s)
+
+  12 passed (35.9s)

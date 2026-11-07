@@ -592,3 +592,86 @@ conditions.
   [14](14-ANDROID-COMPANION.md) remain the protocol for that.
 - No emulator was used, so this result carries no claim beyond this physical device on this
   vendor build.
+
+---
+
+## 13. Native Android implementation — base 6bbfa26, 2026-11-08
+
+Implementation session; no device or account. Fresh main clone verified
+`6bbfa26 docs: add the native migration plan and the implementation brief`.
+A workspace restart removed earlier transient work. The durable INPROGRESS
+checkpoint was restored, fixes reconstructed, and all outcomes below are retained
+reruns. Earlier missing logs are not counted as verification for this handoff.
+
+### What changed
+
+Native Today, Tasks, detail, Review, Calendar, Settings, full editor and
+quick/date/proposal panels, plus a separate Capture entry; real shared Worker
+reads/CAS writes, explicit review/Undo, encrypted observations/drafts, immutable
+online-request recovery, ID/EN/resources/themes/fonts/icon and accessibility
+controls. Migration 0007 and protected enrollment/admin implement accepted A/B/C.
+No dependency added. PWA retained. CaptureService, Queue and Transport source are
+unchanged from the base; their old real-device smoke does not verify this UI.
+
+The standalone API-28 compiler now receives generated application R constants,
+with full coverage/no-JDK flags preserved and an added source-inventory assertion.
+Context/source creation and reminder-policy updates gained shared idempotency
+receipts. A discovered snooze replay defect is fixed: receipt lookup precedes
+checking a possibly expired requested time. Explicit native confirmation replaces
+the web prototype's committing swipe; a date edit/draft/keypress/default target
+never approves. Receipt/form/journal cleanup is transactional. Authentication loss
+retains a non-content uncertain-send warning and clears the sensitive ledger,
+without clearing the raw queue or pairing.
+
+### Exact commands and retained outcomes
+
+Complete stdout/stderr, including deliberate broken/restored runs, are under
+[native-checks](native-checks/README.md). [NATIVE-CHECKS](NATIVE-CHECKS.md) explains
+scope and exclusions; [NATIVE-OWNER-RUN](NATIVE-OWNER-RUN.md) is the owner checklist.
+
+| Command | Actual result |
+|---|---|
+| `npm ci --ignore-scripts` | exit 0; 170 packages from the existing lockfile |
+| `npm run check` | exit 0; 36 Vitest tests, Prettier, TypeScript, PWA and Worker dry-run build |
+| `npm run test:e2e` | exit 0; 12 PWA browser tests (35.9s), local synthetic backend |
+| `npm run test:pwa` | exit 0; 1 built-PWA offline/logout test (6.5s) |
+| `.venv/bin/python -m unittest discover -s collectors/local/tests -v` | exit 0; 40 tests (1.501s), synthetic data |
+| `./gradlew clean assembleDebug lint testDebugUnitTest verifyApi28 --console=plain --no-daemon -Dorg.gradle.java.home=/workspace/scratch/bbff8dae2870/native-toolchain/jdk -Dorg.gradle.java.installations.paths=/workspace/scratch/bbff8dae2870/native-toolchain/jdk -Dorg.gradle.java.installations.auto-detect=false` | exit 0; BUILD SUCCESSFUL in 43s; all-source API28, 6 existing QueuePrivacy plus 5 new NativePolicy standalone JVM cases |
+| `GRADLE_USER_HOME=/workspace/scratch/bbff8dae2870/native-toolchain/gradle python scripts/check_native_mutations.py --output-dir /workspace/scratch/bbff8dae2870/native-logs/mutations --java-home /workspace/scratch/bbff8dae2870/native-toolchain/jdk --android-home /workspace/scratch/bbff8dae2870/native-toolchain/sdk` | exit 0; 10 intended failures and 10 restored passes; exact source restored |
+| `.venv/bin/python scripts/validate_planning.py` | exit 0; planning artifacts only; full actual output retained |
+| `.venv/bin/python scripts/check_placeholders.py` | exit 0; common private-key/provider-token pattern scan |
+| `/workspace/scratch/bbff8dae2870/native-toolchain/sdk/platform-tools/adb devices -l` | exit 0; no attached devices, inventory only |
+
+Gradle first passed in the workspace on the recovered source. A later full rerun
+failed deleting its generated Kotlin output directory (log retained). The final
+run used unchanged code commit d2f24e4 in a detached `/tmp/academic-os-native-final`
+checkout, the same SDK/JDK and the same checks. No rule was narrowed. Isolated
+lint reports **0 errors / 2 warnings**: existing Transport ApplySharedPref and
+CustomX509TrustManager. Their persistence/pinning reasons are retained. The old
+empty v26 icon folder warning is absent in the tracked-source isolated checkout.
+API deprecation/compiler and future Gradle9 notices are not hidden.
+
+Environment: Node24.22.1/npm11.9.0/Python3.12.14; OpenJDK17.0.20, Gradle8.11.1,
+Kotlin2.1.21/AGP8.9.2. Missing standard JDK launchers were recreated from installed
+modules in a private JDK copy. Official CLI archive12266719 and sdkmanager
+installed platforms28/35, build-tools35.0.0/platform-tools. Nested platform
+archive roots normalized. JAVA_HOME alone is insufficient for the bare-java
+wrapper; PATH and Gradle Java properties were explicit. Existing locked Python
+requirements were installed in a fresh venv. SDKs, caches and signing keys are
+excluded from delivery.
+
+### Limits that remain facts
+
+No native UI instrumentation, device, account, provider, private transport or push
+run. PWA 360px/200%/contrast evidence applies to PWA, not Android. Native TalkBack,
+48dp hit testing, long-text layout, focus/keyboard, reduced motion, fonts/theme,
+rotation, process death, Keystore/SQLite/disk failure, signing/update, backup
+exclusion and actual HTTPS/PATCH are **unverified**. Production Access path
+precedence/aliases, quotas, enrollment/revoke/expiry and D1 migration0007
+application are **BLOCKED** on missing account observations.
+
+The previous owner's d748479 smoke remains historical, not this APK's result.
+Notification access is last observed false. **No listener event or capture has
+ever occurred.** The capture matrix, private remote transport, source-generation
+recovery on hardware, laptop-off action delivery, provider consent operation,
+physical push and pilot remain unverified. No milestone is marked complete.

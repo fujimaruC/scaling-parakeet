@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /workspace/scratch/bbff8dae2870/academic-os-native
+
+ ✓ tests/integration/native-owner.test.ts (11 tests) 3769ms
+   ✓ revoked expired wrong-owner and unconfigured-owner credentials cannot read  402ms
+   ✓ canonical context source task and CAS writes replay immutable idempotency keys  687ms
+   ✓ proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables  465ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  06:17:55
+   Duration  4.44s (transform 131ms, setup 0ms, collect 485ms, tests 3.77s, environment 0ms, prepare 52ms)
+

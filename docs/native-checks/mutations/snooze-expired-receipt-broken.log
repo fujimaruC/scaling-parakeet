@@ -1,0 +1,38 @@
+
+ RUN  v3.2.7 /workspace/scratch/bbff8dae2870/academic-os-native
+
+ ❯ tests/integration/native-owner.test.ts (11 tests | 1 failed) 3725ms
+   ✓ missing or forged native authority fails closed, including production administration 7ms
+   ✓ pending has no task authority; activation compares a hash and starts a bounded lifetime 206ms
+   ✓ enrollment recovers an identical lost response but never replaces a consumed grant 261ms
+   ✓ native rejects every Origin and mixed credential; browser same-origin guard remains 120ms
+   ✓ device scope never includes device administration, collectors or source ingestion 200ms
+   ✓ revoked expired wrong-owner and unconfigured-owner credentials cannot read  404ms
+   ✓ canonical context source task and CAS writes replay immutable idempotency keys  678ms
+   ✓ reminder-policy retries replay their receipt before revising settings again 269ms
+   ✓ proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables  460ms
+   ✓ self revocation affects only the current install and the administration page stays protected 243ms
+   × snooze lost-response retry replays its receipt after the requested time passes 257ms
+     → expected 422 to be less than 300
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/native-owner.test.ts > snooze lost-response retry replays its receipt after the requested time passes
+AssertionError: expected 422 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ tests/integration/native-owner.test.ts:476:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  06:29:47
+   Duration  4.37s (transform 124ms, setup 0ms, collect 474ms, tests 3.72s, environment 0ms, prepare 51ms)
+

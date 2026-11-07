@@ -1,0 +1,117 @@
+COMMAND: ./gradlew clean assembleDebug lint testDebugUnitTest verifyApi28 --console=plain --no-daemon -Dorg.gradle.java.home=/workspace/scratch/bbff8dae2870/native-toolchain/jdk -Dorg.gradle.java.installations.paths=/workspace/scratch/bbff8dae2870/native-toolchain/jdk -Dorg.gradle.java.installations.auto-detect=false
+Picked up JAVA_TOOL_OPTIONS: -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44715 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44715
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:clean UP-TO-DATE
+> Task :app:evidenceProvenance
+> Task :app:preBuild
+> Task :app:preDebugBuild
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:desugarDebugFileDependencies
+> Task :app:compressDebugAssets
+> Task :app:mergeDebugJniLibFolders
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeLibDexDebug
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues
+> Task :app:extractProguardFiles
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:processDebugResources
+> Task :app:mergeExtDexDebug
+
+> Task :app:verifyApi28
+Picked up JAVA_TOOL_OPTIONS: -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44715 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44715
+
+> Task :app:compileDebugKotlin
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/MainActivity.kt:66:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/MainActivity.kt:66:381 'fun onBackPressed(): Unit' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeForms.kt:35:162 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeRepository.kt:33:102 'val activeNetworkInfo: NetworkInfo?' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeRepository.kt:33:121 'val isConnected: Boolean' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:79:43 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:79:77 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:79:125 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:79:164 'static field SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java.
+w: file:///tmp/academic-os-native-final/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:79:204 'static field SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR: Int' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testNativePolicy
+Picked up JAVA_TOOL_OPTIONS: -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44715 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44715
+PASS native-policy: four precisions preserve null and field invariants
+PASS native-policy: unknown and approximate completed tasks remain undated
+PASS native-policy: owner-calendar group boundaries
+PASS native-policy: uncertain and throttled requests retain immutable pending state
+PASS native-policy: five observation states remain distinct
+Native policy cases: 5; no Android runtime, device or account used.
+
+> Task :app:testQueuePrivacy
+Picked up JAVA_TOOL_OPTIONS: -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44715 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44715
+PASS fingerprint is deterministic only within the keyed installation
+PASS missing AES key with queued OR pairing ciphertext never generates
+PASS lost dedupe key with queued rows never generates
+PASS restart reuses keys and ciphertext; loss remains blocked
+PASS legacy format requires explicit owner reset, even when empty
+PASS purge acknowledgment follows durable application and stops on failures
+Queue privacy policy: 6 tests passed (JVM only; Android Keystore/SQLite/device unverified)
+
+> Task :app:testDebugUnitTest
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///tmp/academic-os-native-final/apps/android-companion/app/build/reports/lint-results-debug.html
+
+> Task :app:lintDebug
+> Task :app:lint
+[Incubating] Problems report is available at: file:///tmp/academic-os-native-final/apps/android-companion/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 43s
+54 actionable tasks: 53 executed, 1 up-to-date

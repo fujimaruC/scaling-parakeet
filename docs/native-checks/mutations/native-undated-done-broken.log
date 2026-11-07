@@ -1,0 +1,61 @@
+Picked up JAVA_TOOL_OPTIONS:  -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37315 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37315
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:evidenceProvenance
+> Task :app:preBuild
+> Task :app:preDebugBuild
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/MainActivity.kt:66:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/MainActivity.kt:66:381 'fun onBackPressed(): Unit' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeForms.kt:35:162 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeRepository.kt:33:102 'val activeNetworkInfo: NetworkInfo?' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/NativeRepository.kt:33:121 'val isConnected: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:74:43 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:74:77 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:74:125 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:74:164 'static field SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/scratch/bbff8dae2870/academic-os-native/apps/android-companion/app/src/main/java/id/academicos/companion/ledger/Ui.kt:74:204 'static field SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR: Int' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+
+> Task :app:testNativePolicy FAILED
+Picked up JAVA_TOOL_OPTIONS:  -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37315 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37315
+PASS native-policy: four precisions preserve null and field invariants
+Exception in thread "main" java.lang.IllegalStateException: Check failed.
+	at id.academicos.companion.NativePolicyTest.main$lambda$6(NativePolicyTest.kt:15)
+	at id.academicos.companion.NativePolicyTest.main$case(NativePolicyTest.kt:8)
+	at id.academicos.companion.NativePolicyTest.main(NativePolicyTest.kt:15)
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testNativePolicy'.
+> Process 'command '/workspace/scratch/bbff8dae2870/native-toolchain/jdk/bin/java'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 18s
+20 actionable tasks: 5 executed, 15 up-to-date

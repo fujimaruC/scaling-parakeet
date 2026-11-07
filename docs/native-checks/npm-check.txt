@@ -1,0 +1,90 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> check
+> npm run lint && npm run typecheck && npm test && npm run build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lint
+> prettier --check "apps/**/*.{ts,tsx,css}" "packages/**/*.ts" "tests/**/*.ts" "scripts/*.ts"
+
+Checking formatting...
+All matched files use Prettier code style!
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> typecheck
+> tsc --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/scratch/bbff8dae2870/academic-os-native
+
+ ✓ tests/integration/ledger.test.ts (19 tests) 7441ms
+   ✓ persistent ledger > processes reminders without collector or AI and cancels old deadline revisions  318ms
+   ✓ signed ingestion remains proposal-only and explicit approval is idempotent  416ms
+   ✓ deadline-change approval requires explicit current target and preserves history  332ms
+   ✓ source purge scrubs sole-source tasks, preserves manual edits, and accepts a scoped local wipe acknowledgment  660ms
+   ✓ configurable reminder rules rebuild future intents without changing deadline precision  1397ms
+   ✓ quiet hours defer and coalesce reminders without changing deadlines, including daylight-saving boundaries  727ms
+   ✓ device actions require explicit attestations and expiry/retirement never confirm  561ms
+   ✓ read detail scopes and paginates task history and exposes scheduler policy without writing  1024ms
+ ✓ tests/integration/native-owner.test.ts (11 tests) 4546ms
+   ✓ revoked expired wrong-owner and unconfigured-owner credentials cannot read  534ms
+   ✓ canonical context source task and CAS writes replay immutable idempotency keys  825ms
+   ✓ reminder-policy retries replay their receipt before revising settings again  383ms
+   ✓ proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables  548ms
+   ✓ self revocation affects only the current install and the administration page stays protected  308ms
+   ✓ snooze lost-response retry replays its receipt after the requested time passes  400ms
+ ✓ tests/s2.test.ts (4 tests) 175ms
+ ✓ tests/foundation.test.ts (2 tests) 11ms
+
+ Test Files  4 passed (4)
+      Tests  36 passed (36)
+   Start at  06:19:41
+   Duration  13.84s (transform 265ms, setup 0ms, collect 951ms, tests 12.17s, environment 1ms, prepare 214ms)
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> build
+> npm run build -w @academic-os/web && npm run build -w @academic-os/worker
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> build
+> vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 52 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.44 kB │ gzip:  0.30 kB
+dist/assets/index-BgXXA3uF.css   23.18 kB │ gzip:  5.81 kB
+dist/assets/index-DXl708bC.js   302.49 kB │ gzip: 96.37 kB
+✓ built in 1.00s
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> build
+> wrangler deploy --dry-run --outdir dist
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+
+
+
+ ⛅️ wrangler 4.158.0
+────────────────────
+✨ Read 16 files from the assets directory /workspace/scratch/bbff8dae2870/academic-os-native/apps/web/dist
+Total Upload: 459.11 KiB / gzip: 91.12 KiB
+Your Worker has access to the following bindings:
+Binding                               Resource                  
+env.DB (academic-os)                  D1 Database               
+env.ASSETS                            Assets                    
+env.OWNER_SUB ("UNCONFIGURED")        Environment Variable      
+env.ACCESS_TEAM ("UNCONFIGURED")      Environment Variable      
+env.ACCESS_AUD ("UNCONFIGURED")       Environment Variable      
+
+--dry-run: exiting now.
