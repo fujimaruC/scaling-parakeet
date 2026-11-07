@@ -1,0 +1,5 @@
+<resources>
+<style name="NativeLight" parent="android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">#2f54eb</item><item name="android:windowBackground">#f4f2ec</item></style>
+<style name="NativeDark" parent="android:style/Theme.Material.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">#7c95ff</item><item name="android:windowBackground">#16161a</item></style>
+<color name="launcher_background">#f4f2ec</color>
+</resources>

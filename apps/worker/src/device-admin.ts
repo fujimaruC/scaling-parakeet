@@ -1,0 +1,18 @@
+// Recovery administration only. No bearer secret is ever returned to a browser.
+export function deviceAdminPage() {
+  const nonce = crypto.randomUUID();
+  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Academic OS · Owner devices</title><style nonce="${nonce}">body{font:18px system-ui;max-width:700px;margin:auto;padding:24px;background:#f4f2ec;color:#1b1b1f}button,input{min-height:48px;font:inherit;margin:6px;padding:6px}article{border:2px solid;padding:16px;margin:16px 0}code{overflow-wrap:anywhere;display:block}#grant{white-space:pre-wrap}button:focus-visible{outline:3px solid #2f54eb}</style><h1>Owner devices / Perangkat pemilik</h1><p>Only enroll your own install. Compare the full fingerprint on your phone before activating. Grants expire in five minutes. Never copy secrets into URLs or chat.</p><button id="new">New enrollment grant / Buat undangan</button><pre id="grant" role="status"></pre><p id="error" role="alert"></p><button id="refresh">Refresh / Muat ulang</button><section id="devices"></section><script nonce="${nonce}">
+ const error=document.querySelector('#error');async function call(path,method='GET',value){const r=await fetch('/api/v1'+path,{method,headers:{'Content-Type':'application/json'},body:value===undefined?undefined:JSON.stringify(value),cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error?.code||'REQUEST_FAILED');return j.data;}
+ async function refresh(){try{const list=await call('/owner-devices');const host=document.querySelector('#devices');host.replaceChildren();for(const d of list){const article=document.createElement('article');for(const text of [d.id,d.status+' · '+d.expires_at,d.fingerprint]){const p=document.createElement('code');p.textContent=text;article.append(p);}if(d.status==='pending'){const label=document.createElement('label');label.textContent='Fingerprint from phone / Sidik dari ponsel';const input=document.createElement('input');input.autocomplete='off';label.append(input);article.append(label);const activate=document.createElement('button');activate.textContent='Activate matched device / Aktifkan perangkat cocok';activate.onclick=async()=>{if(input.value.trim()!==d.fingerprint){error.textContent='Fingerprint mismatch / Tidak cocok';return;}try{await call('/owner-devices/'+d.id+'/activate','POST',{fingerprint:input.value.trim()});await refresh();}catch(e){error.textContent=e.message;}};article.append(activate);}if(d.status!=='revoked'){const revoke=document.createElement('button');revoke.textContent='Revoke / Cabut';revoke.onclick=async()=>{if(!confirm('Revoke this device? / Cabut perangkat ini?'))return;try{await call('/owner-devices/'+d.id+'/revoke','POST',{});await refresh();}catch(e){error.textContent=e.message;}};article.append(revoke);}host.append(article);}}catch(e){error.textContent=e.message;}}
+ document.querySelector('#new').onclick=async()=>{try{const g=await call('/owner-devices/grants','POST',{});document.querySelector('#grant').textContent=g.grant+'\\nExpires / Kedaluwarsa: '+g.expires_at;setTimeout(()=>{document.querySelector('#grant').textContent='Expired / Kedaluwarsa';},300000);}catch(e){error.textContent=e.message;}};document.querySelector('#refresh').onclick=refresh;refresh();
+ </script></html>`;
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`,
+    },
+  });
+}

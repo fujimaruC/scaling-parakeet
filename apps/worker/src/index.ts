@@ -1,3 +1,11 @@
+import {
+  authenticateDevice,
+  enrollDevice,
+  administerClients,
+  deviceRouteAllowed,
+  DeviceAuthError,
+} from './device-auth';
+import { deviceAdminPage } from './device-admin';
 import { actionView, relayActions } from './device-actions';
 import { listTasks } from './task-list';
 import { owner, sha256, hmac, equal, type AuthEnv } from './auth';
@@ -45,7 +53,7 @@ function result(
     },
   });
 }
-async function body(req: Request) {
+async function body(req: Request, maximum = 262144) {
   if (!req.headers.get('content-type')?.startsWith('application/json'))
     throw new Http(422, 'INVALID_PAYLOAD');
   const reader = req.body?.getReader();
@@ -56,7 +64,7 @@ async function body(req: Request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > 262144) {
+      if (size > maximum) {
         await reader.cancel();
         throw new Http(413, 'PAYLOAD_TOO_LARGE');
       }
@@ -647,6 +655,15 @@ export function createApp(authorize: typeof owner = owner) {
         const url = new URL(req.url);
         const path = url.pathname;
         const db = env.DB;
+        if (path === '/owner-devices') {
+          if (
+            req.method !== 'GET' ||
+            req.headers.has('Authorization') ||
+            !(await authorize(req, env))
+          )
+            throw new Http(401, 'AUTH_REQUIRED');
+          return deviceAdminPage();
+        }
         if (!path.startsWith('/api/'))
           return env.ASSETS
             ? env.ASSETS.fetch(req)
@@ -710,16 +727,70 @@ export function createApp(authorize: typeof owner = owner) {
             .run();
           return result({ acknowledged: true });
         }
-        if (!(await authorize(req, env))) throw new Http(401, 'AUTH_REQUIRED');
-        if (
-          !['GET', 'HEAD'].includes(req.method) &&
-          req.headers.get('Origin') !== url.origin
-        )
-          throw new Http(403, 'INVALID_ORIGIN');
-        const p = path.replace('/api/v1', '');
+        const devicePath = path.startsWith('/api/device/v1/');
+        let deviceId: string | null = null;
+        if (devicePath) {
+          if (req.headers.has('Origin')) throw new Http(403, 'INVALID_ORIGIN');
+          if (path === '/api/device/v1/enroll' && req.method === 'POST')
+            return result(
+              await enrollDevice(req, env, (await body(req, 4096)).value),
+            );
+          const client = await authenticateDevice(
+            req,
+            env,
+            path === '/api/device/v1/enrollment',
+          );
+          deviceId = client.id;
+          if (path === '/api/device/v1/enrollment' && req.method === 'GET')
+            return result({
+              client_id: client.id,
+              status: client.status,
+              expires_at: client.expires_at,
+              fingerprint: client.token_hash,
+            });
+          if (path === '/api/device/v1/session' && req.method === 'DELETE') {
+            await db
+              .prepare(
+                "UPDATE owner_client_credentials SET status='revoked',revoked_at=? WHERE id=?",
+              )
+              .bind(now(), client.id)
+              .run();
+            return result({ revoked: true });
+          }
+          if (
+            !deviceRouteAllowed(path.slice('/api/device/v1'.length), req.method)
+          )
+            throw new Http(403, 'ACCESS_DENIED');
+        } else {
+          if (req.headers.has('Authorization') || !(await authorize(req, env)))
+            throw new Http(401, 'AUTH_REQUIRED');
+          if (
+            !['GET', 'HEAD'].includes(req.method) &&
+            req.headers.get('Origin') !== url.origin
+          )
+            throw new Http(403, 'INVALID_ORIGIN');
+        }
+        const p = path.slice(
+          devicePath ? '/api/device/v1'.length : '/api/v1'.length,
+        );
         const method = req.method;
+        if (!devicePath && p.startsWith('/owner-devices')) {
+          const value = method === 'POST' ? (await body(req)).value : undefined;
+          const out = await administerClients(
+            db,
+            env.OWNER_SUB,
+            p,
+            method,
+            value,
+          );
+          if (out === undefined) throw new Http(404, 'NOT_FOUND');
+          return result(out);
+        }
         if (p === '/me' && method === 'GET')
-          return result({ subject: env.OWNER_SUB });
+          return result({
+            subject: env.OWNER_SUB,
+            ...(deviceId ? { client_id: deviceId } : {}),
+          });
         if (p === '/health' && method === 'GET')
           return result({
             cloud: 'online',
@@ -735,16 +806,49 @@ export function createApp(authorize: typeof owner = owner) {
             ).results,
           );
         if (p === '/contexts' && method === 'POST') {
-          const { value: v } = await body(req);
+          const { raw, value: v } = await body(req);
+          const key = req.headers.get('Idempotency-Key'),
+            digest = await sha256(raw),
+            scope = 'context-create';
+          if (key) {
+            text(key, 128);
+            const prior = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind(scope, key)
+              .first<any>();
+            if (prior) {
+              if (prior.digest !== digest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              return result(
+                await db
+                  .prepare('SELECT * FROM contexts WHERE id=?')
+                  .bind(prior.result_id)
+                  .first(),
+              );
+            }
+          }
           if (!['academic', 'organization', 'personal'].includes(v.type))
             throw new Http(422, 'INVALID_PAYLOAD');
-          const id = uuid();
-          await db
-            .prepare('INSERT INTO contexts(id,type,display_name) VALUES(?,?,?)')
-            .bind(id, v.type, text(v.display_name))
-            .run();
+          const id = uuid(),
+            name = text(v.display_name),
+            ops = [
+              db
+                .prepare(
+                  'INSERT INTO contexts(id,type,display_name) VALUES(?,?,?)',
+                )
+                .bind(id, v.type, name),
+            ];
+          if (key)
+            ops.push(
+              db
+                .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                .bind(scope, key, digest, id),
+            );
+          await db.batch(ops);
           return result(
-            { id, type: v.type, display_name: v.display_name, version: 1 },
+            { id, type: v.type, display_name: name, version: 1 },
             201,
           );
         }
@@ -919,7 +1023,30 @@ export function createApp(authorize: typeof owner = owner) {
             (await db.prepare('SELECT * FROM sources').all()).results,
           );
         if (p === '/sources' && method === 'POST') {
-          const { value: v } = await body(req);
+          const { raw, value: v } = await body(req);
+          const key = req.headers.get('Idempotency-Key'),
+            digest = await sha256(raw),
+            scope = 'source-create';
+          if (key) {
+            text(key, 128);
+            const prior = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind(scope, key)
+              .first<any>();
+            if (prior) {
+              if (prior.digest !== digest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              const old = await db
+                .prepare(
+                  'SELECT id,generation,purged_at FROM sources WHERE id=?',
+                )
+                .bind(prior.result_id)
+                .first<any>();
+              return result(old);
+            }
+          }
           if (
             ![
               'whatsapp_export',
@@ -928,11 +1055,21 @@ export function createApp(authorize: typeof owner = owner) {
             ].includes(v.kind)
           )
             throw new Http(422, 'INVALID_PAYLOAD');
-          const id = uuid();
-          await db
-            .prepare('INSERT INTO sources(id,display_name,kind) VALUES(?,?,?)')
-            .bind(id, text(v.display_name), v.kind)
-            .run();
+          const id = uuid(),
+            ops = [
+              db
+                .prepare(
+                  'INSERT INTO sources(id,display_name,kind) VALUES(?,?,?)',
+                )
+                .bind(id, text(v.display_name), v.kind),
+            ];
+          if (key)
+            ops.push(
+              db
+                .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                .bind(scope, key, digest, id),
+            );
+          await db.batch(ops);
           return result({ id, generation: 1 }, 201);
         }
         if (p === '/collector-credentials' && method === 'POST') {
@@ -1284,7 +1421,27 @@ export function createApp(authorize: typeof owner = owner) {
           });
         }
         if (p === '/settings/reminders' && method === 'PATCH') {
-          const { value: v } = await body(req);
+          const { raw, value: v } = await body(req);
+          const receiptKey = req.headers.get('Idempotency-Key'),
+            receiptScope = 'settings-reminders',
+            receiptDigest = await sha256(raw + '\n' + version(req));
+          if (receiptKey) {
+            text(receiptKey, 128);
+            const old = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind(receiptScope, receiptKey)
+              .first<any>();
+            if (old) {
+              if (old.digest !== receiptDigest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              const queued = await db
+                .prepare('SELECT count(*) count FROM reminder_rebuilds')
+                .first<any>();
+              return result({ updated: true, pending_rebuilds: queued.count });
+            }
+          }
           if (
             typeof v.enabled !== 'boolean' ||
             !Array.isArray(v.offset_hours) ||
@@ -1353,6 +1510,13 @@ export function createApp(authorize: typeof owner = owner) {
             db.prepare(
               "INSERT OR REPLACE INTO reminder_rebuilds SELECT id,due_revision FROM tasks WHERE deleted_at IS NULL AND status NOT IN ('done','archived')",
             ),
+            ...(receiptKey
+              ? [
+                  db
+                    .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                    .bind(receiptScope, receiptKey, receiptDigest, '1'),
+                ]
+              : []),
             db.prepare('DELETE FROM mutation_guards WHERE id=?').bind(guard),
           ]);
           const pending = await db
@@ -1720,6 +1884,8 @@ export function createApp(authorize: typeof owner = owner) {
         }
         throw new Http(404, 'NOT_FOUND');
       } catch (e) {
+        if (e instanceof DeviceAuthError)
+          return result({ error: { code: e.code } }, e.status);
         if (e instanceof Http)
           return result({ error: { code: e.code } }, e.status);
         if (

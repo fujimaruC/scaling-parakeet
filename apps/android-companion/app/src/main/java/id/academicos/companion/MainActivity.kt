@@ -1,63 +1,191 @@
 package id.academicos.companion
+
 import android.app.Activity
-import android.app.ActivityManager
+import android.app.AlertDialog
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
-import android.widget.*
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
+import android.widget.*
+import id.academicos.companion.ledger.*
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
-class MainActivity: Activity(){
- private lateinit var content: LinearLayout
- override fun onCreate(saved: Bundle?){super.onCreate(saved);window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);render()}
- override fun onResume(){super.onResume();render()}
- override fun onNewIntent(value:Intent){super.onNewIntent(value);setIntent(value);render()}
- private fun button(text:String,action:()->Unit){content.addView(Button(this).apply {this.text=text;setOnClickListener{action()}})}
- private fun line(text:String){content.addView(TextView(this).apply {this.text=text;textSize=16f;setPadding(0,16,0,16)})}
- private fun repair(code:String){
-  android.util.Log.e("AOS-PROBE","queueRepair=true code=$code")
-  line("Academic OS · Queue repair required")
-  line("$code. Capture and transfer are blocked. No automatic key replacement is allowed. Owner action is required; interrupted resets stay blocked.")
-  button("Reset private queue and pairing"){
-   android.app.AlertDialog.Builder(this).setMessage("Permanently discard all queued notifications and encrypted pairing/batch state? Capture will pause. Re-pair with Linux afterward. Untransferred events will be lost; use an export on Linux to backfill where possible.").setPositiveButton("Reset"){_,_->
-    try{Queue.resetAfterOwnerConfirmation(this);render()}catch(_:Exception){line("Reset incomplete. Capture stays blocked. Retry the reset; no new key is generated.")}
-   }.setNegativeButton("Cancel",null).show()
-  }
- }
- private fun render(){
-  content=LinearLayout(this).apply {orientation=LinearLayout.VERTICAL;setPadding(28,32,28,32)};setContentView(ScrollView(this).apply {addView(content)})
-  val low=(getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
-  val granted=Settings.Secure.getString(contentResolver,"enabled_notification_listeners")?.split(":")?.any {it=="$packageName/$packageName.CaptureService" || it=="$packageName/.CaptureService"}==true
-  val health=getSharedPreferences("health",0);val settings=getSharedPreferences("capture",0)
-  val evidenceRun=intent.getStringExtra("evidence_run")
-  if(evidenceRun!=null && evidenceRun.matches(Regex("[0-9a-f-]{36}"))){
-   val count=try{Queue(this).use {it.count()}}catch(_:Exception){null}
-   val record=org.json.JSONObject().put("run",evidenceRun).put("android_api",android.os.Build.VERSION.SDK_INT).put("device_model",android.os.Build.MODEL).put("device_build",android.os.Build.DISPLAY).put("version",packageManager.getPackageInfo(packageName,0).versionName).put("notification_access",granted).put("low_ram",low).put("queue_count",count?:org.json.JSONObject.NULL).put("observed_gap_count",health.getInt("gaps",0)).put("repair_required",count==null)
-   android.util.Log.i("AOS-EVIDENCE",record.toString())
-  }
-
-  val queued=try{Queue(this).use {it.count()}}catch(e:QueueUnavailable){repair(e.code);return}catch(_:Exception){repair("QUEUE_STORAGE_UNAVAILABLE");return}
-  // Sanitized device record for M0 evidence: booleans and counts only, never message content.
-  android.util.Log.i("AOS-PROBE","lowRam=$low granted=$granted listener=${health.getString("listener","unknown")} queue=$queued gaps=${health.getInt("gaps",0)}")
-  line("Academic OS · Android 9 probe")
-  line("Notification access: $granted · low-RAM: $low\nListener: ${health.getString("listener","unknown")}\nQueue: $queued events · observed drops: ${health.getInt("gaps",0)}")
-  if(health.getBoolean("owner_reset",false))line("Owner reset recorded. Earlier untransferred events may have been discarded; an empty queue does not prove complete collection.")
-  line("Partial coverage only. Missing notifications cannot be recovered here. Private transfer queues until Linux is reachable. Delivery and complete message coverage are never guaranteed.")
-  button("Notification access settings"){startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))}
-  line("Test only an owner-controlled synthetic conversation. Verify exact title AND notification group key locally. Leave disabled until verified; no broad capture.")
-  button("Inspect active WhatsApp metadata"){val service=CaptureService.active;if(service==null)line("Listener not connected; no metadata inspected.")else try{service.describeActive().forEach {line(it)}}catch(_: Exception){line("Metadata unavailable")}}
-  val title=EditText(this).apply {hint="Verified notification title";setText(settings.getString("title",""))};content.addView(title)
-  val group=EditText(this).apply {hint="Verified notification group key";setText(settings.getString("group",""))};content.addView(group)
-  val enabled=Switch(this).apply {text="Enable selected test conversation";isChecked=settings.getBoolean("enabled",false);isEnabled=!low};content.addView(enabled)
-  button("Save selected mapping") {if(Queue(this).use {it.count()}>0&&(title.text.toString()!=settings.getString("title","")||group.text.toString()!=settings.getString("group",""))){line("Sync or wipe the old queue before changing conversation mapping");return@button};settings.edit().putString("title",title.text.toString()).putString("group",group.text.toString()).putBoolean("enabled",enabled.isChecked && title.text.isNotBlank() && group.text.isNotBlank()).apply();render()}
-  line("Pair only with your private Linux HTTPS receiver. Verify the certificate fingerprint on Linux. No cloud or account keys are entered here.")
-  val endpoint=EditText(this).apply {hint="https://PRIVATE-LINUX-HOST:8766"};content.addView(endpoint)
-  val pin=EditText(this).apply {hint="Receiver certificate SHA-256"};content.addView(pin)
-  val token=EditText(this).apply {hint="5-minute pairing invitation";inputType=129};content.addView(token)
-  button("Pair private receiver"){val address=endpoint.text.toString();val fingerprint=pin.text.toString();val invitation=token.text.toString();token.setText("");Thread{try{Transport(this).pair(address,fingerprint,invitation);SyncJob.schedule(this);runOnUiThread {line("Paired. Test synthetic transfer before real groups.")}}catch(_:Exception){runOnUiThread {line("Pairing failed. Check invitation, private connection, peer fingerprint, hostname and time.")}}}.start()}
-  button("Sync queued events"){Thread{try{Transport(this).sync();runOnUiThread {render()}}catch(_:Exception){runOnUiThread {line("Sync pending. Queue retained; check private receiver and peer identity.")}}}.start()}
-  if(Transport(this).configured())SyncJob.schedule(this)
-  button("Pause collection"){settings.edit().putBoolean("enabled",false).apply();render()}
-  button("Wipe local queue"){android.app.AlertDialog.Builder(this).setMessage("Delete all queued raw notifications?").setPositiveButton("Delete"){_,_->Queue(this).use {it.wipe()};Transport(this).clearPending();render()}.setNegativeButton("Cancel",null).show()}
- }
+class MainActivity:Activity() {
+    lateinit var ui:Ui
+    lateinit var repo:NativeRepository
+    lateinit var forms:NativeForms
+    var navigation=JSONObject().put("page","today")
+    val observations=HashMap<String,Observation>()
+    var contexts=JSONArray()
+    var preferences:JSONObject?=null
+    private lateinit var root:LinearLayout
+    private lateinit var list:ListView
+    private lateinit var feedback:LinearLayout
+    private val handler=Handler(Looper.getMainLooper())
+    private var initialized=false
+    private var hadSession=false
+    private var generation=0
+    private var exportData:String?=null
+    private var undoId:String?=null
+    private var undoUntil=0L
+    private var notice:String?=null
+    val page:String get()=navigation.optString("page","today")
+    val zone:String get()=preferences?.optString("timezone","Asia/Makassar")?:"Asia/Makassar"
+    val writable:Boolean get()=repo.boundaryChecked&&repo.online()&&!repo.busy&&repo.pending==null&&repo.credentials?.optString("status")=="active"
+    override fun attachBaseContext(base:Context){
+        val language=base.getSharedPreferences("owner-ui",0).getString("language","id")?:"id"
+        val config=Configuration(base.resources.configuration).apply{setLocale(java.util.Locale(language))}
+        super.attachBaseContext(base.createConfigurationContext(config))
+    }
+    override fun onCreate(saved:Bundle?){
+        val prefs=getSharedPreferences("owner-ui",0)
+        val dark=when(prefs.getString("theme","system")){"dark"->true;"light"->false;else->resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK==Configuration.UI_MODE_NIGHT_YES}
+        setTheme(if(dark)R.style.NativeDark else R.style.NativeLight)
+        super.onCreate(saved);window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        ui=Ui(this);ui.configureWindow();repo=NativeRepository.get(this);forms=NativeForms(this)
+        renderLoading()
+        repo.initialize{if(isDestroyed)return@initialize;initialized=true;navigation=repo.state()?:navigation;hadSession=repo.credentials!=null;render();if(repo.credentials?.optString("status")=="active"){refresh();forms.restore()}}
+    }
+    override fun onResume(){super.onResume();CaptureEvidence.emit(this);if(initialized){if(repo.credentials?.optString("status")=="active")refresh()else render()};handler.removeCallbacks(ticker);handler.postDelayed(ticker,30000)}
+    override fun onPause(){handler.removeCallbacks(ticker);if(initialized)persist();super.onPause()}
+    override fun onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy()}
+    override fun onNewIntent(value:Intent){super.onNewIntent(value);setIntent(value);CaptureEvidence.emit(this)}
+    private val ticker=object:Runnable{override fun run(){if(initialized&&!forms.isOpen&&repo.credentials?.optString("status")=="active")render();handler.postDelayed(this,30000)}}
+    override fun onBackPressed(){if(forms.isOpen){forms.close();return};val stack=navigation.optJSONArray("stack");if(stack!=null&&stack.length()>0){val prior=stack.getJSONObject(stack.length()-1);stack.remove(stack.length()-1);prior.put("stack",stack);navigation=prior;generation++;persist();loadScreen();render()}else if(page!="today"){navigate("today",replace=true)}else super.onBackPressed()}
+    fun persist(){repo.saveState(navigation)}
+    fun navigate(target:String,id:String?=null,replace:Boolean=false){
+        val stack=navigation.optJSONArray("stack")?:JSONArray()
+        if(!replace){val previous=JSONObject(navigation.toString());previous.remove("stack");previous.remove("form");stack.put(previous);while(stack.length()>12)stack.remove(0)}
+        navigation=JSONObject().put("page",target).put("stack",stack);id?.let{navigation.put("id",it)}
+        generation++;persist();loadScreen();render()
+    }
+    fun refresh(){if(repo.busy)return;notice=null;val ticket=++generation
+        repo.boundary{code->if(isDestroyed||ticket!=generation)return@boundary;notice=code;observations.clear();loadCommon();loadScreen();render()}
+    }
+    private fun loadCommon(){fetch("/contexts"){o->if(o.data is JSONArray)contexts=o.data as JSONArray};fetch("/settings"){o->if(o.data is JSONObject)preferences=o.data as JSONObject}}
+    fun fetch(path:String,done:((Observation)->Unit)?=null){
+        val ticket=generation;observations[path]=Observation(observations[path]?.envelope,LoadState.LOADING)
+        repo.read(path){out->if(isDestroyed||ticket!=generation)return@read;observations[path]=out;done?.invoke(out);render()}
+    }
+    fun loadScreen(){if(repo.credentials?.optString("status")!="active")return
+        when(page){
+            "today"->{fetch("/briefing");fetch(taskPath())}
+            "tasks"->fetch(taskPath())
+            "detail"->fetch(detailPath())
+            "review"->{fetch("/briefing");fetch(candidatePath());if(navigation.optString("target_query").isNotEmpty())fetch(targetPath())}
+            "calendar"->fetch(calendarPath())
+            "settings"->{fetch("/settings"){if(it.data is JSONObject)preferences=it.data as JSONObject};fetch("/contexts"){if(it.data is JSONArray)contexts=it.data as JSONArray}}
+            "sources"->fetch("/sources")
+            "source"->fetch(sourcePath())
+            "history"->fetch("/history")
+            "reminders"->{fetch("/reminders");fetch("/settings"){if(it.data is JSONObject)preferences=it.data as JSONObject}}
+        }
+    }
+    fun taskPath():String {
+        val params=ArrayList<String>();params.add("limit=100");params.add("title_only=1")
+        navigation.optString("filter").takeIf{it.isNotEmpty()&&it!="all"}?.let{params.add("context_type="+encode(it))}
+        navigation.optString("query").takeIf{it.isNotEmpty()}?.let{params.add("q="+encode(it))}
+        return "/tasks?"+params.joinToString("&")
+    }
+    fun detailPath()="/tasks/"+encode(navigation.optString("id"))+"?view=read"
+    fun candidatePath()="/candidates?limit=100"
+    fun targetPath()="/tasks?limit=50&title_only=1&q="+encode(navigation.optString("target_query"))
+    fun sourcePath()="/sources/"+encode(navigation.optString("id"))+"/purge-status"
+    fun month():LocalDate=try{LocalDate.parse(navigation.optString("month",LocalDate.now(ZoneId.of(zone)).withDayOfMonth(1).toString()))}catch(_:Exception){LocalDate.now(ZoneId.of(zone)).withDayOfMonth(1)}
+    fun calendarPath():String{val month=month();return "/tasks?limit=100&date_from=$month&date_to=${month.withDayOfMonth(month.lengthOfMonth())}&timezone="+encode(zone)}
+    fun encode(value:String)=java.net.URLEncoder.encode(value,"UTF-8")
+    fun observation(path:String)=observations[path]?:Observation(null,LoadState.UNLOADED)
+    fun items(path:String)=((observation(path).data as? JSONArray)?:JSONArray()).objects()
+    fun loadMore(path:String,history:Boolean=false){
+        val old=observation(path);val cursor=if(history)(old.data as? JSONObject)?.nullable("next_history_cursor")else old.cursor
+        if(cursor==null||old.cached||!repo.online())return
+        val suffix=if(history)"&history_before=" else "&cursor="
+        val next=path+(if(path.contains('?'))suffix else suffix.replace('&','?'))+encode(cursor)
+        val ticket=generation;observations[path]=old.copy(state=LoadState.LOADING);render()
+        repo.read(next){result->if(isDestroyed||ticket!=generation)return@read
+            if(result.envelope!=null&&!result.cached){
+                if(history){val a=old.data as JSONObject;val b=result.data as JSONObject
+                    if(a.getJSONObject("task").getInt("version")!=b.getJSONObject("task").getInt("version")){fetch(path);return@read}
+                    val merged=JSONArray(a.getJSONArray("history").toString());b.getJSONArray("history").objects().forEach{merged.put(it)};b.put("history",merged);result.envelope.put("data",b);observations[path]=result
+                }else{val merged=JSONArray((old.data as JSONArray).toString());val ids=merged.objects().map{it.optString("id")}.toMutableSet();(result.data as JSONArray).objects().forEach{if(ids.add(it.optString("id")))merged.put(it)};result.envelope.put("data",merged);observations[path]=result}
+            }else{observations[path]=old;notice=result.code?:ui.t("unavailable")};render()
+        }
+    }
+    fun perform(operation:WriteOperation,success:((JSONObject)->Unit)?=null,retry:Boolean=false){
+        if(!retry&&!writable){showNotice(ui.t("online_only"));return}
+        repo.write(operation,retry){answer,code->if(isDestroyed)return@write
+            if(answer!=null){notice=ui.t("saved");if(operation.label in listOf("accept","reject")&&answer.has("review_action")&&!answer.optBoolean("undone")){undoId=answer.getString("review_action");undoUntil=android.os.SystemClock.uptimeMillis()+4500;handler.postDelayed({undoId=null;renderFeedback()},4500)}else undoId=null
+                if(!getSharedPreferences("owner-ui",0).getBoolean("reduced_motion",false)&&android.animation.ValueAnimator.areAnimatorsEnabled())root.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                observations.clear();forms.close();if(operation.method=="DELETE"&&operation.path.startsWith("/tasks/"))navigate("tasks",replace=true)
+                success?.invoke(answer);loadCommon();loadScreen()
+            }else notice=(code?:"SAVE_UNCONFIRMED")+" · "+ui.t("unknown_outcome")
+            render()
+        };render()
+    }
+    fun showNotice(value:String){notice=value;renderFeedback()}
+    fun confirm(title:String,body:String,positive:String=ui.t("yes"),action:()->Unit){AlertDialog.Builder(this).setTitle(title).setMessage(body).setNegativeButton(ui.t("cancel"),null).setPositiveButton(positive){_,_->action()}.show()}
+    private fun renderLoading(){val col=ui.column();col.setBackgroundColor(ui.bg);col.addView(ui.text(ui.t("loading")));setContentView(col)}
+    fun render(){if(isDestroyed)return
+        if(!initialized){renderLoading();return}
+        if(repo.credentials==null&&hadSession){observations.clear();contexts=JSONArray();preferences=null;navigation=JSONObject().put("page","today");hadSession=false}
+        if(repo.credentials!=null)hadSession=true
+        root=ui.column(0);root.setBackgroundColor(ui.bg)
+        val header=ui.row();header.setPadding(ui.dp(12),ui.dp(8),ui.dp(12),ui.dp(4))
+        header.addView(ui.button(ui.t("back"),action={onBackPressed()}).apply{layoutParams=LinearLayout.LayoutParams(-2,-2)})
+        header.addView(ui.text("Academic OS",24f,true).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
+        header.addView(ui.button(ui.t("settings"),action={navigate("settings")}).apply{layoutParams=LinearLayout.LayoutParams(-2,-2)})
+        root.addView(header)
+        list=ListView(this).apply{divider=null;setPadding(ui.dp(12),0,ui.dp(12),ui.dp(12));clipToPadding=false;isSaveEnabled=false;descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS}
+        root.addView(list,LinearLayout.LayoutParams(-1,0,1f));feedback=ui.column(8);root.addView(feedback)
+        if(repo.credentials?.optString("status")=="active"){
+            val nav=ui.row();for(tab in listOf("today","tasks","review","calendar")){nav.addView(ui.button(ui.t(tab),action={navigate(tab,replace=true)}).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f);isSelected=page==tab;contentDescription=ui.t(tab)+(if(page==tab)" · "+ui.t("enabled")else"")})};root.addView(nav)
+        }
+        setContentView(root)
+        try{val rows=when{
+            repo.storageError!=null->repairRows()
+            repo.credentials?.optString("status")!="active"->enrollRows()
+            else->NativeScreens(this).rows()
+        };list.adapter=RowsAdapter(rows)}catch(_:Exception){list.adapter=RowsAdapter(listOf(Row{ui.message(ui.t("unavailable")+" · INVALID_API_RESPONSE")},Row{ui.button(ui.t("refresh"),action={refresh()})},Row{ui.button(ui.t("open_capture"),action={openCapture()})}))}
+        renderFeedback()
+    }
+    private fun renderFeedback(){if(!::feedback.isInitialized)return;feedback.removeAllViews()
+        notice?.let{feedback.addView(ui.message(it))}
+        repo.pending?.let{operation->feedback.addView(ui.message(ui.t("unknown_outcome")+" · "+operation.label));feedback.addView(ui.button(ui.t("retry"),enabled=repo.online()&&!repo.busy,action={perform(operation,retry=true)}))}
+        if(undoId!=null&&android.os.SystemClock.uptimeMillis()<undoUntil){val action=undoId!!;feedback.addView(ui.button(ui.t("undo"),enabled=writable,action={perform(WriteOperation.create("/review-actions/"+encode(action)+"/undo","POST",JSONObject(),"undo"))}))}
+    }
+    private fun enrollRows():List<Row> = listOf(Row{
+        val box=ui.box();box.addView(ui.text(ui.t("enroll"),28f,true));box.addView(ui.message(ui.t("enroll_help")))
+        val c=repo.credentials
+        val base=ui.field(box,"base_url",c?.optString("base")?:getSharedPreferences("owner-ui",0).getString("last_base","")?:"")
+        val grant=ui.field(box,"grant",secret=true)
+        val secure=(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isDeviceSecure
+        if(!secure)box.addView(ui.message(ui.t("screen_lock")))
+        box.addView(ui.button(ui.t("enroll_send"),enabled=secure&&!repo.busy,primary=true){
+            getSharedPreferences("owner-ui",0).edit().putString("last_base",base.text.toString().trim()).apply()
+            val invitation=grant.text.toString();grant.setText("");repo.enroll(base.text.toString().trim(),invitation){code->if(!isDestroyed){notice=code;render();if(repo.credentials?.optString("status")=="active"){refresh();forms.restore()}}}
+        })
+        if(c!=null){box.addView(ui.text(ui.t("fingerprint")));box.addView(ui.text(repo.fingerprint()).apply{setTextIsSelectable(false)})
+            box.addView(ui.message(c.optString("status")+" · "+c.optString("expires_at")))
+            box.addView(ui.button(ui.t("enroll_check")){repo.enrollmentStatus{code->if(!isDestroyed){notice=code;render();if(repo.credentials?.optString("status")=="active"){refresh();forms.restore()}}}})
+            box.addView(ui.button(ui.t("admin")){openAdmin()});box.addView(ui.button(ui.t("logout")){logout()})}
+        box.addView(ui.button(ui.t("open_capture")){openCapture()});box
+    })
+    private fun repairRows()=listOf(Row{val box=ui.box();box.addView(ui.text(ui.t("repair"),24f,true));box.addView(ui.message(repo.storageError?:"LEDGER_STORAGE_FAILED"));box.addView(ui.message(ui.t("repair_help")));box.addView(ui.button(ui.t("reset_tasks")){confirm(ui.t("reset_tasks"),ui.t("repair_help")){repo.logout{render()}}});box.addView(ui.button(ui.t("open_capture")){openCapture()});box})
+    fun logout(){confirm(ui.t("logout"),ui.t("logout_help")){forms.close();repo.logout{navigation=JSONObject().put("page","today");notice=null;render()}}}
+    fun openCapture(){startActivity(Intent(this,CaptureActivity::class.java))}
+    fun openAdmin(){val base=repo.credentials?.optString("base")?:getSharedPreferences("owner-ui",0).getString("last_base","")?:"";try{val u=Uri.parse(base);if(u.scheme!="https")throw IllegalArgumentException();startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(base.trimEnd('/')+"/owner-devices")))}catch(_:Exception){showNotice(ui.t("unavailable"))}}
+    fun exportCanonical(){val path="/export";fetch(path){o->val data=o.data as? JSONObject;if(data==null||o.cached){showNotice(ui.t("unavailable"));return@fetch};exportData=data.toString(2);startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply{type="application/json";addCategory(Intent.CATEGORY_OPENABLE);putExtra(Intent.EXTRA_TITLE,"academic-os-canonical.json")},EXPORT)} }
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){super.onActivityResult(requestCode,resultCode,data);if(requestCode!=EXPORT||resultCode!=RESULT_OK)return;val uri=data?.data?:return;val bytes=exportData?.toByteArray(Charsets.UTF_8);exportData=null;if(bytes==null){showNotice(ui.t("unavailable"));return};repo.async{var ok=false;try{contentResolver.openOutputStream(uri,"wt")?.use{it.write(bytes);ok=true}}catch(_:Exception){};repo.ui{if(!isDestroyed)showNotice(ui.t(if(ok)"saved" else "error"))}}}
+    companion object{private const val EXPORT=810}
 }
