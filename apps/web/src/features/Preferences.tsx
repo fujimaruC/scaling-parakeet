@@ -107,7 +107,9 @@ export function Preferences({
                 : 'Zona waktu belum tersimpan. Gunakan nama IANA, atau muat ulang setelah konflik.'}
             </p>
           )}
-          <button disabled={disabled || !prefs}>{w.save}</button>
+          <button disabled={disabled || !prefs}>
+            {en ? 'Save timezone' : 'Simpan zona waktu'}
+          </button>
         </form>
       </section>
       <section className="pixel-box">

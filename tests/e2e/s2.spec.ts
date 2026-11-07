@@ -149,9 +149,10 @@ test('S2 read-only routes, distinct dates, real policy, live clock and modal his
   await expect(page.locator('.main-nav b')).toHaveText(String(pending));
   const card = article(page, 'Synthetic exact deadline');
   await expect(card).toBeVisible();
+  // S3 made completion a real versioned write; S2's read-only guard is superseded.
   await expect(
     card.getByRole('button', { name: 'Mark complete', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await expect(card.locator('.s2-time-left')).toHaveText('11h 59m');
   await page.clock.fastForward(60000);
   await expect(card.locator('.s2-time-left')).toHaveText('11h 58m');
@@ -161,6 +162,8 @@ test('S2 read-only routes, distinct dates, real policy, live clock and modal his
   await page.getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(page.locator('[data-group]')).toHaveCount(5);
   await page.getByRole('button', { name: 'Organization', exact: true }).click();
+  // S5 added a 250 ms debounced server query; the paused test clock must advance.
+  await page.clock.fastForward(400);
   await expect(article(page, 'Synthetic exact deadline')).toHaveCount(0);
   await expect(article(page, 'Synthetic unknown duty')).toBeVisible();
   await expect(article(page, 'Synthetic approximate duty')).toContainText(
@@ -182,13 +185,14 @@ test('S2 read-only routes, distinct dates, real policy, live clock and modal his
   await expect(page.locator('[data-reminder-policy]')).toContainText(
     '7, 2 hours before deadline',
   );
-  await page.getByRole('button', { name: 'Date preview', exact: true }).click();
+  await page.getByRole('button', { name: 'Change date', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   expect(await dialog.evaluate((el) => el.matches(':modal'))).toBe(true);
+  // S3 replaced the read-only preview with a real versioned date write.
   await expect(
     dialog.getByRole('button', { name: 'Save', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   for (const precision of ['datetime', 'approximate', 'unknown', 'date_only'])
     await dialog
       .getByLabel('Date precision', { exact: true })
@@ -209,7 +213,7 @@ test('S2 read-only routes, distinct dates, real policy, live clock and modal his
     '23:59',
   );
   await expect(
-    page.getByRole('button', { name: 'Date preview', exact: true }),
+    page.getByRole('button', { name: 'Change date', exact: true }),
   ).toBeFocused();
   await page.goBack();
   await expect(page).toHaveURL(/\/tasks$/);
@@ -384,7 +388,7 @@ test('S2 360px, doubled text, target sizes, foreground contrast and deep-link av
       .locator('.s2-detail')
       .evaluate((el) => el.scrollWidth <= innerWidth),
   ).toBe(true);
-  await page.getByRole('button', { name: 'Date preview', exact: true }).click();
+  await page.getByRole('button', { name: 'Change date', exact: true }).click();
   await auditContrast(page, '.s2-sheet', 'Date sheet');
   await page.locator('.s2-sheet').evaluate((root) => {
     const nodes = [...root.querySelectorAll<HTMLElement>('*')];

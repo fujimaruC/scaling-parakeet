@@ -317,7 +317,7 @@ The final round-trip is rerun against 5ae9583 before delivery.
 
 ---
 
-## 8. Hardware run against build `f68dec8`, and a defect in the crash monitor
+## 8b. Hardware run against build `f68dec8`, and a defect in the crash monitor
 
 Ran `scripts/device_evidence.py` twice against the owner's CPH2015 (API 28) with the APK built from `f68dec8`.
 
@@ -452,3 +452,89 @@ escaped earlier suites; the next verifier must run the actual owner protocol
 separately, without fabricating it. No push, deployment, paid provisioning or
 real credentials/messages were used. Android identity/accessibility, real
 large-ledger/device performance and all outstanding release gates remain open.
+
+---
+
+## 11. Independent verification of S3–S7 — base 6de38fd, 2026-11-07
+
+Section 10 recorded compilation only, because the owner reserved testing for a
+separate agent. This section is that agent's run, on the same tree. It adds no
+feature and no source behaviour: the changes below are accessibility fixes, one
+layout fix, test-assertion updates and two mutation-case repairs, all found by
+running the suites against what S3–S7 actually shipped.
+
+### What S3–S7 shipped that the build did not catch
+
+`git diff 11a08eb HEAD -- tests/` was empty: the continuation added no test. Its
+10,599 lines passed typecheck and dry-run bundling, so nothing here was a compile
+error. Six real defects surfaced only when the existing suites ran against the new
+UI:
+
+| # | Defect | Fix |
+|---|---|---|
+| 1 | `Preferences` save button's accessible name was the shared word `Save`, which also matched the context form on the same screen. `getByRole('button', {name:'Save'})` was ambiguous for both users and assistive tech. | Button text is now `Save timezone` / `Simpan zona waktu`. |
+| 2 | `DateFields` precision `<select>` had no accessible name. | Added `aria-label={w.precision}`. |
+| 3 | `QuickSheet`'s task-type button group borrowed `w.context` as its group name, so the group and the context `<select>` were both announced as "Context". | Group renamed `Task type` / `Jenis tugas`. |
+| 4 | The context `<select>` inherited that collision once the group was renamed. | Context select carries its own `aria-label={w.context}`. |
+| 5 | The Tools disclosure lived inside `<main key={page}>`, so every page change remounted it and silently collapsed the panel mid-session. | `<details className="shell-tools">` moved above the keyed `<main>`. Structurally a one-line move: `git diff -w` shows one deletion and one insertion. |
+| 6 | After fix 5 the panel sat outside `<main>`'s horizontal padding. | `.shell-tools { padding: 0 16px; }`. |
+
+Tests and contracts updated to match the real UI: `tests/e2e/app.spec.ts` now drives
+the actual `QuickSheet`, row body buttons and S3 completion toggle, asserts a toast
+never intercepts pointer events, and navigates back from the detail route before
+using the shell; `tests/e2e/s2.spec.ts` records that S3 made completion and date
+edits real versioned writes, and advances the paused clock past S5's 250 ms
+debounce. `docs/06-UI-UX.md` states the Tools-panel rule and that the S3–S7
+continuation, not the S2 slice, adds writes.
+
+### Two mutation cases were unsound
+
+Both were found by running the suite, not by reading it.
+
+- `undated-filter` was an equivalent mutation: flipping its condition changed no
+  observable behaviour, so no test could ever fail. Replaced with `undated-scroll`,
+  which flips the condition that keeps the no-date row visible and is caught by the
+  existing "keeps partial" test (`toBeInViewport`, line 441).
+- `toast-hit-testing` pointed at a read-only S2 route, which renders no toast at
+  all, so the mutation could not bite. The assertion it needed did not exist. Added
+  a real `document.elementFromPoint` hit test at the toast centre to
+  `app.spec.ts`, and repointed the case at it. Proven both ways: baseline
+  `1 passed` exit 0; broken (`pointer-events: auto`) failed with
+  `Expected: false / Received: true` at line 102, exit 1; restored exit 0.
+
+No assertion was weakened to make a case pass. The approval and privacy guards are
+untouched.
+
+### Results actually observed on this tree
+
+| Command | Result |
+|---|---|
+| `npm run check` (lint → typecheck → Vitest → build) | **exit 0** |
+| `npm run lint` (prettier) | exit 0, all matched files conform |
+| `npm run typecheck` (`tsc --noEmit`) | exit 0, no diagnostics |
+| `npm test` (Vitest) | **25 passed**, 3 files |
+| `npm run test:e2e` (Playwright) | **12 passed** (1.0m), 3 files, including the new toast hit test |
+| `scripts/check_s2_mutations.py` | **PASS: 22 broken assertion failures; 22 restored passes; sources restored** — 66/66 logs, 0 non-zero baselines, 0 surviving mutations |
+| `.venv/bin/python -m unittest discover -s collectors/local/tests` | **34 tests, OK** |
+| `.venv/bin/python scripts/validate_planning.py` | **PASS**: 3 schemas, 5 fixtures, 21 rejection cases, 84 links, 30 features, 34 test IDs |
+| `npx playwright test --list` | 12 tests in 3 files, all specs parse |
+
+A first `npm run lint` returned exit 2 with "JSON parse failed" — that was the
+output-condensing wrapper failing to parse ESLint output, not the linter. Re-run
+through `rtk proxy` it returned exit 0; the direct result is what is recorded.
+
+### What this does not establish
+
+- **Not re-run:** `npm run test:pwa` on this tree, and Gradle
+  `assembleDebug lint testDebugUnitTest`. The Android app source is byte-identical
+  to 6de38fd (`git diff --name-only 6de38fd HEAD -- apps/android-companion` is
+  empty); only `collectors/local/tests/test_device_evidence.py` changed, and its
+  suite ran above. Skipping the Gradle rebuild is a scope decision, not a result.
+- **Device behaviour is unverified.** `adb devices` reported 0 devices each check
+  and `enabled_notification_listeners` did not include the Academic OS package
+  throughout. No listener event, capture, queue interrupt, remote recovery or
+  low-RAM lifecycle was observed. Synthetic suites cannot substitute for these.
+- **Not attempted:** visual review, screen-reader/TalkBack pass, real
+  provider/account/D1/Access, physical Web Push, production large-ledger
+  performance.
+- Migration 0006 application is still unverified.

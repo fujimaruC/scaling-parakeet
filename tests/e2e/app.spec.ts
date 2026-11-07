@@ -16,16 +16,18 @@ test('organization context, task persistence, completion and offline snapshot', 
     .selectOption('organization');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('button', { name: '+ Add task', exact: true }).click();
-  await page.getByLabel('Task title').fill('Prepare Himpunan event');
-  await page
-    .getByRole('dialog')
-    .getByRole('combobox', { name: 'Context', exact: true })
+  // S3 QuickSheet: type is a button group, the title field is "Title".
+  const quick = page.getByRole('dialog');
+  await quick
+    .getByRole('button', { name: 'Organization', exact: true })
+    .click();
+  await quick
+    .getByLabel('Title', { exact: true })
+    .fill('Prepare Himpunan event');
+  await quick
+    .getByLabel('Context', { exact: true })
     .selectOption({ label: 'Himpunan' });
-  await page
-    .getByRole('dialog')
-    .getByRole('combobox', { name: 'Type', exact: true })
-    .selectOption('organizational_duty');
-  await page.getByRole('button', { name: 'Save', exact: true }).last().click();
+  await quick.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(
@@ -50,8 +52,7 @@ test('organization context, task persistence, completion and offline snapshot', 
   ).toBeDisabled();
   await page
     .getByRole('article', { name: 'Prepare Himpunan event', exact: true })
-    .getByRole('button')
-    .last()
+    .locator('.s2-task-body')
     .click();
   await expect(
     page.getByRole('status').filter({ hasText: 'Saved snapshot' }),
@@ -62,29 +63,45 @@ test('organization context, task persistence, completion and offline snapshot', 
   await expect(
     page.getByRole('button', { name: 'Add task', exact: true }),
   ).toBeEnabled();
+  // S3 wired real completion; the old read-only guard no longer applies.
   await expect(
     page.getByRole('button', {
       name: 'Mark complete: Prepare Himpunan event',
       exact: true,
     }),
-  ).toBeDisabled();
-  // Existing write path outside S2 is preserved, not newly implemented here.
-  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Prepare Himpunan event', exact: true })
-    .click();
-  await page
-    .getByRole('dialog')
-    .getByRole('combobox', { name: 'Status', exact: true })
-    .selectOption('done');
-  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
-  await page.getByRole('button', { name: 'Tasks', exact: true }).click();
+  ).toBeEnabled();
+  // S3 replaced the legacy dialog with a real versioned completion toggle.
+  const complete = page.getByRole('button', {
+    name: 'Mark complete: Prepare Himpunan event',
+    exact: true,
+  });
+  await complete.click();
   await expect(
     page.getByRole('button', {
       name: 'Undo completion: Prepare Himpunan event',
       exact: true,
     }),
-  ).toBeDisabled();
+  ).toBeEnabled();
+  // The toast must never intercept pointer events meant for the page beneath.
+  const toast = page.locator('.s2-toast');
+  await expect(toast).toBeVisible();
+  const hitTest = await toast.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      r.left + r.width / 2,
+      r.top + r.height / 2,
+    );
+    return {
+      hitNull: hit === null,
+      isToast: hit === el || el.contains(hit),
+    };
+  });
+  expect(hitTest.hitNull, 'toast centre must be inside the viewport').toBe(
+    false,
+  );
+  expect(hitTest.isToast, 'toast must not intercept pointer events').toBe(
+    false,
+  );
 });
 test('360px navigation and both themes fit the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
@@ -139,25 +156,35 @@ test('edit task, keep date-only precision and navigate month calendar', async ({
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByRole('button', { name: 'Calendar', exact: true }).click();
   await page.getByRole('button', { name: '+ Add task', exact: true }).click();
-  await page.getByLabel('Task title').fill('Calendar responsibility');
+  // S3 replaced the legacy quick-add form with the real QuickSheet.
+  const quick = page.getByRole('dialog');
+  await quick.getByRole('button', { name: 'Personal', exact: true }).click();
+  await quick
+    .getByLabel('Title', { exact: true })
+    .fill('Calendar responsibility');
+  await quick
+    .getByLabel('Date precision', { exact: true })
+    .selectOption('date_only');
+  await quick.getByLabel('Date only', { exact: true }).fill('2026-11-20');
+  await quick.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // S5 calendar is day-cell based; the task lives on its own day.
+  await page.getByRole('button', { name: /November 20, 2026/ }).click();
   await page
-    .getByRole('dialog')
-    .getByLabel('Deadline', { exact: true })
-    .fill('2026-11-20');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Calendar responsibility', exact: true })
+    .getByRole('article', { name: 'Calendar responsibility', exact: true })
+    .locator('.s2-task-body')
     .click();
+  await page.getByRole('button', { name: 'Edit task', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Task title').fill('Revised responsibility');
   await dialog.getByRole('button', { name: 'Save changes' }).click();
   await expect(dialog).toHaveCount(0);
-  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+  // The shell is hidden while a detail route is open, so leave it before using nav.
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Calendar' })).toBeVisible();
+  await page.getByRole('button', { name: /November 20, 2026/ }).click();
   await expect(
-    page.getByRole('group', { name: 'Month calendar' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Revised responsibility', exact: true }),
+    page.getByRole('article', { name: 'Revised responsibility', exact: true }),
   ).toBeVisible();
   await page.setViewportSize({ width: 360, height: 800 });
   await page.screenshot({
@@ -175,10 +202,10 @@ test('correct a proposal before approval', async ({ page }) => {
   await page.locator('.shell-tools > summary').click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByRole('button', { name: /^Review(?: \d+)?$/ }).click();
-  const proposal = page.locator('article.proposal').filter({
-    has: page.getByRole('heading', { name: 'Synthetic proposal for review' }),
-  });
-  await proposal.getByRole('button', { name: 'Edit & review' }).click();
+  // S4 renders one card at a time; the action row is a sibling of the card,
+  // so the button is page-level rather than nested inside the article.
+  await expect(page.locator('article.review-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Edit & review' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Task title').fill('Owner corrected synthetic duty');
   await dialog.getByRole('button', { name: 'Approve changes' }).click();

@@ -386,6 +386,7 @@
 }
 .shell-tools {
   margin-bottom: 12px;
+  padding: 0 16px;
 }
 .shell-tools summary {
   min-height: 44px;

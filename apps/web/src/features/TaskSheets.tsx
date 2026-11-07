@@ -28,6 +28,7 @@ export function DateFields({
       <label>
         {w.precision}
         <select
+          aria-label={w.precision}
           value={value.precision}
           onChange={(e) =>
             onChange({
@@ -231,7 +232,11 @@ export function QuickSheet({
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
-          <div className="s2-filters" role="group" aria-label={w.context}>
+          <div
+            className="s2-filters"
+            role="group"
+            aria-label={locale === 'en' ? 'Task type' : 'Jenis tugas'}
+          >
             {(['academic', 'organization', 'personal'] as const).map((k) => (
               <button
                 type="button"
@@ -249,6 +254,7 @@ export function QuickSheet({
           <label>
             {w.context}
             <select
+              aria-label={w.context}
               required={needsContext}
               value={context}
               onChange={(e) => setContext(e.target.value)}

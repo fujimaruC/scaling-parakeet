@@ -748,71 +748,71 @@ function App() {
             <Bitmap rows={ICONS.plus} scale={4} />
           </button>
         )}
-        <main key={page} className="screen-entrance">
-          <details className="shell-tools">
-            <summary>
-              {locale === 'en' ? 'Tools & navigation' : 'Alat & navigasi'}
-            </summary>
-            <div className="aside-bottom">
-              <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}>
-                {s.lang}
-              </button>
-              <button
-                onClick={() =>
-                  setTheme(
-                    document.documentElement.dataset.theme === 'dark'
-                      ? 'light'
-                      : 'dark',
-                  )
-                }
-              >
-                {s.theme}
-              </button>
-              <label className="theme-choice">
-                {locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
-                <select
-                  aria-label={
-                    locale === 'en' ? 'Theme preference' : 'Pilihan tema'
-                  }
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value as typeof theme)}
-                >
-                  <option value="system">
-                    {locale === 'en' ? 'System' : 'Sistem'}
-                  </option>
-                  <option value="light">
-                    {locale === 'en' ? 'Light' : 'Terang'}
-                  </option>
-                  <option value="dark">
-                    {locale === 'en' ? 'Dark' : 'Gelap'}
-                  </option>
-                </select>
-              </label>
-              <small>Asia/Makassar · UTC+8</small>
-            </div>{' '}
-            <header>
+        <details className="shell-tools">
+          <summary>
+            {locale === 'en' ? 'Tools & navigation' : 'Alat & navigasi'}
+          </summary>
+          <div className="aside-bottom">
+            <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}>
+              {s.lang}
+            </button>
+            <button
+              onClick={() =>
+                setTheme(
+                  document.documentElement.dataset.theme === 'dark'
+                    ? 'light'
+                    : 'dark',
+                )
+              }
+            >
+              {s.theme}
+            </button>
+            <label className="theme-choice">
+              {locale === 'en' ? 'Theme preference' : 'Pilihan tema'}
               <select
-                aria-label="Page"
-                className="mobile-pages"
-                value={page}
-                onChange={(e) => setPage(e.target.value as Page)}
+                aria-label={
+                  locale === 'en' ? 'Theme preference' : 'Pilihan tema'
+                }
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as typeof theme)}
               >
-                {nav.map((p) => (
-                  <option key={p} value={p}>
-                    {p === 'tasks'
-                      ? s.navTasks
-                      : p === 'review'
-                        ? s.navReview
-                        : s[p]}
-                  </option>
-                ))}
+                <option value="system">
+                  {locale === 'en' ? 'System' : 'Sistem'}
+                </option>
+                <option value="light">
+                  {locale === 'en' ? 'Light' : 'Terang'}
+                </option>
+                <option value="dark">
+                  {locale === 'en' ? 'Dark' : 'Gelap'}
+                </option>
               </select>
-              <span className="eyebrow">YOUR PERSONAL MEMORY</span>
-              <button onClick={() => void load()} disabled={loading}>
-                {s.refresh}
-              </button>
-            </header>
-          </details>
+            </label>
+            <small>Asia/Makassar · UTC+8</small>
+          </div>{' '}
+          <header>
+            <select
+              aria-label="Page"
+              className="mobile-pages"
+              value={page}
+              onChange={(e) => setPage(e.target.value as Page)}
+            >
+              {nav.map((p) => (
+                <option key={p} value={p}>
+                  {p === 'tasks'
+                    ? s.navTasks
+                    : p === 'review'
+                      ? s.navReview
+                      : s[p]}
+                </option>
+              ))}
+            </select>
+            <span className="eyebrow">YOUR PERSONAL MEMORY</span>
+            <button onClick={() => void load()} disabled={loading}>
+              {s.refresh}
+            </button>
+          </header>
+        </details>
+        <main key={page} className="screen-entrance">
           {error && (
             <p role="alert" className="banner">
               {error}

@@ -258,10 +258,17 @@ lockfile dependencies with npm ci --ignore-scripts (no new dependency). Vite and
 Worker dry-run compile; TypeScript emits no diagnostics. No Java/Android SDK was
 installed or used for this web-only continuation. Native source unchanged.
 
-NOT RUN by owner instruction: npm run check (contains tests), npm test, npm run
-test:e2e, npm run test:pwa, Python/planning validation, Gradle build/lint/JVM/API28,
-mutation/fault tests, browser/visual/a11y checks. Historical counts above do not
-apply to this continuation. No current passing test count is claimed.
+Verified by a later agent on this tree (base 6de38fd): npm run check exit 0
+(prettier, tsc, Vitest 25/25, Vite + Worker build), npm run test:e2e 12 passed,
+mutation suite PASS 22/22 broken-assertion failures with 22 restored passes and 0
+survivors, Python discovery 34 OK, planning validation PASS. Running the suites
+found six real UI/a11y defects and two unsound mutation cases; all are fixed here.
+Full commands, outputs and exclusions are in VERIFICATION-LOG section 11.
+
+NOT re-run on this tree: npm run test:pwa and Gradle assembleDebug/lint/JVM. The
+Android app source is byte-identical to 6de38fd, so the Gradle result at section 7
+is not contradicted, but it was not re-established here. Migration 0006 application
+remains unverified.
 
 Unverified: all new runtime behavior and migration application, real capture and
 private transport/reconnect, Android Chrome138/TalkBack, physical Web Push,

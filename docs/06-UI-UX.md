@@ -74,7 +74,9 @@ Test 360px phone, wide desktop, both languages/themes, keyboard, screen-reader n
 S1 is owner-accepted. S2 adds `/today` (with `/` alias), `/tasks` and
 `/tasks/:id`; tabs, detail and `?sheet=date|quick` are real history entries. Back
 closes a sheet before detail; a direct detail link returns to Tasks. Utilities and
-legacy pages remain reachable in the labeled Tools disclosure. Today has the
+legacy pages remain reachable in the labeled Tools disclosure. The Tools
+disclosure sits outside the per-screen keyed container, so opening a page
+does not collapse it; page changes must not reset that panel. Today has the
 pixel date/header/chips, aggregate proposal banner, due/overdue cards, next-seven-
 calendar-day rows and an always-present no-date navigation row, even at zero.
 Tasks has context filters and ordered Today/This week/Later/No date/Done groups.
@@ -92,8 +94,9 @@ snapshot and leaves history/policy unavailable.
 
 S2 completion/add/save are disabled. Date and quick-add sheets preview fields;
 the precision selector distinguishes exact/date-only/approximate/unknown. No S3
-write or undo is implemented. Existing legacy write flows remain available outside
-these new read-only surfaces. Native dialogs handle modality with explicit
+write or undo is implemented **by this slice**; the S3–S7 continuation below adds
+them. Existing legacy write flows remain available outside these new
+read-only surfaces. Native dialogs handle modality with explicit
 aria-modal, focus trapping/return, Escape, backdrop and browser Back. A polite
 informational toast is not a save-success acknowledgment. One shared clock updates
 visible countdowns every 30 seconds and on return from background.
