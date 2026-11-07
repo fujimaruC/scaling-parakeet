@@ -3,7 +3,8 @@
 **How to use:** Part 1 is for the owner. Part 2 is the brief — paste it whole into the
 implementation agent. Nothing below this line is required reading for the owner.
 
-Base: `1a9c8c781b3ac264ae9216cd8e86fae2f4c7af2b` — `main` on GitHub, verified reachable.
+Base: the code is `1a9c8c7`. `main` on GitHub is newer only because this brief is a commit.
+`git log --oneline -1` is correct at whatever it prints; check that `1a9c8c7` is in the last ten.
 
 ---
 
@@ -38,17 +39,18 @@ honestly marked unproven. You are not here to add features because they seem rea
 REPOSITORY
   https://github.com/fujimaruC/scaling-parakeet
   Branch: main
-  Base commit: 1a9c8c781b3ac264ae9216cd8e86fae2f4c7af2b
+  Code base commit: 1a9c8c781b3ac264ae9216cd8e86fae2f4c7af2b
   Verify before writing code:
+    git log --oneline -10
     git log --oneline -1
-    git log --oneline -5
-  The expected five commits, newest first, are:
-    1a9c8c7 test: verify S3-S7 on the real suites and fix what they found
-    d748479 feat: finalize S3-S7 compiled handoff and verification instructions
-    4d098ce feat: implement S3-S7 workflows for verification handoff
-    11a08eb feat: implement read-only S2 ledger and repair crash window
-    6de38fd docs: record a defect in the crash monitor and queue S2
-  If you do not see these, STOP and say so. Do not work on a different tree.
+  Your HEAD may be newer than the code base, because this brief is itself a commit.
+  That is expected. What must be true:
+    - 1a9c8c7 appears in git log --oneline -10, with the subject
+      "test: verify S3-S7 on the real suites and fix what they found"
+    - the four commits 1a9c8c7, d748479, 4d098ce, 11a08eb all appear, in that order
+    - docs/NEXT-PROMPT.md exists at HEAD (this file)
+  If any of those is false, STOP and say so. Do not work on a different tree.
+  Produce your patch against 1a9c8c7, not against your HEAD, and say which you used.
 
 READ BEFORE WRITING CODE, in this order:
   AGENTS.md
@@ -84,6 +86,52 @@ Machine-verified on commit 1a9c8c7, synthetic data only:
   Gradle assembleDebug/lint/unitTest    NOT re-run on this commit
 
 Do not inherit those counts as yours. Reproduce them yourself and report what you observe.
+
+WHAT HAPPENED IN THE TERMINAL SESSION THAT PRODUCED THIS BRIEF
+
+You are the second agent on this work. The first one ran locally, on the owner's Linux
+machine, against the tree that is now `1a9c8c7`. This is its context, so you do not repeat it
+or assume it went further than it did.
+
+  Environment actually used: Node 24.22.1, npm 11.9.0, Python 3.12.14, JDK 17 at
+  ~/.local/opt/jdk-17.0.21+9, ANDROID_HOME=/home/riko/Android/Sdk with platforms 28 and 35
+  and build-tools 35.0.0, Gradle 8.11.1, Playwright Chromium headless shell 1248.
+  Linux, Chromium only. No Safari, no Firefox, no real Android browser.
+
+  What it did, in order: applied the pending S3-S7 patch, ran the suites, found six defects,
+  fixed them, repaired two unsound mutation cases, re-ran everything, then fast-forwarded
+  `main` from 6de38fd to 1a9c8c7 and pushed. That push is why you can see this code at all;
+  before it, every line of S3-S7 existed only as an unpushed local branch.
+
+  Git history you should expect:
+    6de38fd  origin/main before this work
+    11a08eb  S2 ledger
+    4d098ce  S3-S7 implementation
+    d748479  S3-S7 handoff
+    1a9c8c7  the verification run and its six fixes
+    (newer)  this brief and a line-count correction
+  `main` is now the verified tree. There is no separate branch to find.
+
+  Its honest mistakes, because they are the same traps waiting for you:
+    - It first reported "10,599 lines with zero tests". The zero-test claim was right; the
+      line count was wrong. 10,599 was the whole 6de38fd..d748479 delta including S2.
+      S3-S7 alone is 3,846 insertions across 34 files. It corrected every document.
+      Lesson: check which commit range a number came from before quoting it.
+    - `npm run lint` returned exit 2 with "JSON parse failed". That was the shell's
+      output-condensing wrapper failing to parse ESLint output, not the linter. The same
+      command through the wrapper's proxy returned exit 0. Lesson: a tool that transforms
+      output can manufacture a failure. Confirm the failure is real before chasing it.
+    - It wrote a brief that told you to expect exactly five commits with 1a9c8c7 newest.
+      Committing the brief changed HEAD, so that check would have failed on a correct tree.
+      It is fixed above. Lesson: a verification instruction must not assume it is the last
+      commit.
+
+  What it did NOT do: no device test, no real account, no provider, no deployment, no
+  notification access. `adb devices` returned zero devices on every check and the Academic OS
+  package never appeared in `enabled_notification_listeners`. Every real-phone observation in
+  this repository predates S3-S7 and belongs to an earlier session's build.
+
+  Its full record is docs/VERIFICATION-LOG.md section 11. Read it; do not overwrite it.
 
 THE CENTRAL FACT YOU MUST NOT FORGET
 
