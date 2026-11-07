@@ -466,7 +466,7 @@ running the suites against what S3–S7 actually shipped.
 ### What S3–S7 shipped that the build did not catch
 
 `git diff 11a08eb HEAD -- tests/` was empty: the continuation added no test. Its
-10,599 lines passed typecheck and dry-run bundling, so nothing here was a compile
+3,846 lines across 34 files passed typecheck and dry-run bundling, so nothing here was a compile
 error. Six real defects surfaced only when the existing suites ran against the new
 UI:
 
