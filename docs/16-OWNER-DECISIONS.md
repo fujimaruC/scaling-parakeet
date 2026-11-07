@@ -2,13 +2,17 @@
 
 Version 0.2.0, 2026-11-06. Sources: owner-supplied “Academic OS: Confirmed Product Decisions”, attached “Product Questions and Answers”, and three explicit interview selections. The confirmed decisions supersede contradictions in the attachment and v0.1.
 
+> **Provenance warning (2026-11-07).** Neither cited source document exists in this repository or anywhere in its git history: a full-history search for “Confirmed Product Decisions” and “Product Questions and Answers” returns nothing. Every row below therefore rests on an unattributable source. Treat the table as a design note until the owner confirms each row individually; do not cite it as the owner's decision. Rows the owner restates in conversation are the only ones with provenance.
+>
+> **D05 is superseded.** The owner stated on 2026-11-07 that the product was always meant to be an in-app (native Android) experience, not a PWA, and chose a native Android app when asked directly. D05 is retained below as history, not as current direction. The platform reversal, its cost, and what happens to the existing React implementation are not yet decided and are recorded as open.
+
 | ID | Confirmed decision | Consequence |
 |---|---|---|
 | D01 | Academic and organizational obligations are equally in scope | Himpunan, meetings and duties must work without a course |
 | D02 | Both Android notification listener and manual exports are MVP | Actual Android 9 feasibility is M0; both production paths required for release |
 | D03 | Raw export files exclusively on Linux; no cloud raw notification content | Separate local and cloud data contracts; exclude device backups and logs |
 | D04 | Every AI task is a proposal until explicit approval | Review/edit/reject; no confidence threshold auto-acceptance |
-| D05 | Responsive PWA primary; native Android supports collection only | No duplicate native task-management UI |
+| ~~D05~~ | ~~Responsive PWA primary; native Android supports collection only~~ **SUPERSEDED 2026-11-07 by owner direction toward a native app** | No duplicate native task-management UI |
 | D06 | Linux + 9Router + Worker + D1 retained | Laptop-off cloud reads/reminders; phone capture can queue independently |
 | D07 | $0 preferred, not strict | Paid options can be proposed when useful; no spending amount approved |
 | D08 | Test real Android 9 lifecycle/metadata/filtering/queue/privacy/recovery in M0 | Simulated success never passes the device gate |
