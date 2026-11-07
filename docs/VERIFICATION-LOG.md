@@ -538,3 +538,57 @@ through `rtk proxy` it returned exit 0; the direct result is what is recorded.
   provider/account/D1/Access, physical Web Push, production large-ledger
   performance.
 - Migration 0006 application is still unverified.
+
+---
+
+## 12. Device smoke on hardware — 2026-11-07
+
+Real run on the owner's phone over ADB, not an emulator and not a simulation. This
+follows the one-minute protocol in [DEVICE-SMOKE](DEVICE-SMOKE.md) and executes only
+install, cold launch, background/reopen and the permission-status read. It does not
+grant notification access and does not touch any conversation.
+
+Device: OPPO CPH2015, Android 9 / API 28, build `CPH2015EX_11_A.67`.
+Command: `.venv/bin/python scripts/device_evidence.py --samples 2 --apk apps/android-companion/app/build/outputs/apk/debug/app-debug.apk`
+
+| Field | Observed | How it was checked |
+|---|---|---|
+| `install_ok` | **true** | `adb install -r` returned Success, and the pulled installed APK matches the built one |
+| `apk_sha256` | `3b6d2011731221f7c89899e6338e08bd036eea941ba5e098db25f49c557a2ba7` | Independent `adb pull` of `pm path` output, `sha256sum` both sides: identical |
+| `source_commit` | `d7484799e5fa65536a0b47225059ff176590a160` | Read from the installed APK's `assets/academic-os-build.json`, `source_dirty:false` |
+| `launch_stays_open` | **true** | Force-stop, then cold `am start`; process alive and `mResumedActivity` is `MainActivity` |
+| `reopen_ok` | **true** | Home keyevent, relaunch; process alive, activity resumed |
+| `fatal_exception_observed` | **false** | Tool's bounded marker-scoped window, cross-checked independently: `adb logcat -d -b crash` contains one `FATAL EXCEPTION`, its `Process:` line names `com.coloros.mcs` (a ColorOS system process), and **zero** crash blocks name `id.academicos.companion` |
+| `notification_access` | **false** | `settings get secure enabled_notification_listeners` does not list the package |
+| `low_ram` | false | Reported by the app in its own evidence line |
+| `queue_count` | 0 | Reported by the app; database is readable, no repair prompt |
+| `observed_gap_count` | 0 | Reported by the app |
+| `repair_required` | false | No legacy-wipe prompt appeared; unlike the 2026-11-06 run, which was blocked |
+| `capture` / `transport` / `key_loss_recovery` / `backup_exclusion` | `not_run` | Out of scope for the one-minute smoke |
+
+Tooling note: the second sample reports `install_ok: null`. That is by design — the APK is
+passed only on the first sample — and it is listed under `unavailable`, not as a failure.
+`smoke_result` is hard-coded `unverified` by the tool and stays that way.
+
+### What this proves
+
+Install, cold launch, background/reopen, and the permission-status screen all work on
+API 28 hardware for a build at `d748479`. The app runs with a readable database and no
+repair state, and produced no fatal exception during the observed window. The earlier
+`AutoCloseable` launch crash and the `-T 1` marker defect both stay fixed under real
+conditions.
+
+### What this does NOT prove
+
+- **No listener event has ever been received.** `notification_access` is false, so the
+  notification listener has never run. Capture, filtering, deduplication, queue durability,
+  retention, restart survival and interrupted-ack recovery are all still unverified. This
+  run cannot substitute for them and does not.
+- The APK was built at `d748479`. Source at `d748479` contains no Android changes after
+  that point, so `git diff --stat d748479 HEAD -- apps/android-companion` is empty and the
+  binary correctly represents current native source. Web changes after that commit are not
+  in the APK and are not claimed to be.
+- One smoke run is not the capture matrix. `docs/DEVICE-SMOKE.md` and
+  [14](14-ANDROID-COMPANION.md) remain the protocol for that.
+- No emulator was used, so this result carries no claim beyond this physical device on this
+  vendor build.

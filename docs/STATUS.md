@@ -274,6 +274,17 @@ Unverified: all new runtime behavior and migration application, real capture and
 private transport/reconnect, Android Chrome138/TalkBack, physical Web Push,
 provider/account/production D1/Access, visual review and accessibility compliance.
 notification_access=false remains the last observation; no listener event or
-capture has ever run. Latest crash-coverage null remains null. Android identity/
-resources/theme, native accessibility, production large-ledger performance and
-all other earlier release gates remain outstanding. No APK is included.
+capture has ever run. Android identity/resources/theme, native accessibility,
+production large-ledger performance and all other earlier release gates remain
+outstanding.
+
+Device smoke DID run on real hardware on 2026-11-07: OPPO CPH2015, API 28,
+build d748479. install_ok, launch_stays_open and reopen_ok are true; the pulled
+installed APK hash matches the built one; fatal_exception_observed is false and
+was cross-checked independently (the only crash block in the buffer names
+com.coloros.mcs, not this package). This is the one-minute smoke in
+DEVICE-SMOKE, not the capture matrix: because notification access is still not
+granted, no listener event has ever been received, so capture, filtering, queue
+durability, retention, restart survival and interrupted-ack recovery remain
+unverified. A debug APK was built and installed for this run. Full record:
+[VERIFICATION-LOG](VERIFICATION-LOG.md) section 12.
