@@ -162,3 +162,28 @@ browser, synthetic clock, viewport, reduced-motion setting and captures. Referen
 font calls are replaced in memory with the same local fonts; the reference file
 is unchanged. These are review images, not approved pixel-equality baselines or
 real Android evidence. Do not use this renderer with personal data.
+
+## S3–S7 build-only handoff (2026-11-07)
+
+See [S3-S7-HANDOFF](S3-S7-HANDOFF.md). The current owner requested implementation
+and compilation only, with all tests delegated. Do not treat historical S2
+readonly assertions, mutation totals or renders as current validation. No new
+application dependency. Production assets now stamp the public shell hash map
+into sw.js at build time; public/sw.js is a template, not a standalone development
+service worker. API responses stay out of Cache Storage. Generate deterministic
+public icons with `python3 scripts/generate_pwa_icons.py` if changing the bitmap.
+
+Build without tests:
+
+```bash
+npm ci --ignore-scripts
+./node_modules/.bin/tsc --noEmit
+WRANGLER_SEND_METRICS=false npm run build
+```
+
+The last command runs Vite and the existing Worker `wrangler deploy --dry-run`;
+it does not deploy. It requires no account credentials. The ZIP includes compiled
+web/Worker bundles separately from source. They retain UNCONFIGURED bindings;
+production auth/deployment is an owner-local follow-up. Apply all migrations,
+including 0006, in a disposable environment before verification. No real data or
+credentials belong in that environment. Follow the handoff before real use.

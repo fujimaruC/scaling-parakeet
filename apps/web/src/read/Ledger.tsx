@@ -187,6 +187,9 @@ export default function Ledger({
   onSheet,
   group,
   actions,
+  queryApi,
+  offline,
+  revision,
 }: {
   page: 'today' | 'tasks';
   tasks: Task[];
@@ -202,13 +205,100 @@ export default function Ledger({
   onSheet: () => void;
   group?: string | null;
   actions?: TaskActions;
+  queryApi?: (path: string) => Promise<any>;
+  offline?: boolean;
+  revision?: string;
 }) {
   const now = useClock(),
     w = words[locale];
   const [filter, setFilter] = useState('all'),
     [search, setSearch] = useState('');
+  const remote =
+    page === 'tasks' &&
+    Boolean(queryApi) &&
+    (filter !== 'all' || Boolean(search));
+  const queryPath =
+    '/tasks?limit=100&title_only=1' +
+    (filter !== 'all' ? '&context_type=' + filter : '') +
+    '&q=' +
+    encodeURIComponent(search);
+  const [result, setResult] = useState<{
+      key: string;
+      items: Task[];
+      cursor: string | null;
+      cached?: boolean;
+    } | null>(null),
+    [queryError, setQueryError] = useState(false),
+    [queryBusy, setQueryBusy] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setQueryError(false);
+    setQueryBusy(false);
+    if (!remote) return;
+    setQueryBusy(true);
+    const timer = setTimeout(
+      () =>
+        queryApi!(queryPath)
+          .then((v) => {
+            if (live)
+              setResult({
+                key: queryPath,
+                items: v.items,
+                cursor: v.next_cursor,
+                cached: v.cached,
+              });
+          })
+          .catch(() => {
+            if (live) setQueryError(true);
+          })
+          .finally(() => {
+            if (live) setQueryBusy(false);
+          }),
+      250,
+    );
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [remote, queryPath, offline, revision]);
+  const observed = remote ? result?.key === queryPath : true;
+  const source = remote ? (observed ? result!.items : []) : tasks;
+  const pagePartial = remote ? Boolean(observed && result?.cursor) : partial;
+  const more = remote
+    ? async () => {
+        if (!result?.cursor || !queryApi || queryBusy) return;
+        const key = queryPath;
+        setQueryBusy(true);
+        try {
+          const v = await queryApi(
+            queryPath + '&cursor=' + encodeURIComponent(result.cursor),
+          );
+          setResult((old) =>
+            old?.key === key
+              ? {
+                  key,
+                  items: [
+                    ...old.items,
+                    ...v.items.filter(
+                      (t: Task) => !old.items.some((i) => i.id === t.id),
+                    ),
+                  ],
+                  cursor: v.next_cursor,
+                }
+              : old,
+          );
+        } catch {
+          setQueryError(true);
+        } finally {
+          setQueryBusy(false);
+        }
+      }
+    : onMore;
+  const mayMore = remote
+    ? Boolean(result?.cursor && !offline && !queryBusy)
+    : canMore;
   const undated = useRef<HTMLElement>(null);
-  const selected = tasks.filter((t) => {
+  const selected = source.filter((t) => {
     const c = contextInfo(t, contexts, locale);
     return (
       (filter === 'all' || c.type === filter) &&
@@ -285,10 +375,10 @@ export default function Ledger({
           {w.readOnly}
         </p>
       )}
-      {partial && (
+      {pagePartial && (
         <p role="status" className="s2-partial">
           {w.partial}
-          {canMore && <button onClick={onMore}>{w.more}</button>}
+          {mayMore && <button onClick={() => void more()}>{w.more}</button>}
         </p>
       )}
       {page === 'today' ? (
@@ -375,6 +465,10 @@ export default function Ledger({
               onChange={(e) => setSearch(e.target.value)}
             />
           </label>
+          {remote && (queryBusy || !observed) && !queryError && (
+            <p role="status">{w.loading}</p>
+          )}
+          {remote && queryError && <p role="alert">{w.unavailable}</p>}
           {groupKeys.map(
             (key) =>
               groups[key].length > 0 && (
@@ -389,9 +483,12 @@ export default function Ledger({
                 </section>
               ),
           )}
-          {selected.filter((t) => t.status !== 'archived').length === 0 && (
-            <Empty text={tasks.length ? w.noMatches : w.empty} />
-          )}
+          {observed &&
+            !queryBusy &&
+            !queryError &&
+            selected.filter((t) => t.status !== 'archived').length === 0 && (
+              <Empty text={remote || tasks.length ? w.noMatches : w.empty} />
+            )}
         </>
       )}
     </div>
@@ -410,6 +507,7 @@ export function TaskDetail({
   observedAt,
   actions,
   revision,
+  onEdit,
 }: {
   id: string;
   initial?: Task;
@@ -423,6 +521,7 @@ export function TaskDetail({
   observedAt?: string;
   actions?: TaskActions;
   revision?: string;
+  onEdit?: (task: Task) => void;
 }) {
   const [historyError, setHistoryError] = useState(false);
   const [view, setView] = useState<any>(null),
@@ -633,6 +732,14 @@ export function TaskDetail({
               )}
             </section>
             <div className="s2-detail-actions">
+              {onEdit && (
+                <button
+                  disabled={actions?.disabled}
+                  onClick={() => onEdit(task)}
+                >
+                  {locale === 'en' ? 'Edit task' : 'Edit tugas'}
+                </button>
+              )}
               <button onClick={onDate} disabled={actions?.disabled}>
                 {w.dateSheet}
               </button>

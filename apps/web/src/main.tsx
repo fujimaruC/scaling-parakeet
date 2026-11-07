@@ -166,21 +166,13 @@ async function api(
     throw Object.assign(new Error(j.error?.code ?? 'REQUEST_FAILED'), {
       status: r.status,
     });
+  if (r.redirected)
+    throw Object.assign(new Error('AUTH_REQUIRED'), { status: 401 });
+  if (!j.meta || !Object.prototype.hasOwnProperty.call(j, 'data'))
+    throw Object.assign(new Error('INVALID_API_RESPONSE'), { status: 502 });
   return /^\/(tasks|candidates)\?/.test(path)
     ? { items: j.data, next_cursor: j.meta?.next_cursor ?? null }
     : j.data;
-}
-async function taskPage(cursor?: string) {
-  const response = await fetch(
-    '/api/v1/tasks?limit=100' +
-      (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
-  );
-  const value: any = await response.json();
-  if (!response.ok)
-    throw Object.assign(new Error('REQUEST_FAILED'), {
-      status: response.status,
-    });
-  return value;
 }
 async function snapshot(
   write?: any,
@@ -225,6 +217,7 @@ function App() {
     [undoAction, setUndoAction] = useState<string | null>(null),
     [rowAvailable, setRowAvailable] = useState(false);
   const [revision, setRevision] = useState(0);
+  const readGeneration = useRef(0);
   const [locale, setLocale] = useState<Locale>(
     localStorage.getItem('locale') === 'en' ? 'en' : 'id',
   );
@@ -251,7 +244,7 @@ function App() {
       setUndoAction(null);
     }, 4500);
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, undoAction, revision]);
   const [tasks, setTasks] = useState<any[]>([]),
     [contexts, setContexts] = useState<any[]>([]),
     [candidates, setCandidates] = useState<any[]>([]),
@@ -329,15 +322,27 @@ function App() {
     if (method !== 'GET') return sessionApi(path, method, value, headers);
     const subject = ownerRef.current,
       epoch = sessionEpoch.current;
+    const generation = readGeneration.current;
     const valid = () =>
-      epoch === sessionEpoch.current && subject === ownerRef.current;
+      epoch === sessionEpoch.current &&
+      subject === ownerRef.current &&
+      generation === readGeneration.current;
     if (!subject) throw Error('NO_SESSION');
     if (offline || !navigator.onLine) {
       const saved = (await privateStore('views:' + subject))?.[path];
       if (!saved) throw Error('NOT_OBSERVED');
       return { ...saved.value, cached: true, observed_at: saved.at };
     }
-    const v = await sessionApi(path);
+    let v: any;
+    try {
+      v = await sessionApi(path);
+    } catch (e: any) {
+      if ([401, 403].includes(e.status) || !valid()) throw e;
+      const saved = (await privateStore('views:' + subject))?.[path];
+      if (!saved || !valid()) throw e;
+      setOffline(true);
+      return { ...saved.value, cached: true, observed_at: saved.at };
+    }
     if (!valid()) throw Error('SESSION_CHANGED');
     await updatePrivate(
       'views:' + subject,
@@ -359,8 +364,17 @@ function App() {
   const writes = useWrites(
     owner,
     offline,
-    sessionApi,
+    async (path, method, value, headers) => {
+      readGeneration.current++;
+      loadTicket.current++;
+      setLoading(false);
+      return sessionApi(path, method, value, headers);
+    },
     async (value: any, operation: WritePlan) => {
+      if (operation.label === 'delete' && operation.taskId) {
+        setTasks((old) => old.filter((t) => t.id !== operation.taskId));
+        go('/tasks');
+      }
       if (operation.taskId && value?.id)
         setTasks((old) => old.map((t) => (t.id === value.id ? value : t)));
       setError('');
@@ -379,15 +393,30 @@ function App() {
       // Invalidate pre-mutation private reads before requesting fresh observations.
       const subject = ownerRef.current,
         epoch = sessionEpoch.current;
-      await privateStore('owner', null, () => epoch === sessionEpoch.current);
-      if (subject)
-        await privateStore(
-          'views:' + subject,
-          null,
-          () => epoch === sessionEpoch.current,
+      try {
+        await privateStore('owner', null, () => epoch === sessionEpoch.current);
+        if (subject)
+          await privateStore(
+            'views:' + subject,
+            null,
+            () => epoch === sessionEpoch.current,
+          );
+        if (subject)
+          await privateStore(
+            'utility:' + subject,
+            null,
+            () => epoch === sessionEpoch.current,
+          );
+        setRevision((n) => n + 1);
+        await load();
+      } catch {
+        clearReadSession();
+        setError(
+          locale === 'en'
+            ? 'Server acknowledged the save; the private cache could not refresh. Reopen online.'
+            : 'Server mengonfirmasi simpan; salinan pribadi gagal diperbarui. Buka kembali saat online.',
         );
-      setRevision((n) => n + 1);
-      await load();
+      }
     },
     () =>
       setError(
@@ -505,6 +534,32 @@ function App() {
         sessionApi('/briefing'),
         sessionApi('/settings'),
       ]);
+      if (epoch !== sessionEpoch.current || ticket !== loadTicket.current)
+        return;
+      const previous = await snapshot().catch(() => null);
+      if (previous?.owner === subject) {
+        const inventory = (rows: any[]) =>
+          rows
+            .map((x) => [x.id, x.generation, x.purged_at])
+            .sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+        if (
+          JSON.stringify(inventory(previous.sources ?? [])) !==
+          JSON.stringify(inventory(ss))
+        ) {
+          await privateStore(
+            'views:' + subject,
+            null,
+            () =>
+              epoch === sessionEpoch.current && ticket === loadTicket.current,
+          );
+          await privateStore(
+            'utility:' + subject,
+            null,
+            () =>
+              epoch === sessionEpoch.current && ticket === loadTicket.current,
+          );
+        }
+      }
       if (epoch !== sessionEpoch.current || ticket !== loadTicket.current)
         return;
       setTasks(ts.items);
@@ -821,6 +876,9 @@ function App() {
                   onSheet={() => go(location.pathname + '?sheet=quick')}
                   group={new URLSearchParams(location.search).get('group')}
                   actions={actions}
+                  queryApi={readApi}
+                  offline={offline}
+                  revision={updated + revision}
                 />
               )}
               {page === 'calendar' && (
@@ -853,7 +911,7 @@ function App() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       void mutate(async () => {
-                        await api('/sources', 'POST', {
+                        await sessionApi('/sources', 'POST', {
                           display_name: sourceAlias,
                           kind: sourceKind,
                         });
@@ -937,7 +995,7 @@ function App() {
                                 disabled={offline || busy}
                                 onClick={() =>
                                   void mutate(() =>
-                                    api(
+                                    sessionApi(
                                       '/reminders/' + x.id + '/read',
                                       'PATCH',
                                       {},
@@ -953,7 +1011,7 @@ function App() {
                                 disabled={offline || busy}
                                 onClick={() =>
                                   void mutate(() =>
-                                    api(
+                                    sessionApi(
                                       '/reminders/' + x.id + '/snooze',
                                       'POST',
                                       {
@@ -998,7 +1056,7 @@ function App() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       void mutate(async () => {
-                        await api('/contexts', 'POST', {
+                        await sessionApi('/contexts', 'POST', {
                           type: newType,
                           display_name: newContext,
                         });
@@ -1089,35 +1147,42 @@ function App() {
               </footer>
             </>
           )}
-          {editing && (
-            <TaskEditor
-              item={editing}
-              contexts={contexts}
-              locale={locale}
-              onClose={() => setEditing(null)}
-              onSave={async (fields) => {
-                await writes.send(
-                  plan(
-                    '/tasks/' + editing.id,
-                    'PATCH',
-                    fields,
-                    'edit',
-                    { 'If-Match': String(editing.version) },
-                    editing.id,
-                    fields,
-                  ),
-                );
-              }}
-              onDelete={async () => {
-                await api('/tasks/' + editing.id, 'DELETE', undefined, {
-                  'If-Match': String(editing.version),
-                });
-                await load();
-              }}
-            />
-          )}
         </main>
       </div>
+      {editing && (
+        <TaskEditor
+          item={editing}
+          defaultZone={prefs?.timezone ?? 'Asia/Makassar'}
+          contexts={contexts}
+          locale={locale}
+          onClose={() => setEditing(null)}
+          onSave={async (fields) => {
+            await writes.send(
+              plan(
+                '/tasks/' + editing.id,
+                'PATCH',
+                fields,
+                'edit',
+                { 'If-Match': String(editing.version) },
+                editing.id,
+                fields,
+              ),
+            );
+          }}
+          onDelete={async () => {
+            await writes.send(
+              plan(
+                '/tasks/' + editing.id,
+                'DELETE',
+                {},
+                'delete',
+                { 'If-Match': String(editing.version) },
+                editing.id,
+              ),
+            );
+          }}
+        />
+      )}
       {signed && route.taskId && (
         <TaskDetail
           key={route.taskId}
@@ -1132,6 +1197,7 @@ function App() {
           onDate={() => go(location.pathname + '?sheet=date')}
           observedAt={updated}
           actions={actions}
+          onEdit={setEditing}
           revision={updated + revision}
         />
       )}

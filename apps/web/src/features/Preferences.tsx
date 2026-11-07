@@ -25,7 +25,8 @@ export function Preferences({
   const en = locale === 'en',
     w = words[locale],
     [zone, setZone] = useState(prefs?.timezone ?? ''),
-    [install, setInstall] = useState<any>(null);
+    [install, setInstall] = useState<any>(null),
+    [zoneError, setZoneError] = useState(false);
   useEffect(() => {
     setZone(prefs?.timezone ?? '');
   }, [prefs?.timezone]);
@@ -73,6 +74,7 @@ export function Preferences({
           onSubmit={async (e) => {
             e.preventDefault();
             if (!prefs) return;
+            setZoneError(false);
             try {
               new Intl.DateTimeFormat('en', { timeZone: zone });
               await commit(
@@ -84,7 +86,9 @@ export function Preferences({
                   { 'If-Match': String(prefs.version) },
                 ),
               );
-            } catch {}
+            } catch {
+              setZoneError(true);
+            }
           }}
         >
           <label>
@@ -96,6 +100,13 @@ export function Preferences({
               onChange={(e) => setZone(e.target.value)}
             />
           </label>
+          {zoneError && (
+            <p role="alert">
+              {en
+                ? 'Timezone not saved. Use an IANA name, or refresh after a conflict.'
+                : 'Zona waktu belum tersimpan. Gunakan nama IANA, atau muat ulang setelah konflik.'}
+            </p>
+          )}
           <button disabled={disabled || !prefs}>{w.save}</button>
         </form>
       </section>

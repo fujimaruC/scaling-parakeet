@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-06 · Asia/Makassar. Whole-system implementation continues; full MVP is not complete.**
+**2026-11-07 · Asia/Makassar. S3–S7 implementation/build handoff; all behavioral verification delegated. Full MVP is not complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -63,7 +63,7 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 2. Configure the owner's private network and receiver locally. No VPN vendor/account choice or real peer pairing is claimed. Finish release UI, localized native resources, launcher icon and signed release packaging.
 3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
 4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
-5. S2 read-only Today/Tasks/Detail is implemented with precision-safe grouping, real policy/history, loaded-page disclosures and modal previews. Still extend PWA server-query controls, calendar pagination across large ledgers, full labels/translations and accessibility/keyboard/screen-reader audit. Loaded subsets are disclosed. Finish device-compatible installation/update tests.
+5. S3–S7 web implementation now adds real versioned task writes, manual retry journal, review stack/conflicts/compensating Undo, bounded calendar and server context/title queries, settings/purge, offline observations, public PWA shell/icons and motion/haptics. The owner reserved ALL tests for another agent: behavior, large-ledger pagination, translations, accessibility/keyboard/screen-reader audit, visual acceptance and device installation/update remain unverified. This is a compiled implementation handoff, not a passed release gate.
 6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions and PWA status polling/pagination. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
 7. Verify owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
 8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
@@ -219,3 +219,54 @@ Corrected crash-window hardware observation is BLOCKED; latest fatal field remai
 null, notification access false, no capture/listener event ever. Relative countdowns
 use browser time; no independently verified clock-skew correction is claimed.
 S2 owner review is pending; stop here before S3. No milestone complete.
+
+
+## S3–S7 implementation-only continuation — base 6de38fd, 2026-11-07
+
+Fresh GitHub main clone at 6de38fd71f5237a7eda90307fe04ba47c69d922d; restored the
+validated S2 patch/tree from Academic-OS-System-48255c5.zip, then worked on
+build/s3-s7. S2 was not available as a remote commit and is included in the patch
+against main. Checkpoint saved during implementation. No GitHub push/deployment,
+paid provisioning, new dependency, real-data import or account/device operation.
+
+The owner explicitly authorized all S3–S7 together, then requested no tests and
+reserved verification for another agent. See ADR-023. Implementation scope W11/
+W31/W41, F03/F04/F13/F14/F20/F22/F23/F24; native Android/collector were preserved.
+No milestone is complete. Build commands and actual output are in BUILD-S3-S7;
+verification-agent instructions and remaining observations are in S3-S7-HANDOFF.
+
+Implemented: completion/reopen, manual add, precision-preserving date/full edit/
+delete, versioned history and idempotent retries; durable explicit-online-request
+journal with no reconnect sends; pending visual completion separate from canonical
+group/count state; review stack/swipe/buttons/keys, active evidence IDs, explicit
+conflict target search, edited approval and compensating Undo; month/query cursor
+navigation and partial disclosures; local UI preferences, owner timezone, existing
+reminder controls, structured export/Linux backup instructions and explicit purge
+preview; owner-scoped offline observations, hash-matched public PWA shell, maskable
+icons and optional motion/haptics. No sample data added to production paths.
+
+Preserve these decisions: owner approval before AI mutation; exact/date-only/
+approximate/unknown remain distinct; uncertain writes retain immutable same-key
+retry; Undo cannot overwrite later edits or a purged generation and inverse data
+is excluded from backups; cache missing is unavailable; raw data never enters
+cloud/PWA storage; phone/Linux acknowledgments remain independent from cloud
+success. Source purge disables inverse restoration and scrubs affected structured
+history payloads. No hidden auto-accept, offline write queue or push promise.
+
+Actual environment: Node v24.22.1, npm11.9.0, Python3.12.14. Installed existing
+lockfile dependencies with npm ci --ignore-scripts (no new dependency). Vite and
+Worker dry-run compile; TypeScript emits no diagnostics. No Java/Android SDK was
+installed or used for this web-only continuation. Native source unchanged.
+
+NOT RUN by owner instruction: npm run check (contains tests), npm test, npm run
+test:e2e, npm run test:pwa, Python/planning validation, Gradle build/lint/JVM/API28,
+mutation/fault tests, browser/visual/a11y checks. Historical counts above do not
+apply to this continuation. No current passing test count is claimed.
+
+Unverified: all new runtime behavior and migration application, real capture and
+private transport/reconnect, Android Chrome138/TalkBack, physical Web Push,
+provider/account/production D1/Access, visual review and accessibility compliance.
+notification_access=false remains the last observation; no listener event or
+capture has ever run. Latest crash-coverage null remains null. Android identity/
+resources/theme, native accessibility, production large-ledger performance and
+all other earlier release gates remain outstanding. No APK is included.

@@ -84,3 +84,44 @@ without `view=read` is unchanged. Migration 0005 adds only a history lookup inde
 Configured policy or the scheduler's shared default is labeled explicitly; this
 is not a claim that an intent was generated or delivered. No raw evidence field,
 new write endpoint, registration or public personal-data route is added.
+
+## S3–S7 implementation additions (unverified behavior)
+
+- GET `/tasks` accepts `context_type=academic|organization|personal` (Personal
+  includes no context), optional `title_only=1` with q, and a paired inclusive
+  `date_from/date_to` YYYY-MM-DD range of at most 366 days plus IANA `timezone`.
+  Exact instants use owner-calendar boundaries; date-only values match literal
+  dates. Existing <=100 cursor pagination remains. Invalid ranges/timezones are
+  INVALID_FILTER. The UI's month/year bounds avoid unbounded calendar navigation.
+- GET `/candidates?limit=1..100&cursor=<last id>` is ordered by id and returns
+  meta.next_cursor. Each pending/clarification row adds source_label and active
+  opaque evidence_ids; no bodies/quotes/hash fields. Existing array data envelope
+  is preserved. A partial pending page is never the total pending count.
+- PATCH and DELETE `/tasks/:id` optionally accept an Idempotency-Key in addition
+  to If-Match; new UI writers always send both. The digest covers structured body
+  and expected version. The receipt and guarded mutation/reminders commit in one
+  batch. A committed delete replay is checked before attempting to read its
+  deleted task. A committed PATCH replay reads current canonical task state,
+  which can be newer after another owner edit; it never reapplies the old patch.
+- Review replies include task_id and review_action; new receipts reference the
+  review action so an uncertain response can recover its Undo handle. Historical
+  task-id receipts remain readable. Response undone marks an already-compensated
+  action. Receipt replay is not fresh evidence validation or permission to Undo.
+- POST `/review-actions/:action_id/undo` requires an owner, JSON object and
+  Idempotency-Key. It appends a compensating review/history action, reopens the
+  candidate with a new version and soft-deletes a review-created task or restores
+  an untouched target's prior structured fields/evidence. Source/candidate/task
+  guards and active prior evidence are checked in the batch. Missing inverse is
+  404 UNDO_UNAVAILABLE; blocked/already-undone/later-edit conflicts are 409.
+  Same-key replay reports its committed action without repeating compensation.
+- PATCH `/settings` accepts system/light/dark and optional Idempotency-Key plus
+  If-Match; retries keep the same request/version. Owner timezone also updates
+  configured quiet-hour timezone. POST source purge similarly recognizes an
+  optional key. Legacy callers remain supported. Device acknowledgment semantics
+  are unchanged; cloud purge never implies phone/Linux wipe confirmation.
+
+All routes still require the existing owner auth/origin checks. Request digests
+refer only to approved structured requests, never raw messages. New inverse
+storage is not exported. The new journal applies to S3 task writes, review/Undo,
+settings timezone and purge. Existing utility context/source creation and reminder
+controls retain their prior flows; do not claim a new universal offline outbox.

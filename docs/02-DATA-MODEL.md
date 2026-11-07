@@ -71,3 +71,24 @@ Canonical backup includes schema version, contexts, tasks, approved source metad
 ## Index and resource plan
 
 Index tasks(context_id,status,due_at_utc), tasks(updated_at), reminder_intents(state,scheduled_for_utc), candidates(review_status,updated_at), evidence(source_id,generation), sync received time. Date-only sorting requires a separate local-date index/normalized query, not false UTC conversion. Search starts with escaped, bounded SQL matching and context/status filters; assess FTS only when measured. Paginate all histories and source lists.
+
+## S3–S7 review compensation storage (migration 0006)
+
+`review_effects` keys an owner decision by action_id and records candidate/source
+identity and generation, the post-decision versions, prior candidate status,
+optional target task/version, a new-task flag, structured pre-task fields and
+prior opaque evidence links. undone_by and undo_blocked fence compensation.
+No original evidence, raw quotation, original date expression or message hash is
+stored. Existing review_actions/task_events remain the audit. Compensation uses
+one guarded batch, advances versions/revisions, restores prior evidence only if
+still active, and schedules future reminders only. Later edits/source purge block
+undo. A new-task undo is a soft deletion, with historical evidence retained for
+future source purge. Purge scrubs inverse snapshots and conservatively removes
+history payloads of affected reviewed tasks while preserving event metadata.
+
+Inverse records are deliberately absent from export/portable restore. The shipped
+backup reader continues using the established canonical table allowlist; do not
+add inverse snapshots to a backup or re-enable them after restore. A restored
+historical action has no current Undo capability. Migration also indexes pending
+candidate cursors and literal date-only lookup. Application of this migration
+and all behavioral invariants are unverified in this build-only session.

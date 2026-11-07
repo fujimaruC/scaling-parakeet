@@ -56,12 +56,10 @@ export default function Review({
       cancel: boolean;
     } | null>(null),
     lock = useRef(false),
-    mounted = useRef(true),
-    timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    mounted = useRef(true);
   useEffect(
     () => () => {
       mounted.current = false;
-      if (timer.current) clearTimeout(timer.current);
     },
     [],
   );
@@ -501,10 +499,14 @@ export default function Review({
       )}
       {editing && (
         <TaskEditor
-          item={proposed}
+          item={
+            conflict && target ? { ...target, due: proposed.due } : proposed
+          }
           contexts={contexts}
           tasks={conflict && target ? [target] : []}
           initialTarget={target?.id}
+          lockedTarget={conflict}
+          defaultZone={zone}
           locale={locale}
           proposal
           onClose={() => setEditing(false)}

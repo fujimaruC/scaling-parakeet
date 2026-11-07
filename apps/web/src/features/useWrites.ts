@@ -7,8 +7,10 @@ export type Api = (
   headers?: Record<string, string>,
 ) => Promise<any>;
 export function haptic(ms: number) {
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
-    navigator.vibrate?.(ms);
+  try {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+      navigator.vibrate?.(ms);
+  } catch {}
 }
 // Exactly one explicit online operation at a time. Reconnect never sends writes.
 export function useWrites(
@@ -74,7 +76,11 @@ export function useWrites(
           operation.headers,
         );
       } catch (e: any) {
-        if (e.status >= 400 && e.status < 500) {
+        if (
+          e.status >= 400 &&
+          e.status < 500 &&
+          ![408, 425, 429].includes(e.status)
+        ) {
           await privateStore(
             'write:' + subject,
             null,
@@ -92,13 +98,15 @@ export function useWrites(
       );
       setPending(null);
       haptic(
-        operation.label === 'reject'
-          ? 10
-          : operation.label === 'accept'
-            ? 16
-            : operation.patch?.status === 'todo'
-              ? 6
-              : 12,
+        operation.label === 'date'
+          ? 8
+          : operation.label === 'reject'
+            ? 10
+            : operation.label === 'accept'
+              ? 16
+              : operation.patch?.status === 'todo'
+                ? 6
+                : 12,
       );
       await onApplied(response, operation);
       return response;

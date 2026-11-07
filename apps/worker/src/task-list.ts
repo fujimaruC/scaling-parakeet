@@ -17,8 +17,15 @@ export async function listTasks(db: D1Database, url: URL) {
     .slice(0, 200)
     .replace(/[\\%_]/g, '\\$&');
   if (q) {
-    where.push("(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')");
-    bindings.push('%' + q + '%', '%' + q + '%');
+    if (url.searchParams.get('title_only') === '1') {
+      where.push("title LIKE ? ESCAPE '\\'");
+      bindings.push('%' + q + '%');
+    } else {
+      where.push(
+        "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')",
+      );
+      bindings.push('%' + q + '%', '%' + q + '%');
+    }
   }
   const type = url.searchParams.get('context_type');
   if (type) {

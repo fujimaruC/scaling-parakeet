@@ -8,6 +8,8 @@ export default function TaskEditor({
   locale,
   proposal = false,
   initialTarget,
+  lockedTarget = false,
+  defaultZone = 'Asia/Makassar',
   onSave,
   onDelete,
   onClose,
@@ -18,6 +20,8 @@ export default function TaskEditor({
   locale: string;
   proposal?: boolean;
   initialTarget?: string;
+  lockedTarget?: boolean;
+  defaultZone?: string;
   onSave: (fields: any, target?: any) => Promise<void>;
   onDelete?: () => Promise<void>;
   onClose: () => void;
@@ -31,7 +35,7 @@ export default function TaskEditor({
     due.local_date ?? due.local_datetime?.slice(0, 10) ?? '',
   );
   const [time, setTime] = useState(due.local_datetime?.slice(11, 16) ?? '');
-  const [zone, setZone] = useState(due.timezone ?? 'Asia/Makassar');
+  const [zone, setZone] = useState(due.timezone ?? defaultZone);
   const [status, setStatus] = useState(item.status ?? 'todo');
   const [priority, setPriority] = useState(
     item.priority === 'unknown' ? 'normal' : (item.priority ?? 'normal'),
@@ -140,11 +144,16 @@ export default function TaskEditor({
         </label>
         {proposal && (
           <label>
-            {en
-              ? 'Update existing task (optional)'
-              : 'Perbarui tugas tersimpan (opsional)'}
+            {lockedTarget
+              ? en
+                ? 'Existing target task'
+                : 'Tugas tujuan tersimpan'
+              : en
+                ? 'Update existing task (optional)'
+                : 'Perbarui tugas tersimpan (opsional)'}
             <select
-              required={item.kind === 'deadline_change'}
+              required={item.kind === 'deadline_change' || lockedTarget}
+              disabled={lockedTarget}
               value={target}
               onChange={(e) => setTarget(e.target.value)}
             >

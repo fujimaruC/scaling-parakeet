@@ -291,3 +291,16 @@ fieldset {
     scroll-behavior: auto !important;
   }
 }
+
+.seg i {
+  transform-origin: bottom;
+  animation: segment-rise 200ms ease-out backwards;
+}
+@keyframes segment-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}

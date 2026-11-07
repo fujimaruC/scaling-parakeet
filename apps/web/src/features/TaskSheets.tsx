@@ -113,6 +113,13 @@ export function DateSheet({
   const w = words[locale];
   return (
     <Sheet title={w.dateSheet} locale={locale} onClose={onClose}>
+      {disabled && (
+        <p role="status">
+          {locale === 'en'
+            ? 'Editing unavailable. Close this sheet to retry a pending request, or refresh online.'
+            : 'Perubahan tidak tersedia. Tutup lembar ini untuk mencoba ulang permintaan tertunda, atau muat ulang saat online.'}
+        </p>
+      )}
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -177,6 +184,13 @@ export function QuickSheet({
     needsContext = type !== 'personal';
   return (
     <Sheet title={w.quick} {...{ locale, onClose }}>
+      {disabled && (
+        <p role="status">
+          {locale === 'en'
+            ? 'Editing unavailable. Close this sheet to retry a pending request, or refresh online.'
+            : 'Perubahan tidak tersedia. Tutup lembar ini untuk mencoba ulang permintaan tertunda, atau muat ulang saat online.'}
+        </p>
+      )}
       <form
         onSubmit={async (e) => {
           e.preventDefault();

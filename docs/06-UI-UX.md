@@ -111,3 +111,45 @@ S2 exact deadlines sort by UTC instant within their owner-calendar day, includin
 repeated wall-clock hours at DST rollback. A failed older-history page preserves
 the known detail/events and offers retry with an explicit history error. Informational
 toasts are nonblocking; S2 supplies no toast mutation or undo action.
+
+## S3–S7 implemented continuation; verification delegated
+
+Owner authorization now permits all five slices in one implementation session
+without intermediate review stops. S2-only disabled controls/previews above are
+historical: current ledger completion, quick-add and precision sheets call the
+real versioned Worker. Full task editing remains reachable from detail. Unknown
+and approximate remain distinct; neither is coerced into a machine deadline.
+Pending completion shows an optimistic check only; groups/counts remain canonical.
+An explicit online request is journaled before send. Unknown responses expose a
+same-key retry; new/offline writes remain blocked. Closing a sheet does not delete
+its pending request. Do not submit a replacement for an uncertain create.
+
+Review uses a real pending candidate page, stack, pointer threshold/vertical
+cancellation, native buttons and non-repeating unmodified arrow-key equivalents.
+Date edits stay a draft until explicit acceptance. Issues/non-task kinds require
+an edited approval. Conflict target selection is explicit, searchable and paged;
+no automatic fuzzy target is chosen. Only active opaque evidence IDs and safe
+source aliases appear. Missing evidence blocks acceptance. Accept/reject can show
+a 4.5-second Undo button; compensation appends audit and checks server versions.
+Rejection without a known target is a candidate audit, not an invented task event.
+
+Calendar uses the owner's timezone, Monday-first day buttons, selected-day rows,
+up to three undone context squares and a permanent no-date link. A partial month
+qualifies all dots/counts; load-more is explicit. New month/day selections are URL
+history entries. Tasks context/title searches now query beyond the global first
+page, with independent cursors and honest loading/unavailable states.
+
+Settings adds browser-local ID/EN/system/light/dark, versioned owner timezone,
+existing reminder rules, structured export, Linux encryption/restore instructions,
+and source purge/acknowledgment entry points. Purge is preview plus explicit
+retain/delete policy and confirmation. It never claims an offline phone erased.
+Install uses native browser availability; Web Push delivery remains unverified.
+
+Offline reads use real saved observations with a visible read-only banner.
+Unvisited detail/month/history/reminders remain unavailable. Root saves pending
+proposal/source pages; task detail includes its observed policy and history.
+Logout/auth denial clear private snapshots and the request journal. Cache Storage
+contains only public hash-matched shell/fonts/icons; API data is never cached by
+the service worker. Motion/haptics are optional and reduced-motion is respected.
+No test, visual baseline, accessibility audit or device validation was run for
+this continuation. See S3-S7-HANDOFF before treating any behavior as verified.

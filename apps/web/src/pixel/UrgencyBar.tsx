@@ -28,7 +28,11 @@ export function UrgencyBar({
   return (
     <div className={`seg ${value.level}`} aria-hidden="true">
       {Array.from({ length: 16 }, (_, i) => (
-        <i key={i} className={i < value.filled ? 'on' : undefined} />
+        <i
+          key={i}
+          className={i < value.filled ? 'on' : undefined}
+          style={{ animationDelay: i * 28 + 'ms' }}
+        />
       ))}
     </div>
   );

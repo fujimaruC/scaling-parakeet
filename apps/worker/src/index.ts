@@ -539,11 +539,7 @@ async function undoReview(db: D1Database, actionId: string, req: Request) {
             )
             .bind(at, at, action, effect.task_id),
         );
-        ops.push(
-          db
-            .prepare('DELETE FROM task_evidence WHERE task_id=?')
-            .bind(effect.task_id),
-        );
+        // Keep historical evidence links on the tombstone so a later source purge can scrub it.
       } else {
         if (!original) throw new Http(409, 'UNDO_UNAVAILABLE');
         for (let n = 0; n < links.length; n++)
@@ -817,6 +813,21 @@ export function createApp(authorize: typeof owner = owner) {
         if (tm) {
           if (method === 'GET' && url.searchParams.get('view') === 'read')
             return result(await readTaskView(db, tm[1], url));
+          if (method === 'DELETE' && req.headers.has('Idempotency-Key')) {
+            const key = text(req.headers.get('Idempotency-Key'), 128),
+              digest = await sha256('{}\n' + version(req));
+            const receipt = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind('task-DELETE:' + tm[1], key)
+              .first<any>();
+            if (receipt) {
+              if (receipt.digest !== digest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              return result({ deleted: true });
+            }
+          }
           const current = await getTask(db, tm[1]);
           if (method === 'GET') return result(current);
           if (method === 'PATCH' || method === 'DELETE') {
@@ -1351,7 +1362,26 @@ export function createApp(authorize: typeof owner = owner) {
         }
         const settingsMatch = p === '/settings';
         if (settingsMatch && method === 'PATCH') {
-          const { value: v } = await body(req);
+          const { raw, value: v } = await body(req);
+          const expected = version(req),
+            key = req.headers.get('Idempotency-Key'),
+            scope = 'settings',
+            digest = await sha256(raw + '\n' + expected),
+            guard = uuid();
+          if (key) {
+            text(key, 128);
+            const prior = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind(scope, key)
+              .first<any>();
+            if (prior) {
+              if (prior.digest !== digest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              return result({ updated: true });
+            }
+          }
           if (
             !['id', 'en'].includes(v.language) ||
             !['system', 'light', 'dark'].includes(v.theme)
@@ -1365,21 +1395,35 @@ export function createApp(authorize: typeof owner = owner) {
           const oldSettings = await db
             .prepare('SELECT value_json FROM settings WHERE id=1')
             .first<any>();
-          const r = await db
+          const saved = JSON.parse(oldSettings.value_json);
+          if (saved.reminder_policy?.quiet_hours)
+            saved.reminder_policy.quiet_hours.timezone = v.timezone;
+          const update = db
             .prepare(
               'UPDATE settings SET value_json=?,version=version+1 WHERE id=1 AND version=?',
             )
             .bind(
               JSON.stringify({
-                ...JSON.parse(oldSettings.value_json),
+                ...saved,
                 language: v.language,
                 theme: v.theme,
                 timezone: v.timezone,
               }),
-              version(req),
-            )
-            .run();
-          if (!r.meta.changes) throw new Http(409, 'VERSION_CONFLICT');
+              expected,
+            );
+          const ops = [update];
+          if (key)
+            ops.push(
+              db
+                .prepare('INSERT INTO mutation_guards VALUES(?,changes())')
+                .bind(guard),
+              db
+                .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                .bind(scope, key, digest, '1'),
+              db.prepare('DELETE FROM mutation_guards WHERE id=?').bind(guard),
+            );
+          const r = await db.batch(ops);
+          if (!r[0].meta.changes) throw new Http(409, 'VERSION_CONFLICT');
           return result({ updated: true });
         }
         const snooze = p.match(/^\/reminders\/([^/]+)\/snooze$/);
@@ -1532,7 +1576,24 @@ export function createApp(authorize: typeof owner = owner) {
               affected_tasks: affected.results,
               local_wipe_required: true,
             });
-          const { value: v } = await body(req);
+          const { raw, value: v } = await body(req);
+          const key = req.headers.get('Idempotency-Key'),
+            scope = 'purge:' + src.id,
+            digest = await sha256(raw);
+          if (key) {
+            text(key, 128);
+            const receipt = await db
+              .prepare(
+                'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+              )
+              .bind(scope, key)
+              .first<any>();
+            if (receipt) {
+              if (receipt.digest !== digest)
+                throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+              return result({ cloud_purged: true, local_wipe_pending: true });
+            }
+          }
           if (v.expected_generation !== src.generation || src.purged_at)
             throw new Http(409, 'VERSION_CONFLICT');
           if (!['retain_as_manual', 'delete'].includes(v.task_policy))
@@ -1558,6 +1619,15 @@ export function createApp(authorize: typeof owner = owner) {
               )
               .bind(src.id),
           ];
+          // A compensated review may no longer have a live task_evidence link.
+          // Scrub its structured history payload as well; retain event identity/type/time.
+          ops.push(
+            db
+              .prepare(
+                'UPDATE task_events SET before_json=NULL,after_json=NULL WHERE task_id IN (SELECT task_id FROM review_effects WHERE source_id=?)',
+              )
+              .bind(src.id),
+          );
           ops.push(
             db
               .prepare(
@@ -1614,6 +1684,12 @@ export function createApp(authorize: typeof owner = owner) {
                 src.id,
               ),
           );
+          if (key)
+            ops.push(
+              db
+                .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                .bind(scope, key, digest, src.id),
+            );
           await db.batch(ops);
           return result({ cloud_purged: true, local_wipe_pending: true });
         }

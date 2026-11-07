@@ -11,12 +11,17 @@ export function calendarRange(from: string, through: string, zone: string) {
     Date.parse(through) - Date.parse(from) > 366 * 86400000
   )
     throw Error('INVALID_FILTER');
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
+  let fmt: Intl.DateTimeFormat;
+  try {
+    fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  } catch {
+    throw Error('INVALID_FILTER');
+  }
   const day = (n: number) => {
     const p = fmt.formatToParts(n);
     return ['year', 'month', 'day']

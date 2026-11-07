@@ -186,3 +186,60 @@ missing task would conceal valid observations. A simulated 503/retry browser tes
 protects this distinction. Informational toasts do not intercept underlying
 controls; there is no interactive toast action or undo in S2. Relative countdowns
 use the browser clock, not an independently verified trusted clock.
+
+## ADR-023 — S3–S7 implementation-only handoff (2026-11-07)
+
+The owner explicitly requested all S3–S7 in one go and then instructed: “do not
+run a test … let my other agent do it … complete build only”. That supersedes
+intermediate slice-review stops and this session's test-execution requirements.
+It does not waive privacy, explicit approval, or any release gate. No new
+application dependency. Native Android/collector implementation is preserved.
+
+Use one owner-scoped IndexedDB journal for an explicit online operation, written
+before sending its immutable body, version and idempotency key. Prefer manual
+same-request retry over background writes or a new key after an uncertain
+response. Reconnect only refreshes reads. Network/5xx/408/425/429 leave the
+operation pending; definite other 4xx responses roll it back. Authentication
+denial clears the private session. This is recovery of an already-authorized
+online request, not support for creating offline writes. Optimistic completion
+changes its visible check/label while canonical counts/groups wait for an ack.
+
+Undo is a compensating owner review, not a history deletion or a stale snapshot
+written back by the browser. Migration 0006 records structured inverse fields
+and evidence IDs; atomic source-generation/candidate/task guards prevent undo
+after a later edit or purge. A restored deadline receives a new revision and
+future-only reminder intents. New-task undo soft-deletes and keeps historical
+evidence links so later purge can scrub the tombstone. Source purge disables and
+scrubs affected inverse records; history payloads for affected reviews are
+scrubbed conservatively while event identity/type/time remain. Inverse records
+are intentionally excluded from canonical backups: restoring a backup must not
+restore a latent power to undo old approvals. The toast lasts 4.5 seconds; server
+correctness uses versions/generations, not the browser clock. A conflict rejected
+without a selected target has a candidate audit only; no task association is
+invented. Selecting a target also records the rejection in that task's timeline.
+
+Calendar requests one bounded month, with cursor loading and explicit partial
+counts/dots, instead of fetching a year into memory. Exact timestamps use actual
+owner-calendar UTC boundaries; date-only values stay literal local dates.
+Approximate/unknown dates never acquire calendar cells. Context/title queries
+also page on the server rather than filtering only the first global page.
+
+Cache successful structured read observations in owner-scoped IndexedDB, capped
+at 24 view entries plus root/utility snapshots. Missing observations are
+unavailable, not empty results. Mutations invalidate prior observations, and an
+authenticated source-generation change invalidates cached evidence-derived
+views. Language/theme stay browser-local; owner timezone is versioned on Worker.
+Encrypted backup/restore stays in the existing Linux workflow; there is no fake
+browser restore or raw-data upload.
+
+Service-worker Cache Storage is only for public build-matched bytes. A build
+plugin pins public asset hashes and a per-build cache name; login/error HTML
+cannot be admitted as a shell asset. API and Access requests are never handled
+by that cache, and online navigation documents are never stored. This uses the
+existing Node/browser crypto APIs. Maskable PNG icons use Python stdlib pixel
+rendering, matching the existing star rather than introducing an image library.
+
+Motion, optional haptics, native buttons/modals, readable accept/reject text,
+keyboard equivalents, labels and reduced-motion rules are implementation work.
+They are not accessibility, visual-regression, browser or hardware evidence.
+All behavioral validation is delegated and NOT RUN here. No milestone complete.

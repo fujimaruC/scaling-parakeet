@@ -416,3 +416,39 @@ account/provider/push and production D1/Access. Android identity/resources/theme
 full accessibility audit, large-ledger Calendar/server-query expansion and S3–S7
 remain open. No push, deploy, paid service, real messages, account credentials or
 signing keys are included.
+
+
+## 10. S3–S7 build-only handoff — 2026-11-07
+
+The owner instructed the implementation agent to execute no tests and leave them
+to another agent. This section records compilation only. All earlier sections
+remain historical; none of their test counts certify this changed source. No
+milestone is complete. See BUILD-S3-S7 for exact final command output and
+S3-S7-HANDOFF for targeted verification instructions.
+
+| Operation | Observation |
+|---|---|
+| Fresh GitHub clone/main | 6de38fd71f5237a7eda90307fe04ba47c69d922d |
+| S2 recovery | Applied validated 48255c5 artifact patch before S3–S7 |
+| npm ci --ignore-scripts | exit0, existing lockfile installed |
+| ./node_modules/.bin/tsc --noEmit | exit0, no diagnostics (compiler only) |
+| WRANGLER_SEND_METRICS=false npm run build | exit0, Vite build and Worker dry-run bundle |
+| npm run check / Vitest / E2E / PWA / mutations | NOT RUN — owner delegated tests |
+| Python tests / planning validation | NOT RUN — owner delegated validation |
+| Gradle/API28/JVM/lint | NOT RUN — native unchanged in this slice |
+| Browser / visual baselines / keyboard / a11y / screen reader | NOT RUN |
+| Device / account / provider / private transport / push | NOT RUN / unverified |
+
+Node v24.22.1, npm11.9.0, Python3.12.14. No new application dependency or SDK/JDK
+installation. Source adds real task/review/Undo/calendar/settings/offline/PWA/
+polish code, but no runtime pass is inferred from its existence or compile.
+Migration0006 application is unverified. No test-count claim is made.
+
+Source and patch packaging comparisons only establish byte/tree consistency;
+they are not application tests. No new hardware fields were observed. In
+particular notification_access=false, no listener event/capture ever received,
+and latest fatal_exception_observed=null remain unchanged. Device defects have
+escaped earlier suites; the next verifier must run the actual owner protocol
+separately, without fabricating it. No push, deployment, paid provisioning or
+real credentials/messages were used. Android identity/accessibility, real
+large-ledger/device performance and all outstanding release gates remain open.
