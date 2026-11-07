@@ -4,6 +4,7 @@ export default function ReminderSettings({
   api,
   offline,
   onSaved,
+  initial,
 }: {
   locale: string;
   api: (
@@ -14,6 +15,7 @@ export default function ReminderSettings({
   ) => Promise<any>;
   offline: boolean;
   onSaved: () => Promise<void>;
+  initial?: any;
 }) {
   const en = locale === 'en';
   const [version, setVersion] = useState(0),
@@ -27,22 +29,24 @@ export default function ReminderSettings({
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (!offline)
-      api('/settings')
-        .then((s) => {
-          setVersion(s.version);
-          setEnabled(s.reminder_policy?.enabled ?? true);
-          setOffsets((s.reminder_policy?.offset_hours ?? [24, 3]).join(', '));
-          setHour(s.reminder_policy?.date_only_hour ?? 9);
-          setQuietEnabled(s.reminder_policy?.quiet_hours?.enabled ?? false);
-          setQuietStart(s.reminder_policy?.quiet_hours?.start_hour ?? 22);
-          setQuietEnd(s.reminder_policy?.quiet_hours?.end_hour ?? 7);
-          setTimezone(s.timezone);
-        })
-        .catch(() =>
-          setError(en ? 'Cannot load rules' : 'Aturan belum dimuat'),
-        );
-  }, [offline]);
+    if (offline && !initial) {
+      setVersion(0);
+      return;
+    }
+    const load = offline ? Promise.resolve(initial) : api('/settings');
+    load
+      .then((s) => {
+        setVersion(s.version);
+        setEnabled(s.reminder_policy?.enabled ?? true);
+        setOffsets((s.reminder_policy?.offset_hours ?? [24, 3]).join(', '));
+        setHour(s.reminder_policy?.date_only_hour ?? 9);
+        setQuietEnabled(s.reminder_policy?.quiet_hours?.enabled ?? false);
+        setQuietStart(s.reminder_policy?.quiet_hours?.start_hour ?? 22);
+        setQuietEnd(s.reminder_policy?.quiet_hours?.end_hour ?? 7);
+        setTimezone(s.timezone);
+      })
+      .catch(() => setError(en ? 'Cannot load rules' : 'Aturan belum dimuat'));
+  }, [offline, initial]);
   async function save(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -88,81 +92,92 @@ export default function ReminderSettings({
           : 'Tenggat tersimpan diperiksa di cloud. Pengingat tanggal saja memakai hari sebelumnya pada zona waktu sumber. Perubahan diterapkan bertahap pada pemeriksaan cloud. Push belum dikonfigurasi; kotak pengingat tetap tersedia.'}
       </p>
       {error && <p role="alert">{error}</p>}
-      <form onSubmit={save}>
-        <label>
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-          />
-          {en ? 'Enable deadline reminders' : 'Aktifkan pengingat tenggat'}
-        </label>
-        <label>
-          {en ? 'Hours before an exact deadline' : 'Jam sebelum tenggat pasti'}
-          <input
-            value={offsets}
-            onChange={(e) => setOffsets(e.target.value)}
-            placeholder="24, 3"
-          />
-        </label>
-        <label>
+      {version === 0 && (
+        <p>
           {en
-            ? 'Date-only reminder hour (0–23)'
-            : 'Jam untuk tanggal saja (0–23)'}
-          <input
-            type="number"
-            min={0}
-            max={23}
-            required
-            value={hour}
-            onChange={(e) => setHour(Number(e.target.value))}
-          />
-        </label>
-        <fieldset>
-          <legend>
-            {en ? 'Quiet hours' : 'Jam tenang'} · {timezone}
-          </legend>
+            ? 'Reminder policy unavailable.'
+            : 'Kebijakan pengingat belum tersedia.'}
+        </p>
+      )}
+      <form onSubmit={save} hidden={version === 0}>
+        <fieldset disabled={offline || busy}>
           <label>
             <input
               type="checkbox"
-              checked={quietEnabled}
-              onChange={(e) => setQuietEnabled(e.target.checked)}
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
             />
-            {en
-              ? 'Defer new inbox reminders during quiet hours'
-              : 'Tunda pengingat baru selama jam tenang'}
+            {en ? 'Enable deadline reminders' : 'Aktifkan pengingat tenggat'}
           </label>
           <label>
-            {en ? 'Quiet hours start (0–23)' : 'Awal jam tenang (0–23)'}
+            {en
+              ? 'Hours before an exact deadline'
+              : 'Jam sebelum tenggat pasti'}
+            <input
+              value={offsets}
+              onChange={(e) => setOffsets(e.target.value)}
+              placeholder="24, 3"
+            />
+          </label>
+          <label>
+            {en
+              ? 'Date-only reminder hour (0–23)'
+              : 'Jam untuk tanggal saja (0–23)'}
             <input
               type="number"
               min={0}
               max={23}
               required
-              value={quietStart}
-              onChange={(e) => setQuietStart(Number(e.target.value))}
+              value={hour}
+              onChange={(e) => setHour(Number(e.target.value))}
             />
           </label>
-          <label>
-            {en ? 'Quiet hours end (0–23)' : 'Akhir jam tenang (0–23)'}
-            <input
-              type="number"
-              min={0}
-              max={23}
-              required
-              value={quietEnd}
-              onChange={(e) => setQuietEnd(Number(e.target.value))}
-            />
-          </label>
-          <p>
-            {en
-              ? 'Reminders in one quiet window may be combined. Deadlines stay unchanged; reminders can arrive after a deadline. Existing inbox entries remain visible.'
-              : 'Pengingat pada satu rentang tenang dapat digabung. Tenggat tetap; pengingat dapat tiba setelah tenggat. Isi kotak yang ada tetap terlihat.'}
-          </p>
+          <fieldset>
+            <legend>
+              {en ? 'Quiet hours' : 'Jam tenang'} · {timezone}
+            </legend>
+            <label>
+              <input
+                type="checkbox"
+                checked={quietEnabled}
+                onChange={(e) => setQuietEnabled(e.target.checked)}
+              />
+              {en
+                ? 'Defer new inbox reminders during quiet hours'
+                : 'Tunda pengingat baru selama jam tenang'}
+            </label>
+            <label>
+              {en ? 'Quiet hours start (0–23)' : 'Awal jam tenang (0–23)'}
+              <input
+                type="number"
+                min={0}
+                max={23}
+                required
+                value={quietStart}
+                onChange={(e) => setQuietStart(Number(e.target.value))}
+              />
+            </label>
+            <label>
+              {en ? 'Quiet hours end (0–23)' : 'Akhir jam tenang (0–23)'}
+              <input
+                type="number"
+                min={0}
+                max={23}
+                required
+                value={quietEnd}
+                onChange={(e) => setQuietEnd(Number(e.target.value))}
+              />
+            </label>
+            <p>
+              {en
+                ? 'Reminders in one quiet window may be combined. Deadlines stay unchanged; reminders can arrive after a deadline. Existing inbox entries remain visible.'
+                : 'Pengingat pada satu rentang tenang dapat digabung. Tenggat tetap; pengingat dapat tiba setelah tenggat. Isi kotak yang ada tetap terlihat.'}
+            </p>
+          </fieldset>
+          <button disabled={offline || busy || version === 0}>
+            {en ? 'Save reminder rules' : 'Simpan aturan pengingat'}
+          </button>
         </fieldset>
-        <button disabled={offline || busy || version === 0}>
-          {en ? 'Save reminder rules' : 'Simpan aturan pengingat'}
-        </button>
       </form>
     </section>
   );

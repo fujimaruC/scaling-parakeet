@@ -1,3 +1,4 @@
+import { calendarRange } from './calendar-range';
 export function encodeCursor(parts: unknown[]) {
   return btoa(JSON.stringify(parts))
     .replace(/\+/g, '-')
@@ -18,6 +19,31 @@ export async function listTasks(db: D1Database, url: URL) {
   if (q) {
     where.push("(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')");
     bindings.push('%' + q + '%', '%' + q + '%');
+  }
+  const type = url.searchParams.get('context_type');
+  if (type) {
+    if (!['academic', 'organization', 'personal'].includes(type))
+      throw Error('INVALID_FILTER');
+    where.push(
+      type === 'personal'
+        ? '(context_id IS NULL OR context_id IN (SELECT id FROM contexts WHERE type=?))'
+        : 'context_id IN (SELECT id FROM contexts WHERE type=?)',
+    );
+    bindings.push(type);
+  }
+  const from = url.searchParams.get('date_from'),
+    through = url.searchParams.get('date_to');
+  if (from || through) {
+    if (!from || !through) throw Error('INVALID_FILTER');
+    const [start, end] = calendarRange(
+      from,
+      through,
+      url.searchParams.get('timezone') ?? 'Asia/Makassar',
+    );
+    where.push(
+      "((json_extract(due_json,'$.precision')='datetime' AND due_at_utc>=? AND due_at_utc<?) OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date')>=? AND json_extract(due_json,'$.local_date')<=?))",
+    );
+    bindings.push(start, end, from, through);
   }
   const context = url.searchParams.get('context_id');
   if (context) {

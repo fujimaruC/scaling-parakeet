@@ -1,3 +1,5 @@
+import { DateFields } from '../features/TaskSheets';
+import type { Locale } from '../read/model';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 export default function TaskEditor({
   item,
@@ -5,6 +7,7 @@ export default function TaskEditor({
   tasks = [],
   locale,
   proposal = false,
+  initialTarget,
   onSave,
   onDelete,
   onClose,
@@ -14,6 +17,7 @@ export default function TaskEditor({
   tasks?: any[];
   locale: string;
   proposal?: boolean;
+  initialTarget?: string;
   onSave: (fields: any, target?: any) => Promise<void>;
   onDelete?: () => Promise<void>;
   onClose: () => void;
@@ -37,13 +41,19 @@ export default function TaskEditor({
       ? 'personal_action'
       : item.kind,
   );
-  const [target, setTarget] = useState('');
+  const [target, setTarget] = useState(initialTarget ?? '');
+  const [preciseDue, setPreciseDue] = useState(item.due);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
     dialog.current?.showModal();
-    return () => dialog.current?.close();
+    dialog.current?.querySelector<HTMLElement>('input,button')?.focus();
+    return () => {
+      dialog.current?.close();
+      if (trigger?.isConnected) trigger.focus();
+    };
   }, []);
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -58,20 +68,7 @@ export default function TaskEditor({
           kind,
           status,
           priority,
-          due: date
-            ? {
-                precision: time ? 'datetime' : 'date_only',
-                local_date: time ? null : date,
-                local_datetime: time ? date + 'T' + time + ':00' : null,
-                timezone: zone,
-              }
-            : {
-                precision:
-                  due.precision === 'approximate' ? 'approximate' : 'unknown',
-                local_date: null,
-                local_datetime: null,
-                timezone: null,
-              },
+          due: preciseDue,
         },
         tasks.find((t) => t.id === target),
       );
@@ -87,9 +84,15 @@ export default function TaskEditor({
     }
   }
   return (
-    <dialog ref={dialog} onCancel={onClose} className="editor">
+    <dialog
+      ref={dialog}
+      aria-modal="true"
+      aria-labelledby="task-editor-title"
+      onCancel={onClose}
+      className="editor"
+    >
       <form onSubmit={submit}>
-        <h2>
+        <h2 id="task-editor-title">
           {proposal
             ? en
               ? 'Edit & approve proposal'
@@ -191,36 +194,13 @@ export default function TaskEditor({
             ))}
           </select>
         </label>
-        <label>
-          {en ? 'Deadline' : 'Tenggat'}
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              if (!e.target.value) setTime('');
-            }}
-          />
-        </label>
-        <label>
-          {en ? 'Time (optional)' : 'Jam (opsional)'}
-          <input
-            type="time"
-            disabled={!date}
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
-        </label>
-        {date && (
-          <label>
-            {en ? 'Source timezone' : 'Zona waktu sumber'}
-            <input
-              required
-              value={zone}
-              onChange={(e) => setZone(e.target.value)}
-            />
-          </label>
-        )}
+        <DateFields
+          value={preciseDue}
+          onChange={setPreciseDue}
+          locale={locale === 'en' ? 'en' : 'id'}
+          zone={zone}
+          disabled={busy}
+        />
         <div className="actions">
           <button className="primary" disabled={busy} type="submit">
             {proposal

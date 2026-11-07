@@ -17,6 +17,11 @@ import {
   reminderText,
 } from './model';
 import { useClock } from './clock';
+export type TaskActions = {
+  disabled: boolean;
+  pending: (id: string) => any;
+  toggle: (task: Task) => void;
+};
 const GEAR = [
   '001010100',
   '011111110',
@@ -75,6 +80,7 @@ export function TaskRow({
   now,
   zone,
   onOpen,
+  actions,
 }: {
   task: Task;
   contexts: any[];
@@ -82,9 +88,10 @@ export function TaskRow({
   now: number;
   zone: string;
   onOpen: (t: Task) => void;
+  actions?: TaskActions;
 }) {
   const w = words[locale],
-    done = task.status === 'done';
+    done = (actions?.pending(task.id)?.status ?? task.status) === 'done';
   return (
     <article
       className={`s2-row pixel-box ${done ? 'is-done' : ''}`}
@@ -93,8 +100,9 @@ export function TaskRow({
     >
       <button
         className="s2-check"
-        disabled
-        aria-describedby="s2-readonly"
+        disabled={!actions || actions.disabled}
+        onClick={() => actions?.toggle(task)}
+        aria-busy={Boolean(actions?.pending(task.id))}
         aria-label={`${done ? w.undoComplete : w.complete}: ${task.title}`}
       >
         <span className="check-box" aria-hidden="true">
@@ -119,15 +127,17 @@ function DueCard({
   locale,
   now,
   onOpen,
+  actions,
 }: {
   task: Task;
   contexts: any[];
   locale: Locale;
   now: number;
   onOpen: (t: Task) => void;
+  actions?: TaskActions;
 }) {
   const w = words[locale],
-    done = task.status === 'done';
+    done = (actions?.pending(task.id)?.status ?? task.status) === 'done';
   return (
     <article
       className={`pixel-box s2-due ${done ? 'is-done' : ''}`}
@@ -151,7 +161,12 @@ function DueCard({
           precision={task.due.precision}
         />
       )}
-      <button className="s2-full" disabled aria-describedby="s2-readonly">
+      <button
+        className="s2-full"
+        disabled={!actions || actions.disabled}
+        onClick={() => actions?.toggle(task)}
+        aria-busy={Boolean(actions?.pending(task.id))}
+      >
         {done ? w.undoComplete : w.complete}
       </button>
     </article>
@@ -171,6 +186,7 @@ export default function Ledger({
   onPage,
   onSheet,
   group,
+  actions,
 }: {
   page: 'today' | 'tasks';
   tasks: Task[];
@@ -185,6 +201,7 @@ export default function Ledger({
   onPage: (page: string) => void;
   onSheet: () => void;
   group?: string | null;
+  actions?: TaskActions;
 }) {
   const now = useClock(),
     w = words[locale];
@@ -235,7 +252,10 @@ export default function Ledger({
       undated.current?.scrollIntoView({ block: 'start' });
   }, [group, page, filter, search, tasks.length]);
   const row = (task: Task) => (
-    <TaskRow key={task.id} {...{ task, contexts, locale, now, zone, onOpen }} />
+    <TaskRow
+      key={task.id}
+      {...{ task, contexts, locale, now, zone, onOpen, actions }}
+    />
   );
   return (
     <div className="s2-ledger">
@@ -260,9 +280,11 @@ export default function Ledger({
           <Bitmap rows={GEAR} scale={2} />
         </button>
       </header>
-      <p id="s2-readonly" className="s2-note">
-        {w.readOnly}
-      </p>
+      {!actions && (
+        <p id="s2-readonly" className="s2-note">
+          {w.readOnly}
+        </p>
+      )}
       {partial && (
         <p role="status" className="s2-partial">
           {w.partial}
@@ -303,7 +325,7 @@ export default function Ledger({
               due.map((task) => (
                 <DueCard
                   key={task.id}
-                  {...{ task, contexts, locale, now, onOpen }}
+                  {...{ task, contexts, locale, now, onOpen, actions }}
                 />
               ))
             ) : (
@@ -386,6 +408,8 @@ export function TaskDetail({
   onClose,
   onDate,
   observedAt,
+  actions,
+  revision,
 }: {
   id: string;
   initial?: Task;
@@ -397,6 +421,8 @@ export function TaskDetail({
   onClose: () => void;
   onDate: () => void;
   observedAt?: string;
+  actions?: TaskActions;
+  revision?: string;
 }) {
   const [historyError, setHistoryError] = useState(false);
   const [view, setView] = useState<any>(null),
@@ -411,18 +437,17 @@ export function TaskDetail({
     setError(false);
     setHistoryError(false);
     backButton.current?.focus();
-    if (!offline)
-      api('/tasks/' + encodeURIComponent(id) + '?view=read')
-        .then((v) => {
-          if (live) setView(v);
-        })
-        .catch(() => {
-          if (live) setError(true);
-        });
+    api('/tasks/' + encodeURIComponent(id) + '?view=read')
+      .then((v) => {
+        if (live) setView(v);
+      })
+      .catch(() => {
+        if (live) setError(!offline || !initial);
+      });
     return () => {
       live = false;
     };
-  }, [id, offline]);
+  }, [id, offline, revision]);
   const task: Task | undefined = view?.task ?? (offline ? initial : undefined);
   const c = task ? contextInfo(task, contexts, locale) : null;
   return (
@@ -456,14 +481,20 @@ export function TaskDetail({
           <>
             {offline && (
               <p role="status" className="banner">
-                {w.snapshot} · {observedAt ?? w.unavailable} · {w.readOnly}
+                {w.snapshot} ·{' '}
+                {view?.observed_at ?? observedAt ?? w.unavailable} ·{' '}
+                {locale === 'en'
+                  ? 'Offline — read only'
+                  : 'Offline — hanya baca'}
               </p>
             )}
             <h1 className="s2-detail-title">{task.title}</h1>
             <Meta task={task} contexts={contexts} locale={locale} view={view} />
-            <p id="s2-readonly-detail" className="s2-note">
-              {w.readOnly}
-            </p>
+            {!actions && (
+              <p id="s2-readonly-detail" className="s2-note">
+                {w.readOnly}
+              </p>
+            )}
             <section className="pixel-box s2-deadline">
               <h2 className="s2-section">{w.deadline}</h2>
               <p className="s2-big-date" data-precision={task.due.precision}>
@@ -512,7 +543,20 @@ export function TaskDetail({
                         <strong>
                           {event.event_type === 'created'
                             ? w.created
-                            : w.updated}
+                            : event.event_type === 'review_undone'
+                              ? locale === 'en'
+                                ? 'Review undone'
+                                : 'Tinjauan diurungkan'
+                              : event.event_type === 'proposal_rejected'
+                                ? locale === 'en'
+                                  ? 'Proposal rejected'
+                                  : 'Usulan ditolak'
+                                : event.event_type ===
+                                    'proposal_clarification_requested'
+                                  ? locale === 'en'
+                                    ? 'Clarification requested'
+                                    : 'Klarifikasi diminta'
+                                  : w.updated}
                         </strong>
                         {(['before_json', 'after_json'] as const).map(
                           (key, i) => {
@@ -589,9 +633,17 @@ export function TaskDetail({
               )}
             </section>
             <div className="s2-detail-actions">
-              <button onClick={onDate}>{w.dateSheet}</button>
-              <button disabled aria-describedby="s2-readonly-detail">
-                {task.status === 'done' ? w.undoComplete : w.complete}
+              <button onClick={onDate} disabled={actions?.disabled}>
+                {w.dateSheet}
+              </button>
+              <button
+                disabled={!actions || actions.disabled}
+                onClick={() => actions?.toggle(task)}
+                aria-busy={Boolean(actions?.pending(task.id))}
+              >
+                {(actions?.pending(task.id)?.status ?? task.status) === 'done'
+                  ? w.undoComplete
+                  : w.complete}
               </button>
             </div>
           </>

@@ -458,6 +458,192 @@ async function sync(req: Request, env: Env) {
     candidates: v.candidates.length,
   });
 }
+async function undoReview(db: D1Database, actionId: string, req: Request) {
+  const { raw } = await body(req);
+  const key = text(req.headers.get('Idempotency-Key'), 128),
+    scope = 'review-undo:' + actionId,
+    digest = await sha256(raw);
+  const prior = await db
+    .prepare('SELECT * FROM idempotency_records WHERE scope=? AND key=?')
+    .bind(scope, key)
+    .first<any>();
+  if (prior) {
+    if (prior.digest !== digest) throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+    return { review_action: prior.result_id, undone: true };
+  }
+  const effect = await db
+    .prepare('SELECT * FROM review_effects WHERE action_id=?')
+    .bind(actionId)
+    .first<any>();
+  if (!effect) throw new Http(404, 'UNDO_UNAVAILABLE');
+  if (effect.undo_blocked || effect.undone_by)
+    throw new Http(409, 'UNDO_UNAVAILABLE');
+  const action = uuid(),
+    at = now(),
+    ops: D1PreparedStatement[] = [];
+  // All guards execute inside the atomic batch, so purge/edits cannot race a preflight.
+  ops.push(
+    db
+      .prepare(
+        `INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM sources WHERE id=? AND generation=? AND purged_at IS NULL)`,
+      )
+      .bind(action, effect.source_id, effect.generation),
+  );
+  ops.push(
+    db
+      .prepare(
+        `UPDATE candidates SET review_status=?,version=version+1,accepted_action=NULL,result_task_id=NULL,updated_at=? WHERE id=? AND version=? AND accepted_action=?`,
+      )
+      .bind(
+        effect.prior_status,
+        at,
+        effect.candidate_id,
+        effect.candidate_version,
+        actionId,
+      ),
+  );
+  ops.push(
+    db
+      .prepare('INSERT INTO mutation_guards VALUES(?,changes())')
+      .bind(action + '-candidate'),
+  );
+  const original = effect.before_task_json
+    ? JSON.parse(effect.before_task_json)
+    : null;
+  const links = JSON.parse(effect.before_evidence_json ?? '[]');
+  if (effect.task_id) {
+    ops.push(
+      db
+        .prepare(
+          'INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM tasks WHERE id=? AND version=? AND deleted_at IS NULL)',
+        )
+        .bind(action + '-version', effect.task_id, effect.task_version),
+    );
+    const accepted = await db
+      .prepare('SELECT action FROM review_actions WHERE id=?')
+      .bind(actionId)
+      .first<any>();
+    if (accepted?.action.startsWith('accept')) {
+      ops.push(
+        db
+          .prepare(
+            'INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM tasks WHERE id=? AND mutation_id=?)',
+          )
+          .bind(action + '-identity', effect.task_id, actionId),
+      );
+      if (effect.created_task) {
+        ops.push(
+          db
+            .prepare(
+              'UPDATE tasks SET deleted_at=?,updated_at=?,version=version+1,due_revision=due_revision+1,mutation_id=? WHERE id=?',
+            )
+            .bind(at, at, action, effect.task_id),
+        );
+        ops.push(
+          db
+            .prepare('DELETE FROM task_evidence WHERE task_id=?')
+            .bind(effect.task_id),
+        );
+      } else {
+        if (!original) throw new Http(409, 'UNDO_UNAVAILABLE');
+        for (let n = 0; n < links.length; n++)
+          ops.push(
+            db
+              .prepare(
+                `INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM source_items si JOIN sources s ON s.id=si.source_id WHERE si.id=? AND si.removed_at IS NULL AND s.purged_at IS NULL AND s.generation=si.generation)`,
+              )
+              .bind(action + '-evidence-' + n, links[n].source_item_id),
+          );
+        const current = await getTask(db, effect.task_id);
+        ops.push(
+          db
+            .prepare(
+              'UPDATE tasks SET title=?,description=?,context_id=?,kind=?,status=?,priority=?,due_json=?,due_at_utc=?,manual_owned=?,version=version+1,due_revision=due_revision+1,mutation_id=?,updated_at=? WHERE id=?',
+            )
+            .bind(
+              original.title,
+              original.description,
+              original.context_id,
+              original.kind,
+              original.status,
+              original.priority,
+              JSON.stringify(original.due),
+              original.due_at_utc,
+              original.manual_owned,
+              action,
+              at,
+              effect.task_id,
+            ),
+        );
+        ops.push(
+          db
+            .prepare('DELETE FROM task_evidence WHERE task_id=?')
+            .bind(effect.task_id),
+        );
+        for (const link of links)
+          ops.push(
+            db
+              .prepare('INSERT INTO task_evidence VALUES(?,?,?)')
+              .bind(
+                effect.task_id,
+                link.source_item_id,
+                link.approval_event_id,
+              ),
+          );
+        if (!['done', 'archived'].includes(original.status))
+          ops.push(
+            ...(await intents(
+              db,
+              effect.task_id,
+              original.due,
+              current.due_revision + 1,
+              action,
+            )),
+          );
+      }
+    }
+    ops.push(
+      db
+        .prepare(
+          'INSERT INTO task_events(task_id,event_type,created_at) VALUES(?,?,?)',
+        )
+        .bind(effect.task_id, 'review_undone', at),
+    );
+  }
+  ops.push(
+    db
+      .prepare('INSERT INTO review_actions VALUES(?,?,?,?)')
+      .bind(action, effect.candidate_id, 'undo', at),
+  );
+  ops.push(
+    db
+      .prepare(
+        'UPDATE review_effects SET undone_by=?,before_task_json=NULL,before_evidence_json=NULL WHERE action_id=? AND undone_by IS NULL AND undo_blocked=0',
+      )
+      .bind(action, actionId),
+  );
+  ops.push(
+    db
+      .prepare('INSERT INTO mutation_guards VALUES(?,changes())')
+      .bind(action + '-effect'),
+  );
+  ops.push(
+    db
+      .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+      .bind(scope, key, digest, action),
+  );
+  ops.push(
+    db
+      .prepare('DELETE FROM mutation_guards WHERE id=? OR substr(id,1,?)=?')
+      .bind(action, action.length + 1, action + '-'),
+  );
+  try {
+    await db.batch(ops);
+  } catch {
+    throw new Http(409, 'UNDO_CONFLICT');
+  }
+  return { review_action: action, undone: true };
+}
 export function createApp(authorize: typeof owner = owner) {
   return {
     async fetch(req: Request, env: Env): Promise<Response> {
@@ -635,7 +821,26 @@ export function createApp(authorize: typeof owner = owner) {
           if (method === 'GET') return result(current);
           if (method === 'PATCH' || method === 'DELETE') {
             const expected = version(req);
-            const v = method === 'PATCH' ? (await body(req)).value : {};
+            const input =
+              method === 'PATCH' ? await body(req) : { raw: '{}', value: {} };
+            const v = input.value;
+            const key = req.headers.get('Idempotency-Key');
+            const scope = 'task-' + method + ':' + tm[1];
+            const digest = await sha256(input.raw + '\n' + expected);
+            if (key) {
+              text(key, 128);
+              const receipt = await db
+                .prepare(
+                  'SELECT * FROM idempotency_records WHERE scope=? AND key=?',
+                )
+                .bind(scope, key)
+                .first<any>();
+              if (receipt) {
+                if (receipt.digest !== digest)
+                  throw new Http(409, 'IDEMPOTENCY_CONFLICT');
+                return result(await getTask(db, tm[1]));
+              }
+            }
             const fields = taskFields({ ...current, ...v });
             const reschedule =
               JSON.stringify(fields.due) !== JSON.stringify(current.due) ||
@@ -674,6 +879,20 @@ export function createApp(authorize: typeof owner = owner) {
             )
               ops.push(
                 ...(await intents(db, tm[1], fields.due, revision, mutation)),
+              );
+            if (key)
+              ops.push(
+                db
+                  .prepare(
+                    'INSERT INTO mutation_guards SELECT ?,EXISTS(SELECT 1 FROM tasks WHERE id=? AND mutation_id=?)',
+                  )
+                  .bind(mutation, tm[1], mutation),
+                db
+                  .prepare('INSERT INTO idempotency_records VALUES(?,?,?,?)')
+                  .bind(scope, key, digest, tm[1]),
+                db
+                  .prepare('DELETE FROM mutation_guards WHERE id=?')
+                  .bind(mutation),
               );
             const r = await db.batch(ops);
             if (!r[0].meta.changes) throw new Http(409, 'VERSION_CONFLICT');
@@ -722,22 +941,45 @@ export function createApp(authorize: typeof owner = owner) {
             .run();
           return result({ id, secret }, 201);
         }
-        if (p === '/candidates' && method === 'GET')
+        if (p === '/candidates' && method === 'GET') {
+          const limit = Number(url.searchParams.get('limit') ?? 100);
+          const cursor = url.searchParams.get('cursor') ?? '';
+          if (
+            !Number.isInteger(limit) ||
+            limit < 1 ||
+            limit > 100 ||
+            cursor.length > 128
+          )
+            throw new Http(422, 'INVALID_FILTER');
+          const rows = await db
+            .prepare(
+              `SELECT c.*,s.display_name source_label,
+            (SELECT json_group_array(si.id) FROM candidate_evidence ce JOIN source_items si ON si.id=ce.source_item_id JOIN sources es ON es.id=si.source_id WHERE ce.candidate_id=c.id AND si.removed_at IS NULL AND es.purged_at IS NULL AND es.generation=si.generation) evidence_json
+            FROM candidates c JOIN sources s ON s.id=c.source_id WHERE c.review_status IN ('pending','needs_clarification') AND s.purged_at IS NULL AND s.generation=c.generation AND c.id>? ORDER BY c.id LIMIT ?`,
+            )
+            .bind(cursor, limit + 1)
+            .all<any>();
+          const items = rows.results.slice(0, limit);
           return result(
-            (
-              await db
-                .prepare(
-                  "SELECT * FROM candidates WHERE review_status IN ('pending','needs_clarification') LIMIT 100",
-                )
-                .all<any>()
-            ).results.map((c) => ({
+            items.map((c) => ({
               ...c,
               fields: JSON.parse(c.fields_json),
               issues: JSON.parse(c.issues_json),
+              evidence_ids: JSON.parse(c.evidence_json),
               fields_json: undefined,
               issues_json: undefined,
+              evidence_json: undefined,
             })),
+            200,
+            {
+              next_cursor:
+                rows.results.length > limit ? items[items.length - 1].id : null,
+            },
           );
+        }
+        const undo = p.match(/^\/review-actions\/([^/]+)\/undo$/);
+        if (undo && method === 'POST')
+          return result(await undoReview(db, undo[1], req));
         const review = p.match(/^\/candidates\/([^/]+)\/review$/);
         if (review && method === 'POST') {
           const { raw, value: v } = await body(req);
@@ -753,7 +995,19 @@ export function createApp(authorize: typeof owner = owner) {
           if (prev) {
             if (prev.digest !== digest)
               throw new Http(409, 'IDEMPOTENCY_CONFLICT');
-            return result({ task_id: prev.result_id });
+            const effect = await db
+              .prepare('SELECT * FROM review_effects WHERE action_id=?')
+              .bind(prev.result_id)
+              .first<any>();
+            return result(
+              effect
+                ? {
+                    task_id: effect.task_id,
+                    review_action: effect.action_id,
+                    undone: !!effect.undone_by,
+                  }
+                : { task_id: prev.result_id },
+            );
           }
           const c = await db
             .prepare('SELECT * FROM candidates WHERE id=?')
@@ -801,10 +1055,18 @@ export function createApp(authorize: typeof owner = owner) {
                   : { ...proposed, ...(v.task_patch ?? {}) },
               )
             : null;
+          const previousEvidence = target
+            ? (
+                await db
+                  .prepare('SELECT * FROM task_evidence WHERE task_id=?')
+                  .bind(target.id)
+                  .all()
+              ).results
+            : [];
           const ops = [
             db
               .prepare(
-                "UPDATE candidates SET review_status=?,version=version+1,accepted_action=?,result_task_id=?,updated_at=? WHERE id=? AND version=? AND review_status IN ('pending','needs_clarification')",
+                "UPDATE candidates SET review_status=?,version=version+1,accepted_action=?,result_task_id=?,updated_at=? WHERE id=? AND version=? AND review_status IN ('pending','needs_clarification') AND EXISTS(SELECT 1 FROM sources WHERE sources.id=candidates.source_id AND sources.generation=candidates.generation AND sources.purged_at IS NULL)",
               )
               .bind(
                 accepting
@@ -854,7 +1116,7 @@ export function createApp(authorize: typeof owner = owner) {
             ops.push(
               db
                 .prepare(
-                  'INSERT INTO tasks(id,context_id,title,kind,description,status,priority,due_json,due_at_utc,created_at,updated_at,manual_owned) SELECT ?,?,?,?,?,?,?,?,?,?,?,0 WHERE EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
+                  'INSERT INTO tasks(id,context_id,title,kind,description,status,priority,due_json,due_at_utc,created_at,updated_at,manual_owned,mutation_id) SELECT ?,?,?,?,?,?,?,?,?,?,?,0,? WHERE EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
                 )
                 .bind(
                   id,
@@ -868,6 +1130,7 @@ export function createApp(authorize: typeof owner = owner) {
                   fields.due_at_utc,
                   at,
                   at,
+                  action,
                   c.id,
                   action,
                 ),
@@ -890,7 +1153,7 @@ export function createApp(authorize: typeof owner = owner) {
               .prepare(
                 'INSERT INTO idempotency_records SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM candidates WHERE id=? AND accepted_action=?)',
               )
-              .bind(scope, key, digest, id, c.id, action),
+              .bind(scope, key, digest, action, c.id, action),
           );
           if (fields && !['done', 'archived'].includes(fields.status))
             ops.push(
@@ -899,8 +1162,41 @@ export function createApp(authorize: typeof owner = owner) {
                 id,
                 fields.due,
                 target ? target.due_revision + 1 : 1,
-                target ? action : 'created',
+                action,
               )),
+            );
+          ops.push(
+            db
+              .prepare(
+                'INSERT INTO review_effects(action_id,candidate_id,source_id,generation,candidate_version,prior_status,task_id,task_version,created_task,before_task_json,before_evidence_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+              )
+              .bind(
+                action,
+                c.id,
+                c.source_id,
+                c.generation,
+                c.version + 1,
+                c.review_status,
+                target?.id ?? (fields ? id : null),
+                target ? target.version + (fields ? 1 : 0) : fields ? 1 : null,
+                fields && !target ? 1 : 0,
+                target ? JSON.stringify(target) : null,
+                JSON.stringify(previousEvidence),
+              ),
+          );
+          if (!fields && target)
+            ops.push(
+              db
+                .prepare(
+                  'INSERT INTO task_events(task_id,event_type,created_at) VALUES(?,?,?)',
+                )
+                .bind(
+                  target.id,
+                  v.action === 'reject'
+                    ? 'proposal_rejected'
+                    : 'proposal_clarification_requested',
+                  at,
+                ),
             );
           ops.push(
             db
@@ -1058,7 +1354,7 @@ export function createApp(authorize: typeof owner = owner) {
           const { value: v } = await body(req);
           if (
             !['id', 'en'].includes(v.language) ||
-            !['light', 'dark'].includes(v.theme)
+            !['system', 'light', 'dark'].includes(v.theme)
           )
             throw new Http(422, 'INVALID_PAYLOAD');
           try {
@@ -1262,6 +1558,13 @@ export function createApp(authorize: typeof owner = owner) {
               )
               .bind(src.id),
           ];
+          ops.push(
+            db
+              .prepare(
+                `UPDATE review_effects SET undo_blocked=1,before_task_json=NULL,before_evidence_json=NULL WHERE source_id=? OR task_id IN (SELECT te.task_id FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id WHERE si.source_id=?)`,
+              )
+              .bind(src.id, src.id),
+          );
           if (v.task_policy === 'delete')
             ops.push(
               db

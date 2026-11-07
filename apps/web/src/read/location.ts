@@ -30,7 +30,15 @@ export function useLocation() {
     return () => window.removeEventListener('popstate', pop);
   }, []);
   const go = (path: string, replace = false) => {
-    history[replace ? 'replaceState' : 'pushState']({ aos: true }, '', path);
+    history[replace ? 'replaceState' : 'pushState'](
+      {
+        aos: replace
+          ? (history.state?.aos ?? 0)
+          : (history.state?.aos ?? 0) + 1,
+      },
+      '',
+      path,
+    );
     setRoute(readLocation());
   };
   const back = () =>

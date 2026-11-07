@@ -161,10 +161,25 @@ export function QuickPreview({
     </Sheet>
   );
 }
-export function Toast({ message }: { message: string }) {
+export function Toast({
+  message,
+  action,
+  actionLabel,
+  disabled,
+}: {
+  message: string;
+  action?: () => void;
+  actionLabel?: string;
+  disabled?: boolean;
+}) {
   return (
     <div role="status" aria-live="polite" className="s2-toast">
       {message}
+      {action && (
+        <button disabled={disabled} onClick={action}>
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
