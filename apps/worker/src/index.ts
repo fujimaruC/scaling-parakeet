@@ -1593,13 +1593,6 @@ export function createApp(authorize: typeof owner = owner) {
         const snooze = p.match(/^\/reminders\/([^/]+)\/snooze$/);
         if (snooze && method === 'POST') {
           const { raw, value: v } = await body(req);
-          const at = Date.parse(v.until);
-          if (
-            !Number.isFinite(at) ||
-            at <= Date.now() ||
-            at > Date.now() + 30 * 86400000
-          )
-            throw new Http(422, 'INVALID_SNOOZE');
           const key = text(req.headers.get('Idempotency-Key'), 128),
             digest = await sha256(raw),
             scope = 'snooze:' + snooze[1];
@@ -1614,6 +1607,14 @@ export function createApp(authorize: typeof owner = owner) {
               throw new Http(409, 'IDEMPOTENCY_CONFLICT');
             return result({ intent_id: previous.result_id });
           }
+          // A committed receipt remains authoritative after its requested time passes.
+          const at = Date.parse(v.until);
+          if (
+            !Number.isFinite(at) ||
+            at <= Date.now() ||
+            at > Date.now() + 30 * 86400000
+          )
+            throw new Http(422, 'INVALID_SNOOZE');
           const entry = await db
             .prepare(
               "SELECT t.* FROM notification_inbox n JOIN tasks t ON t.id=n.task_id WHERE n.id=? AND t.deleted_at IS NULL AND t.status NOT IN ('done','archived')",

@@ -20,13 +20,14 @@ class NativeForms(private val a:MainActivity) {
     private val u get()=a.ui
     private var dialog:AlertDialog?=null
     private var restoration=false
+    private var currentHost:LinearLayout?=null
     val isOpen:Boolean get()=dialog?.isShowing==true
     private fun preserve(form:JSONObject){a.navigation.put("form",form);a.persist()}
     private fun watch(edit:EditText,form:JSONObject,key:String){edit.addTextChangedListener(object:TextWatcher{override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){};override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){form.put(key,s?.toString()?:"");preserve(form)};override fun afterTextChanged(e:Editable?){} })}
     private fun show(type:String,title:String,form:JSONObject,content:(LinearLayout,JSONObject)->Unit){
         if(isOpen)return
         form.put("form_type",type);preserve(form)
-        val host=u.column();content(host,form)
+        val host=u.column();currentHost=host;content(host,form)
         host.addView(u.button(u.t("close")){close()})
         val scroll=ScrollView(a).apply{addView(host);isFillViewport=true}
         val previous=a.currentFocus
@@ -35,8 +36,16 @@ class NativeForms(private val a:MainActivity) {
         created.setOnDismissListener{dialog=null;if(!a.isChangingConfigurations&&!a.isDestroyed){a.navigation.remove("form");a.persist();previous?.requestFocus()}}
         created.show();created.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
+    fun reportFailure(message:String){
+        val host=currentHost?:return;if(!isOpen)return;host.addView(u.message(message),0)
+        val pending=a.repo.pending
+        if(pending!=null){
+            fun freeze(v:View){if(v is android.view.ViewGroup)repeat(v.childCount){freeze(v.getChildAt(it))};if(v is EditText||v is Spinner||v is CheckBox||(v is Button&&v.text.toString()!=u.t("close")))v.isEnabled=false}
+            freeze(host);host.addView(u.button(u.t("retry"),a.repo.online()&&!a.repo.busy){a.perform(pending,retry=true)},1)
+        }
+    }
     fun close(){dialog?.dismiss();dialog=null;if(!a.isChangingConfigurations){a.navigation.remove("form");a.persist()}}
-    fun restore(){if(restoration||isOpen)return;restoration=true;val form=a.navigation.optJSONObject("form")?:return
+    fun restore(){if(restoration||isOpen||a.repo.pending!=null)return;restoration=true;val form=a.navigation.optJSONObject("form")?:return
         try{when(form.optString("form_type")){"quick"->quick(form);"editor"->editor(Task(form.getJSONObject("task")),form);"date"->date(Task(form.getJSONObject("task")),form);"proposal_date"->proposalDate(form.getJSONObject("candidate"),form.getJSONObject("patch"),form.getString("draft_key"),form);"proposal_editor"->proposalEditor(form.getJSONObject("candidate"),form.optJSONObject("target"),form.optJSONObject("patch"),form.getString("draft_key"),form);"context"->createContext(form);"source"->createSource(form);"rules"->reminderRules(form)}}catch(_:Exception){a.showNotice(u.t("unavailable"))}
     }
     private fun dateFields(box:LinearLayout,form:JSONObject):()->JSONObject {
@@ -45,18 +54,18 @@ class NativeForms(private val a:MainActivity) {
         fun render(){
             fields.removeAllViews()
             val selected=due.optString("precision","unknown")
-            u.choice(fields,"precision",listOf("datetime","date_only","approximate","unknown").map{it to u.t(it)},selected){value->if(value!=selected){due=blankDue().put("precision",value);if(value in listOf("datetime","date_only"))due.put("timezone",a.zone);form.put("due",due);preserve(form);render()}}
+            u.choice(fields,"precision",listOf("datetime","date_only","approximate","unknown").map{it to u.t(it)},selected){value->if(value!=selected){due=blankDue().put("precision",value);if(value in listOf("datetime","date_only"))due.put("timezone",a.zone);form.remove("wall_date");form.remove("wall_time");form.put("due",due);preserve(form);render()}}
             if(selected in listOf("datetime","date_only")){
-                val dateText=due.nullable("local_date")?:due.nullable("local_datetime")?.take(10)
+                val dateText=due.nullable("local_date")?:due.nullable("local_datetime")?.take(10)?:form.nullable("wall_date")
                 fields.addView(u.button(dateText?:u.t("date")){
                     val original=try{dateText?.let{LocalDate.parse(it)}}catch(_:Exception){null};val initial=original?:LocalDate.now()
-                    DatePickerDialog(a,{_,year,month,day->val dayValue=LocalDate.of(year,month+1,day).toString();if(selected=="datetime"){val time=due.nullable("local_datetime")?.drop(11)?:"00:00:00";due.put("local_datetime",dayValue+"T"+time).put("local_date",JSONObject.NULL)}else due.put("local_date",dayValue).put("local_datetime",JSONObject.NULL);form.put("due",due);preserve(form);render()},initial.year,initial.monthValue-1,initial.dayOfMonth).show()
+                    DatePickerDialog(a,{_,year,month,day->val dayValue=LocalDate.of(year,month+1,day).toString();if(selected=="datetime"){val time=due.nullable("local_datetime")?.drop(11)?:form.nullable("wall_time");form.put("wall_date",dayValue);due.put("local_datetime",if(time==null)JSONObject.NULL else dayValue+"T"+time).put("local_date",JSONObject.NULL)}else due.put("local_date",dayValue).put("local_datetime",JSONObject.NULL);form.put("due",due);preserve(form);render()},initial.year,initial.monthValue-1,initial.dayOfMonth).show()
                 })
                 if(selected=="datetime"){
-                    val current=due.nullable("local_datetime")?.drop(11)
+                    val current=due.nullable("local_datetime")?.drop(11)?:form.nullable("wall_time")
                     fields.addView(u.button(current?.take(5)?:u.t("time"),dateText!=null){
                         val time=try{current?.let{LocalTime.parse(it)}}catch(_:Exception){null}
-                        TimePickerDialog(a,{_,hour,minute->val value=dateText+"T"+hour.toString().padStart(2,'0')+":"+minute.toString().padStart(2,'0')+":00";due.put("local_datetime",value);form.put("due",due);preserve(form);render()},time?.hour?:0,time?.minute?:0,true).show()
+                        TimePickerDialog(a,{_,hour,minute->val value=dateText+"T"+hour.toString().padStart(2,'0')+":"+minute.toString().padStart(2,'0')+":00";due.put("local_datetime",value);form.put("wall_time",value.drop(11));form.put("due",due);preserve(form);render()},time?.hour?:0,time?.minute?:0,true).show()
                     })
                 }
                 val zone=u.field(fields,"timezone",due.optString("timezone",a.zone));zone.addTextChangedListener(object:TextWatcher{override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){};override fun afterTextChanged(e:Editable?){};override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){due.put("timezone",s.toString());form.put("due",due);preserve(form)}})
@@ -66,7 +75,7 @@ class NativeForms(private val a:MainActivity) {
         return {Due.from(due);if(due.optString("precision")=="datetime"&&due.isNull("local_datetime"))throw IllegalArgumentException();JSONObject(due.toString())}
     }
     private fun contextField(box:LinearLayout,form:JSONObject,filter:String?=null){
-        val current=form.optString("context_id","");val choices=a.contexts.objects().filter{filter==null||it.optString("type")==filter}
+        val current=form.nullable("context_id")?:"";val choices=a.contexts.objects().filter{filter==null||it.optString("type")==filter}
         val items=ArrayList<Pair<String,String>>();items.add("" to u.t(if(filter!=null&&filter!="personal")"choose_context" else "personal"));items.addAll(choices.map{it.getString("id") to it.getString("display_name")})
         if(current.isNotEmpty()&&items.none{it.first==current})items.add(current to u.t("context_missing"))
         u.choice(box,"context",items,current){value->form.put("context_id",value);preserve(form)}
@@ -82,7 +91,7 @@ class NativeForms(private val a:MainActivity) {
             box.addView(u.message(u.t("manual")))
             box.addView(u.button(u.t("add"),a.writable,primary=true){try{
                 if(title.text.isBlank()||(type!="personal"&&draft.optString("context_id").isEmpty()))throw IllegalArgumentException()
-                val payload=JSONObject().put("title",title.text.toString()).put("context_id",draft.optString("context_id").takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("kind",when(type){"academic"->"assignment";"organization"->"organizational_duty";else->"personal_action"}).put("due",due())
+                val payload=JSONObject().put("title",title.text.toString()).put("context_id",draft.nullable("context_id")?.takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("kind",when(type){"academic"->"assignment";"organization"->"organizational_duty";else->"personal_action"}).put("due",due())
                 a.perform(WriteOperation.create("/tasks","POST",payload,"create"))
             }catch(_:Exception){a.showNotice(u.t("required"));box.addView(u.message(u.t("required")))}})
             if(!a.writable)box.addView(u.message(u.t("online_only")))
@@ -117,7 +126,7 @@ class NativeForms(private val a:MainActivity) {
             if(proposal)box.addView(u.message(u.t("draft_only")))
             box.addView(u.button(u.t(if(proposal)"draft_save" else "save"),a.writable,primary=true){try{
                 if(title.text.isBlank()||kind.isEmpty())throw IllegalArgumentException()
-                val payload=JSONObject().put("title",title.text.toString()).put("description",notes.text.toString().takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("context_id",draft.optString("context_id").takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("kind",kind).put("status",status).put("priority",priority).put("due",due())
+                val payload=JSONObject().put("title",title.text.toString()).put("description",notes.text.toString().takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("context_id",draft.nullable("context_id")?.takeIf{it.isNotEmpty()}?:JSONObject.NULL).put("kind",kind).put("status",status).put("priority",priority).put("due",due())
                 save(payload)
             }catch(_:Exception){box.addView(u.message(u.t("required")))}})
             if(!a.writable)box.addView(u.message(u.t("online_only")))

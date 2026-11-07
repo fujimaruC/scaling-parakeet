@@ -219,4 +219,7 @@
     <string name="pause_capture">Jeda pengumpulan</string>
     <string name="wipe_queue">Hapus antrean lokal</string>
     <string name="wipe_confirm">Hapus semua notifikasi mentah dalam antrean?</string>
+<string name="auth_uncertain">Sesi berakhir saat hasil kirim belum dikonfirmasi. Setelah masuk lagi, periksa data terbaru sebelum membuat pengganti.</string>
+<string name="ack_uncertain">Saya telah memeriksa data terbaru</string>
+<string name="expiry_warning">Kredensial segera atau sudah kedaluwarsa. Daftarkan ulang lewat peramban tepercaya. Perkiraan jam ponsel.</string>
 </resources>

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import android.util.Base64
 
 class NativeRepository private constructor(context:Context) {
-    private val app=context.applicationContext
+    private val app=context.applicationContext as android.app.Application
     private val vault=PrivateStore(app)
     private val executor=Executors.newSingleThreadExecutor()
     private val main=Handler(Looper.getMainLooper())
@@ -27,6 +27,7 @@ class NativeRepository private constructor(context:Context) {
     @Volatile var credentials:JSONObject?=null; private set
     @Volatile var storageError:String?=null; private set
     @Volatile var boundaryChecked=false; private set
+    @Volatile var unconfirmedAfterAuthLoss=app.getSharedPreferences("owner-ui",0).getBoolean("uncertain_after_auth_loss",false); private set
     private var views=JSONObject()
     @Volatile private var navigation:JSONObject?=null
     fun online():Boolean=(app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo?.isConnected==true
@@ -63,10 +64,14 @@ class NativeRepository private constructor(context:Context) {
             return json
         }finally{connection.disconnect()}
     }
-    private fun authLoss(){epoch.incrementAndGet();credentials=null;pending=null;boundaryChecked=false;views=JSONObject();vault.clear()}
+    private fun authLoss(){
+        if(pending!=null){unconfirmedAfterAuthLoss=true;if(!app.getSharedPreferences("owner-ui",0).edit().putBoolean("uncertain_after_auth_loss",true).commit())storageError="LEDGER_STORAGE_FAILED"}
+        epoch.incrementAndGet();credentials=null;pending=null;navigation=null;boundaryChecked=false;views=JSONObject();try{vault.clear()}catch(_:Exception){storageError="LEDGER_STORAGE_FAILED"}
+    }
+    fun acknowledgeAuthLoss(done:()->Unit){executor.execute{app.getSharedPreferences("owner-ui",0).edit().putBoolean("uncertain_after_auth_loss",false).apply();unconfirmedAfterAuthLoss=false;main.post(done)}}
     private fun observed(path:String,env:JSONObject,cached:Boolean):Observation {
-        val data=env.opt("data");val items=data as? JSONArray;val cursor=env.optJSONObject("meta")?.nullable("next_cursor")
-        return Observation(env,if(cursor!=null)LoadState.PARTIAL else if(items!=null&&items.length()==0)LoadState.EMPTY else LoadState.READY,cached,env.optJSONObject("meta")?.optString("server_time"))
+        val data=env.opt("data");val items=data as? JSONArray;val cursor=env.optJSONObject("meta")?.nullable("next_cursor");val obj=data as? JSONObject;val more=cursor!=null||obj?.nullable("next_history_cursor")!=null||(path in listOf("/history","/reminders")&&(items?.length()?:0)>=100)||(obj?.optJSONArray("actions")?.length()?:0)<(obj?.optInt("actions_total",0)?:0)
+        return Observation(env,NativePolicy.state(true,false,false,items!=null&&items.length()==0,more),cached,env.optJSONObject("meta")?.optString("server_time"))
     }
     private fun get(path:String):Observation {
         val e=epoch.get()
@@ -76,12 +81,14 @@ class NativeRepository private constructor(context:Context) {
             views.put(path,env);while(views.length()>24)views.remove(views.keys().next())
             vault.update(mapOf("views" to views));return observed(path,env,false)
         }catch(t:Exception){
+            if(t is StoreFailure){storageError=t.code;return Observation(null,LoadState.UNAVAILABLE,code=t.code)}
             val error=t as? ApiFailure
             if(error?.status in listOf(401,403)){authLoss();throw t}
             if(error!=null&&error.status in 400..499) return Observation(null,LoadState.UNAVAILABLE,false,code=error.code)
             return views.optJSONObject(path)?.let{observed(path,it,true)}?:Observation(null,LoadState.UNAVAILABLE,!online(),code=error?.code?:"NETWORK_UNAVAILABLE")
         }
     }
+    fun remember(path:String,envelope:JSONObject){val e=epoch.get();val copy=JSONObject(envelope.toString());executor.execute{if(e==epoch.get()&&credentials!=null)try{views.put(path,copy);while(views.length()>24)views.remove(views.keys().next());vault.update(mapOf("views" to views))}catch(t:Exception){storageError=(t as? StoreFailure)?.code?:"LEDGER_STORAGE_FAILED"}}}
     fun read(path:String,done:(Observation)->Unit){val e=epoch.get();executor.execute{
         val out=try{get(path)}catch(t:Exception){Observation(null,LoadState.UNAVAILABLE,code=(t as? ApiFailure)?.code?:"REQUEST_FAILED")}
         main.post{if(e==epoch.get()||credentials==null)done(out)}
@@ -127,14 +134,16 @@ class NativeRepository private constructor(context:Context) {
                 val response=request(op.path,op.method,op.body,op)
                 if(e!=epoch.get())throw ApiFailure(401,"SESSION_CHANGED")
                 // Commit receipt, invalidation and journal removal together before final success.
-                vault.update(mapOf("receipt" to JSONObject().put("operation",op.json()).put("response",response),"views" to JSONObject(),"request" to null))
+                val completedNavigation=JSONObject((navigation?:JSONObject()).toString()).apply{remove("form")}
+                vault.update(mapOf("receipt" to JSONObject().put("operation",op.json()).put("response",response),"views" to JSONObject(),"request" to null,"navigation" to completedNavigation))
+                navigation=completedNavigation
                 views=JSONObject();pending=null;answer=response.getJSONObject("data")
-            }catch(t:Exception){val a=t as? ApiFailure;code=a?.code?:(t as? StoreFailure)?.code?:"SAVE_UNCONFIRMED"
+            }catch(t:Exception){if(t is StoreFailure)storageError=t.code;val a=t as? ApiFailure;code=a?.code?:(t as? StoreFailure)?.code?:"SAVE_UNCONFIRMED"
                 if(a?.status in listOf(401,403)){try{authLoss()}catch(_:Exception){storageError="LEDGER_STORAGE_FAILED"}}
-                else if(a!=null&&a.status in 400..499&&a.status !in listOf(408,425,429)){try{vault.update(mapOf("request" to null));pending=null}catch(_:Exception){code="LEDGER_STORAGE_FAILED"}}
+                else if(a!=null&&!NativePolicy.retainPending(a.status)){try{vault.update(mapOf("request" to null));pending=null}catch(_:Exception){code="LEDGER_STORAGE_FAILED"}}
             }finally{busy=false};main.post{if(e==epoch.get()||credentials==null)done(answer,code)}
         }
     }
-    fun logout(done:()->Unit){epoch.incrementAndGet();credentials=null;pending=null;views=JSONObject();boundaryChecked=false;executor.execute{try{vault.clear();storageError=null}catch(_:Exception){storageError="LEDGER_STORAGE_FAILED"};main.post{done()}}}
+    fun logout(done:()->Unit){epoch.incrementAndGet();credentials=null;pending=null;navigation=null;views=JSONObject();boundaryChecked=false;executor.execute{try{vault.clear();storageError=null}catch(_:Exception){storageError="LEDGER_STORAGE_FAILED"};main.post{done()}}}
     companion object { @Volatile private var instance:NativeRepository?=null;fun get(context:Context):NativeRepository=instance?:synchronized(this){instance?:NativeRepository(context).also{instance=it}} }
 }

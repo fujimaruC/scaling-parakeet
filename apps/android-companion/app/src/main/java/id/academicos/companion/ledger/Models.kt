@@ -18,12 +18,7 @@ data class Due(val precision: String, val date: String?, val wall: String?, val 
         fun from(value: JSONObject): Due {
             val p = value.getString("precision")
             val d = value.nullable("local_date"); val w = value.nullable("local_datetime"); val z = value.nullable("timezone")
-            require(p in listOf("datetime", "date_only", "approximate", "unknown"))
-            when (p) {
-                "datetime" -> { require(d == null && w != null && z != null); LocalDateTime.parse(w); ZoneId.of(z) }
-                "date_only" -> { require(d != null && w == null && z != null); LocalDate.parse(d); ZoneId.of(z) }
-                else -> require(d == null && w == null && z == null)
-            }
+            NativePolicy.shape(p,d,w,z)
             return Due(p, d, w, z)
         }
     }
@@ -45,11 +40,7 @@ data class Task(val value: JSONObject) {
     val instant: Instant? = value.nullable("due_at_utc")?.let { Instant.parse(it) }
     init { require(status in listOf("todo","doing","blocked","done","archived")); require((due.precision == "datetime") == (instant != null)) }
     fun day(ownerZone: String): LocalDate? = when(due.precision) { "datetime" -> instant!!.atZone(ZoneId.of(ownerZone)).toLocalDate(); "date_only" -> LocalDate.parse(due.date); else -> null }
-    fun group(today: LocalDate, zone: String): String {
-        val day=day(zone) ?: return "undated"
-        if(status=="done")return "done"
-        return if(day<=today) "today" else if(day<=today.plusDays(7)) "week" else "later"
-    }
+    fun group(today:LocalDate,zone:String):String=NativePolicy.group(due.precision,day(zone),today,status)
     fun sortKey(zone: String): String = day(zone)?.toString().orEmpty()+":"+(instant?.toString() ?: "~")+":"+id
 }
 enum class LoadState { UNLOADED, LOADING, UNAVAILABLE, EMPTY, PARTIAL, READY }

@@ -2,6 +2,10 @@ package id.academicos.companion.ledger
 import android.content.Context
 import id.academicos.companion.R
 object Copy { private val ids=mapOf(
+"auth_uncertain" to R.string.auth_uncertain,
+"ack_uncertain" to R.string.ack_uncertain,
+"expiry_warning" to R.string.expiry_warning,
+
 "app_name" to R.string.app_name,
 "today" to R.string.today,
 "tasks" to R.string.tasks,

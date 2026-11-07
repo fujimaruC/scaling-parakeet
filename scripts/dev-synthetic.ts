@@ -64,7 +64,10 @@ const vite = await createViteServer({
   server: { middlewareMode: true, hmr: false },
 });
 const server = createServer(async (req, res) => {
-  if (!req.url?.startsWith('/api/')) {
+  if (
+    !req.url?.startsWith('/api/') &&
+    req.url?.split('?')[0] !== '/owner-devices'
+  ) {
     if (process.env.SYNTHETIC_PRODUCTION === '1') {
       const root = resolve('apps/web/dist');
       const requested = resolve(

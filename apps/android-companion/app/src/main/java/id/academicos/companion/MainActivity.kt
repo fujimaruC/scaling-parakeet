@@ -36,6 +36,7 @@ class MainActivity:Activity() {
     private var initialized=false
     private var hadSession=false
     private var generation=0
+    private var renderedKey=""
     private var exportData:String?=null
     private var undoId:String?=null
     private var undoUntil=0L
@@ -61,7 +62,7 @@ class MainActivity:Activity() {
     override fun onPause(){handler.removeCallbacks(ticker);if(initialized)persist();super.onPause()}
     override fun onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy()}
     override fun onNewIntent(value:Intent){super.onNewIntent(value);setIntent(value);CaptureEvidence.emit(this)}
-    private val ticker=object:Runnable{override fun run(){if(initialized&&!forms.isOpen&&repo.credentials?.optString("status")=="active")render();handler.postDelayed(this,30000)}}
+    private val ticker=object:Runnable{override fun run(){if(initialized&&!forms.isOpen&&currentFocus !is EditText&&repo.credentials?.optString("status")=="active")render();handler.postDelayed(this,30000)}}
     override fun onBackPressed(){if(forms.isOpen){forms.close();return};val stack=navigation.optJSONArray("stack");if(stack!=null&&stack.length()>0){val prior=stack.getJSONObject(stack.length()-1);stack.remove(stack.length()-1);prior.put("stack",stack);navigation=prior;generation++;persist();loadScreen();render()}else if(page!="today"){navigate("today",replace=true)}else super.onBackPressed()}
     fun persist(){repo.saveState(navigation)}
     fun navigate(target:String,id:String?=null,replace:Boolean=false){
@@ -119,49 +120,57 @@ class MainActivity:Activity() {
                     if(a.getJSONObject("task").getInt("version")!=b.getJSONObject("task").getInt("version")){fetch(path);return@read}
                     val merged=JSONArray(a.getJSONArray("history").toString());b.getJSONArray("history").objects().forEach{merged.put(it)};b.put("history",merged);result.envelope.put("data",b);observations[path]=result
                 }else{val merged=JSONArray((old.data as JSONArray).toString());val ids=merged.objects().map{it.optString("id")}.toMutableSet();(result.data as JSONArray).objects().forEach{if(ids.add(it.optString("id")))merged.put(it)};result.envelope.put("data",merged);observations[path]=result}
-            }else{observations[path]=old;notice=result.code?:ui.t("unavailable")};render()
+            }else{observations[path]=old;notice=result.code?:ui.t("unavailable")};observations[path]?.envelope?.let{repo.remember(path,it)};render()
         }
     }
-    fun perform(operation:WriteOperation,success:((JSONObject)->Unit)?=null,retry:Boolean=false){
+    fun perform(operation:WriteOperation,retry:Boolean=false,success:((JSONObject)->Unit)?=null){
         if(!retry&&!writable){showNotice(ui.t("online_only"));return}
         repo.write(operation,retry){answer,code->if(isDestroyed)return@write
             if(answer!=null){notice=ui.t("saved");if(operation.label in listOf("accept","reject")&&answer.has("review_action")&&!answer.optBoolean("undone")){undoId=answer.getString("review_action");undoUntil=android.os.SystemClock.uptimeMillis()+4500;handler.postDelayed({undoId=null;renderFeedback()},4500)}else undoId=null
                 if(!getSharedPreferences("owner-ui",0).getBoolean("reduced_motion",false)&&android.animation.ValueAnimator.areAnimatorsEnabled())root.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
                 observations.clear();forms.close();if(operation.method=="DELETE"&&operation.path.startsWith("/tasks/"))navigate("tasks",replace=true)
                 success?.invoke(answer);loadCommon();loadScreen()
-            }else notice=(code?:"SAVE_UNCONFIRMED")+" · "+ui.t("unknown_outcome")
+            }else {notice=(code?:"SAVE_UNCONFIRMED")+" · "+ui.t("unknown_outcome");forms.reportFailure(notice!!)}
             render()
         };render()
     }
     fun showNotice(value:String){notice=value;renderFeedback()}
-    fun confirm(title:String,body:String,positive:String=ui.t("yes"),action:()->Unit){AlertDialog.Builder(this).setTitle(title).setMessage(body).setNegativeButton(ui.t("cancel"),null).setPositiveButton(positive){_,_->action()}.show()}
+    fun confirm(title:String,body:String,positive:String=ui.t("yes"),action:()->Unit){AlertDialog.Builder(this).setTitle(title).setMessage(body).setNegativeButton(ui.t("cancel"),null).setPositiveButton(positive){_,_->action()}.show().window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)}
     private fun renderLoading(){val col=ui.column();col.setBackgroundColor(ui.bg);col.addView(ui.text(ui.t("loading")));setContentView(col)}
     fun render(){if(isDestroyed)return
         if(!initialized){renderLoading();return}
         if(repo.credentials==null&&hadSession){observations.clear();contexts=JSONArray();preferences=null;navigation=JSONObject().put("page","today");hadSession=false}
         if(repo.credentials!=null)hadSession=true
+        val key=page+":"+navigation.optString("id")+":"+navigation.optString("month")+":"+navigation.optString("query")+":"+navigation.optString("filter")
+        val scroll=if(::list.isInitialized&&key==renderedKey)list.onSaveInstanceState()else null
+        val focused=currentFocus as? EditText;val focusId=focused?.id;val selection=focused?.selectionStart?:0;renderedKey=key
         root=ui.column(0);root.setBackgroundColor(ui.bg)
         val header=ui.row();header.setPadding(ui.dp(12),ui.dp(8),ui.dp(12),ui.dp(4))
-        header.addView(ui.button(ui.t("back"),action={onBackPressed()}).apply{layoutParams=LinearLayout.LayoutParams(-2,-2)})
+        header.addView(ui.icon("back"){onBackPressed()})
         header.addView(ui.text("Academic OS",24f,true).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
-        header.addView(ui.button(ui.t("settings"),action={navigate("settings")}).apply{layoutParams=LinearLayout.LayoutParams(-2,-2)})
+        header.addView(ui.icon("settings"){navigate("settings")})
         root.addView(header)
         list=ListView(this).apply{divider=null;setPadding(ui.dp(12),0,ui.dp(12),ui.dp(12));clipToPadding=false;isSaveEnabled=false;descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS}
-        root.addView(list,LinearLayout.LayoutParams(-1,0,1f));feedback=ui.column(8);root.addView(feedback)
+        root.addView(list,LinearLayout.LayoutParams(-1,0,1f));feedback=ui.column(8);root.addView(FeedbackScroll(this).apply{addView(feedback)})
+        if(repo.credentials?.optString("status")=="active"&&page in listOf("today","tasks","calendar")){
+            root.addView(ui.row().apply{gravity=Gravity.END;addView(ui.icon("add"){forms.quick()}.apply{isEnabled=writable;layoutParams=LinearLayout.LayoutParams(ui.dp(56),ui.dp(56))})})
+        }
         if(repo.credentials?.optString("status")=="active"){
-            val nav=ui.row();for(tab in listOf("today","tasks","review","calendar")){nav.addView(ui.button(ui.t(tab),action={navigate(tab,replace=true)}).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f);isSelected=page==tab;contentDescription=ui.t(tab)+(if(page==tab)" · "+ui.t("enabled")else"")})};root.addView(nav)
+            val nav=ui.row();for(tab in listOf("today","tasks","review","calendar")){nav.addView(ui.button(ui.t(tab)+(if(page==tab)" ✓"else""),action={navigate(tab,replace=true)}).apply{layoutParams=LinearLayout.LayoutParams(0,-2,1f);isSelected=page==tab;setCompoundDrawables(null,ui.drawable(tab),null,null);contentDescription=ui.t(tab)+(if(page==tab)" · "+ui.t("enabled")else"")})};root.addView(nav)
         }
         setContentView(root)
         try{val rows=when{
             repo.storageError!=null->repairRows()
             repo.credentials?.optString("status")!="active"->enrollRows()
             else->NativeScreens(this).rows()
-        };list.adapter=RowsAdapter(rows)}catch(_:Exception){list.adapter=RowsAdapter(listOf(Row{ui.message(ui.t("unavailable")+" · INVALID_API_RESPONSE")},Row{ui.button(ui.t("refresh"),action={refresh()})},Row{ui.button(ui.t("open_capture"),action={openCapture()})}))}
+        };list.adapter=RowsAdapter(rows);if(scroll!=null)list.onRestoreInstanceState(scroll);if(focusId!=null&&!forms.isOpen)list.post{list.findViewById<EditText>(focusId)?.let{it.requestFocus();it.setSelection(selection.coerceAtMost(it.text.length))}};if(navigation.optString("group")=="undated"){val index=rows.indexOfFirst{it.anchor=="undated"};if(index>=0)list.post{list.setSelection(index)}}}catch(_:Exception){list.adapter=RowsAdapter(listOf(Row{ui.message(ui.t("unavailable")+" · INVALID_API_RESPONSE")},Row{ui.button(ui.t("refresh"),action={refresh()})},Row{ui.button(ui.t("open_capture"),action={openCapture()})}))}
         renderFeedback()
     }
     private fun renderFeedback(){if(!::feedback.isInitialized)return;feedback.removeAllViews()
         notice?.let{feedback.addView(ui.message(it))}
-        repo.pending?.let{operation->feedback.addView(ui.message(ui.t("unknown_outcome")+" · "+operation.label));feedback.addView(ui.button(ui.t("retry"),enabled=repo.online()&&!repo.busy,action={perform(operation,retry=true)}))}
+        if(repo.unconfirmedAfterAuthLoss){feedback.addView(ui.message(ui.t("auth_uncertain")));feedback.addView(ui.button(ui.t("ack_uncertain"),enabled=repo.boundaryChecked&&repo.online(),action={confirm(ui.t("ack_uncertain"),ui.t("auth_uncertain")){repo.acknowledgeAuthLoss{render()}}}))}
+        if(repo.credentials?.optString("status")=="active")try{val expiry=Instant.parse(repo.credentials!!.getString("expires_at"));if(expiry.epochSecond-Instant.now().epochSecond<=7*86400)feedback.addView(ui.message(ui.t("expiry_warning")+" · "+expiry))}catch(_:Exception){}
+        repo.pending?.let{operation->feedback.addView(ui.message(ui.t("unknown_outcome")+" · "+operation.label));feedback.addView(ui.button(ui.t("retry"),enabled=repo.online()&&!repo.busy,action={perform(operation,retry=true)}));feedback.addView(ui.button(ui.t("detail")){confirm(ui.t("unknown_outcome"),operation.body,ui.t("close")){}})}
         if(undoId!=null&&android.os.SystemClock.uptimeMillis()<undoUntil){val action=undoId!!;feedback.addView(ui.button(ui.t("undo"),enabled=writable,action={perform(WriteOperation.create("/review-actions/"+encode(action)+"/undo","POST",JSONObject(),"undo"))}))}
     }
     private fun enrollRows():List<Row> = listOf(Row{

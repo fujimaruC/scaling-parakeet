@@ -219,4 +219,7 @@
     <string name="pause_capture">Pause collection</string>
     <string name="wipe_queue">Wipe local queue</string>
     <string name="wipe_confirm">Delete all raw queued notifications?</string>
+<string name="auth_uncertain">Sign-in ended while a send was unconfirmed. After signing in again, inspect fresh canonical data before creating a replacement. Do not assume the earlier send failed.</string>
+<string name="ack_uncertain">I have checked the fresh canonical data</string>
+<string name="expiry_warning">The device credential expires soon or has expired. Re-enroll through the trusted browser. This warning uses the phone clock.</string>
 </resources>
