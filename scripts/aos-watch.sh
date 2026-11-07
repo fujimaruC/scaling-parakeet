@@ -21,8 +21,16 @@ if [ -n "$REMOTE" ] && [ -z "$SEEN_COMMIT" ]; then
   echo "commit=$REMOTE" >> "$STATE"          # first run: baseline, no alert
 elif [ -n "$REMOTE" ] && [ "$REMOTE" != "$SEEN_COMMIT" ]; then
   # Commits this agent authored are our own pushes, not inbound work.
-  INBOUND=$(git log --format='%h %an %s' "$SEEN_COMMIT".."$REMOTE" 2>/dev/null \
-            | grep -v ' Claude ' || true)
+  # A range whose tip is Claude-authored is this agent's own push: record it and
+  # stay silent. Filtering per-commit alone is not enough, because a push of ours
+  # also carries older non-Claude commits that are new only to this watcher.
+  TIP_AUTHOR=$(git log -1 --format='%an' "$REMOTE" 2>/dev/null || echo "")
+  if [ "$TIP_AUTHOR" = "Claude" ]; then
+    INBOUND=""
+  else
+    INBOUND=$(git log --format='%h %an %s' "$SEEN_COMMIT".."$REMOTE" 2>/dev/null \
+              | grep -v ' Claude ' || true)
+  fi
   echo "commit=$REMOTE" >> "$STATE"
   if [ -n "$INBOUND" ]; then
     NEW=1
