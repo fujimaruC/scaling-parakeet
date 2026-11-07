@@ -199,6 +199,12 @@
   align-items: center;
   gap: 12px;
   width: calc(100% - 4px);
+  /* The fixed "add task" FAB floats over this row's bottom-right corner
+     (measured 56x28px at 375x812), so a tap near that edge added a task
+     instead of opening the no-date group. The width is explicit, so a
+     margin-right would not shrink it; the FAB is 56px wide plus its 20px
+     inset, so trim the row instead of the margin. */
+  width: calc(100% - 64px);
   padding: 14px;
   min-height: 56px;
   text-align: left;

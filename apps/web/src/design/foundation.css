@@ -11,7 +11,10 @@ body {
   min-height: 100dvh;
 }
 main {
-  padding: 16px 16px calc(110px + env(safe-area-inset-bottom));
+  /* Bottom padding must clear the FAB, which sits at bottom:94px and is 56px
+     tall, so its top edge is 150px above the safe area. 110px left the last
+     40px of content underneath it, where clicking hit the FAB instead. */
+  padding: 16px 16px calc(160px + env(safe-area-inset-bottom));
   max-width: 430px;
 }
 aside {
