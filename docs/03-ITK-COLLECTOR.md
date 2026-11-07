@@ -1,7 +1,7 @@
 # ITK Moodle LMS Collector Specification & Architecture
 
 **Target:** `https://kuliah.itk.ac.id` (ITK Moodle-based portal, Moodle 4.x with Moove theme and Tiles course format).
-**Status:** Implemented and tested with active Firefox session. 40 collector unit tests passing.
+**Status:** Implemented. 40 collector unit tests pass, all against mocked HTML and a patched `urlopen`; no test contacts `kuliah.itk.ac.id` and no real session has been exercised by an agent. Structured item metadata only (course, title, due, URL, submission status) enters the sync envelope; the session cookie is read from Firefox and never persisted. Real-portal behaviour, cookie handoff on the owner's actual Firefox profile, and Moodle theme drift remain unverified.
 
 ---
 
