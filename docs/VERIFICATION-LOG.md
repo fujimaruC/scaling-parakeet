@@ -958,3 +958,90 @@ enrollment/activation/revocation, Cloudflare/Access/D1/provider/push check. No
 APK was rebuilt for the phone and no signing key was touched. Notification
 access remains last recorded false; no listener event has ever occurred. M0 and
 all release gates remain incomplete.
+
+## 17. First real run of the native APK — CPH2015 / API 28, 2026-11-09
+
+The owner connected the OPPO CPH2015 over USB. `adb devices` reports
+`W4BI7L6SHQW879SG`, model CPH2015, Android 9 / API 28, build
+`CPH2015EX_11_A.67` — the same phone as §12, but a different APK.
+
+### What was on the phone before
+
+`versionCode=1`, `versionName=0.1-probe`, commit `d748479`, sha256 `3b6d2011…`,
+`firstInstallTime` 2026-11-06 15:42:03. Notification access was **not** granted;
+the only enabled listener was Google's. A baseline `device_evidence.py` run
+recorded `queue_count=0`, `low_ram=false`, `launch_stays_open=true`,
+`reopen_ok=true`.
+
+### Signing preflight (read-only)
+
+```text
+owner_device_run.py --sdk $ANDROID_HOME --apk app-debug.apk --preflight
+{"allowed": true, "candidate_ephemeral": false, "candidate_package_ok": true,
+ "error_code": null, "package_present": true, "signature_match": true}
+```
+
+Same signing identity as the installed app, so an in-place update was permitted.
+No uninstall, clear, permission grant or downgrade ran.
+
+### Install and smoke
+
+```text
+device_evidence.py --apk app-debug.apk --sdk $ANDROID_HOME
+install_ok: true            version: 0.2-native-preview
+source_commit: 44a9a50      apk_sha256: 2388355d…
+launch_stays_open: true     reopen_ok: true
+queue_count: 0              repair_required: false
+notification_access: false  android_api: 28
+```
+
+`firstInstallTime` stayed 2026-11-06 15:42:03 while `lastUpdateTime` moved to
+2026-11-09 07:30:24, confirming an in-place update rather than a reinstall.
+`capture.db` from 2026-11-06 survived and `owner-ledger.db` was created — no
+app data was lost.
+
+### Defect found on the first real run, and fixed
+
+That first run returned `crash_coverage_complete: false` with
+`fatal_exception_observed: null` on a launch that was otherwise clean. The cause
+was the monitor's chatty rule: **any** `I/chatty` line was treated as lost
+coverage. ColorOS emits these constantly for tags the monitor never subscribes
+to, for example:
+
+```text
+I/chatty  ( 1275): uid=1000(system) InputDispatcher identical 1 line
+I/chatty  ( 2010): uid=10016(com.google.android.gms) lowpool[1249] identical 2 lines
+```
+
+On this device the coverage verdict could therefore never be `true`, so every
+future run would have been reported as unverified. The rule now attributes
+suppression to its owner: only our own package's monitored tags (`AOS-RUN`,
+`AndroidRuntime`, `DEBUG`, `libc`) count as lost evidence, and unparsable lines
+or our own unnamed suppression still fail closed.
+
+Four regression tests were added and were confirmed to fail against the previous
+rule (`None is not False`) before passing. After the fix the same real-device
+run reports:
+
+```text
+crash_coverage_complete: true   crash_window_started: true   crash_window_ended: true
+fatal_exception_observed: false launch_stays_open: true      reopen_ok: true
+```
+
+This is the first `fatal_exception_observed: false` backed by a **complete**
+window on the new native app. §12's earlier false was from the probe build and a
+different (defective) coverage rule.
+
+Local re-checks after the change: Python discovery 70 pass; owner-safety
+mutations 7 intended failures / 7 restored; evidence mutations 10 / 10; planning
+validation and Prettier unaffected.
+
+### Still not observed
+
+Notification access remains false and **no listener event or capture has ever
+occurred**. Install/readback/launch/reopen and clean-window coverage are now
+evidenced for this APK; capture, filtering, queue durability, restart survival,
+interrupted-ack recovery, transport, enrollment/activation/revocation, cloud
+path isolation, provider and push remain unverified. `smoke_result` stays
+`unverified` because the interactive owner session has not run. No milestone is
+complete.

@@ -407,3 +407,33 @@ readback, launch, native usability, capture, credential lifecycle, Cloudflare
 path isolation, provider/push. No APK was rebuilt for the phone and no key was
 touched. Notification access remains last recorded false; no listener event has
 ever occurred. M0 and all other release gates remain incomplete.
+
+## First real run of the native APK — CPH2015/API 28, 2026-11-09
+
+The owner connected the phone. Before the update it held `0.1-probe`
+(versionCode 1, commit `d748479`); the read-only signing preflight returned
+`allowed: true`, `signature_match: true`, so an in-place update was permitted.
+`install_ok: true`; the phone now runs `0.2-native-preview` (commit `44a9a50`,
+sha `2388355d…`) with `firstInstallTime` unchanged, `capture.db` intact and a new
+`owner-ledger.db` — no data reset, no permission granted.
+
+Launch, reopen, queue count 0 and no repair prompt are evidenced on real
+hardware. Notification access is still **false** and no listener event has ever
+occurred.
+
+One real defect was found by this run and fixed. The crash monitor treated any
+`I/chatty` line as lost coverage, but ColorOS continuously suppresses
+`InputDispatcher` and GMS lines, so `crash_coverage_complete` could never be
+true on this device and every run would have been reported unverified. The rule
+now attributes suppression to its owner: only our own package's monitored tags
+count as lost evidence, and unparsable or unnamed self-suppression stays
+fail-closed. After the fix the same device reports
+`crash_coverage_complete: true` with `fatal_exception_observed: false` — the
+first clean-window negative on the new app.
+
+Exact output: [VERIFICATION-LOG §17](VERIFICATION-LOG.md#17-first-real-run-of-the-native-apk--cph2015--api-28-2026-11-09).
+
+Still unverified: capture, filtering, queue durability, restart survival,
+interrupted-ack recovery, transport, enrollment/activation/revocation, cloud
+path isolation, provider and push. `smoke_result` remains `unverified` until the
+interactive owner session runs. M0 and all release gates remain incomplete.
