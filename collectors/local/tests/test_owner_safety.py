@@ -163,5 +163,26 @@ class BriefFormatCompatibilityTests(unittest.TestCase):
  def test_padded_native_fatal_is_not_reported_clean(self):
   for tag,body,expected in [('libc','Fatal signal 11',None),('DEBUG','>>> '+d.PKG+' <<<',True)]:
    c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('F/'+tag+'   ( 71): '+body);c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),expected)
+ def test_unrelated_system_chatty_suppression_does_not_lose_app_coverage(self):
+  # Real ColorOS lines. Neither InputDispatcher (system) nor gms is our evidence.
+  for line in ['I/chatty  ( 1275): uid=1000(system) InputDispatcher identical 1 line',
+               'I/chatty  ( 2010): uid=10016(com.google.android.gms) lowpool[1249] identical 2 lines',
+               'I/chatty  ( 2010): uid=10016(com.google.android.gms) identical 1 line']:
+   c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed(line)
+   c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),False,line)
+ def test_chatty_suppression_of_a_monitored_tag_still_means_lost_coverage(self):
+  for tag in ('AndroidRuntime','DEBUG','libc','AOS-RUN'):
+   c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START')
+   c.feed('I/chatty  ( 71): uid=10272('+d.PKG+') '+tag+' identical 3 lines')
+   c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result(),tag)
+ def test_our_own_unnamed_chatty_suppression_stays_fail_closed(self):
+  c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START')
+  c.feed('I/chatty  ( 71): uid=10272('+d.PKG+') identical 2 lines')
+  c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result())
+ def test_unparsable_chatty_line_stays_fail_closed(self):
+  for body in ('identical lines suppressed','uid=1000(system)','garbage'):
+   c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START')
+   c.feed('I/chatty  ( 71): '+body);c.feed('I/AOS-RUN( 1): '+c.token+' END')
+   self.assertIsNone(c.result(),body)
  def test_padded_chatty_suppression_is_incomplete_coverage(self):
   c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('I/chatty  ( 71): identical lines suppressed');c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result())

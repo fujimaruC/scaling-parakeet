@@ -40,6 +40,19 @@ def install(apk,sdk=None):
  if code is not None and (code!=0 or 'Failure [' in text):return False
  return None
 
+MONITORED={'AOS-RUN','AndroidRuntime','DEBUG','libc'}
+def chatty_parts(line):
+ """(owner,tag) from a chatty suppression line. owner None=unparsable, tag None=not named.
+ ponytail: assumes chatty names app uids by package name, as observed on ColorOS/API28.
+ Pass the installed uid and compare numerically if a vendor renames it.
+ """
+ body=line.split('):',1)[1].strip() if '):' in line else ''
+ m=re.fullmatch(r'uid=\d+\(([^)]*)\)\s+(.*)',body)
+ if not m:return None,None
+ owner,rest=m.groups()
+ t=re.fullmatch(r'(?:lowpool\[\d+\]\s+)?([A-Za-z0-9_.:-]+)\s+identical \d+ lines?',rest)
+ return owner,(t[1] if t else None)
+
 class CrashWindow:
  """Live bounded stream, with both markers observed on the same stream.
  Missing markers/EOF/parser ambiguity means unknown, never crash-free.
@@ -57,7 +70,13 @@ class CrashWindow:
   if not self.started.is_set() or self.ended.is_set():return
   if re.match(r'F/DEBUG\s*\(',line) and '>>> '+PKG+' <<<' in line:self.native=True
   if re.match(r'[EF]/(?:DEBUG|libc)\s*\(',line):self.bad=True
-  if 'dropped' in line.lower() or re.search(r'/chatty\s*\(',line) or line.startswith('logcat:'):self.bad=True
+  if 'dropped' in line.lower() or line.startswith('logcat:'):self.bad=True
+  elif re.search(r'/chatty\s*\(',line):
+   # chatty names the owner and usually the suppressed tag. Only suppression of
+   # our own monitored tags is lost evidence; another app's chatter is not.
+   owner,tag=chatty_parts(line)
+   if owner is None or owner==PKG:
+    if tag is None or tag in MONITORED:self.bad=True
   m=re.match(r'[EF]/AndroidRuntime\s*\(\s*(\d+)\):\s*(.*)',line)
   if not m:
    if 'AndroidRuntime' in line:self.bad=True
