@@ -675,3 +675,94 @@ Notification access is last observed false. **No listener event or capture has
 ever occurred.** The capture matrix, private remote transport, source-generation
 recovery on hardware, laptop-off action delivery, provider consent operation,
 physical push and pilot remain unverified. No milestone is marked complete.
+
+---
+
+## 14. Verification of the native handoff `0b0b4c6` — 2026-11-08
+
+Independent re-run of `Academic-OS-System-0b0b4c6.zip` on the owner's machine.
+The delivery claims base `6bbfa26` and source snapshot `0b0b4c6`; this section
+records what was reproduced here, not what the delivery asserts.
+
+### Application and tree
+
+| Check | Result |
+|---|---|
+| `git am --3way` on `6bbfa26` | **exit 0**, 5 commits applied, HEAD `44a9a50` |
+| Resulting tree hash | **`660ae8fdaac4bf3b8f5f411d71a7f7c065c997c6`** — exact match to APPLY.md |
+| Applied tree vs zip `source/` | **identical**; `diff -rq` differences are build artifacts only (`node_modules`, `dist`, `.gradle`, `build`, `__pycache__`, `test-results`, `local.properties`) |
+| Authorship of the 5 commits | `Codex <codex@openai.com>` ×4, `Codex <codex@local.invalid>` ×1 |
+
+### Suites actually run here
+
+| Command | Result |
+|---|---|
+| `npm run check` | **exit 0**, 36 Vitest tests in 4 files (prettier, tsc, Vite + Worker dry-run) |
+| `npm run test:e2e` | **exit 0**, 12 passed (1.7m) |
+| `npm run test:pwa` | **exit 0**, 1 passed (7.3s) |
+| `python -m unittest discover -s collectors/local/tests` | **exit 0**, 40 tests OK |
+| `python scripts/validate_planning.py` | **exit 0**: 3 schemas, 5 fixtures, 21 rejections, 98 links, 30 features, 34 test IDs |
+| `python scripts/check_placeholders.py` | **exit 0**, common private-key/provider-token patterns only |
+| `./gradlew clean assembleDebug lint testDebugUnitTest verifyApi28` | **BUILD SUCCESSFUL in 6m 23s**, 54/54 tasks executed |
+| `scripts/check_native_mutations.py` | **PASS: 10 intended failures; 10 restored passes. Source restored** |
+| `adb devices` | **0 devices** — no install, launch or `AOS-PROBE` observation |
+
+Lint reports **0 errors / 2 warnings**, both pre-existing in `Transport.kt`:
+`ApplySharedPref` and `CustomX509TrustManager`. The JVM policy suites report
+`Queue privacy policy: 6 tests passed` and `Native policy cases: 5`.
+
+Mutation-log count, because it looks wrong at first glance: the runner executes
+**one baseline per task group**, not per case (`if task not in checked`). Three
+groups — `verifyApi28`, `testNativePolicy`, `worker` — give 3 baselines plus
+10 broken plus 10 restored = **23 logs**, which is exactly what was produced.
+0 survivors, 0 non-zero baselines. An expectation of 30 was my own error, not a
+gap in the runner.
+
+### Artifact identity
+
+| Field | Observed |
+|---|---|
+| APK SHA-256 | `2ff7c83affb211b7334b489ce979b93fd63474fd2c434b5a6464a6d43e18bf2a` — exact match to APPLY.md |
+| APK size | 3,295,710 bytes — exact match |
+| Embedded build manifest | `{"source_commit":"d2f24e44827313f3f615ee5598411bad2d298f4d","source_dirty":false}` |
+| Package | `id.academicos.companion`, versionCode 2, versionName `0.2-native-preview` |
+| SDK | min 28, target 35, compile 35 |
+| Signing | `CN=Android Debug` — not the owner's release identity |
+
+### Code claims checked by reading
+
+- `/api/device/v1/*` exists with `enroll`, `enrollment` and `session` (DELETE) routes.
+- `device-auth.ts:38` rejects **any** `Origin` on the device namespace; `index.ts:771`
+  still compares browser writes against `url.origin`. The asymmetry is correct.
+- `/owner-devices` (page at :658, API at :777) sits behind `authorize()` and the
+  same-origin branch. I first suspected it bypassed that branch; tracing the
+  control flow showed it does not.
+- `0007_owner_clients.sql` exists, storing only grant and credential hashes.
+- Eight page branches: today, tasks, detail, review, calendar, settings, sources,
+  history, reminders. `NativeForms.kt` provides quick, date, editor, proposalEditor
+  and proposalDate.
+- 1,605 Kotlin lines under `src/main/java`, 8 files in `ledger/`.
+- `res/font/inter.ttf` and `pixelify.ttf` ship with both OFL licence files.
+- `verifyApi28` gained a real guard: `check(production == checked)` fails the build
+  if production Kotlin sits outside `src/main/java`.
+- `CaptureService.kt`, `Queue.kt` and `Transport.kt` are **byte-identical** to
+  `6bbfa26`, so the earlier device smoke does not describe this UI.
+- **No dependency added**: every `package.json` and `package-lock.json` unchanged;
+  no `dependencies` block in the Android module.
+- The PWA is untouched and the Worker still serves `apps/web/dist`.
+- The shipped mutation runner is byte-identical to the one in `source/`.
+
+### What this does not establish
+
+- **APK provenance cannot be diffed.** APPLY.md says the final build used code
+  commit `d2f24e44`, with only documentation added afterwards. That commit is not
+  present in this repository and the build ran in an ephemeral checkout, so the
+  embedded string matches the claim but the code behind it cannot be compared.
+- **No device observation of any kind.** Nothing was installed. Signature
+  compatibility with the owner's existing install is unknown; the APK is
+  debug-signed and APPLY.md warns an in-place update may fail without the original
+  key. Do not uninstall or clear app data to work around that.
+- Real enrollment, Cloudflare path isolation, D1 migration 0007 application,
+  HTTPS behaviour on device, Keystore/SQLite/power-loss recovery, TalkBack,
+  200% text, and the capture matrix all remain unverified.
+- `notification_access` remains false. No listener event or capture has ever run.
