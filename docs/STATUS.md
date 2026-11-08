@@ -375,3 +375,35 @@ Real signing compatibility, install, native launch/usability, credential lifecyc
 Cloudflare path isolation and capture remain unverified. No new native hardware
 result exists. Notification access is last recorded false; no capture/listener
 event has ever occurred. M0 and all other release gates remain incomplete.
+
+## Independent re-verification of `ebfb6ca` — 2026-11-08
+
+The newest delivered archive was applied onto a clean base `e7417ce` as commit
+`6db80bf`; its tree hash equals the archive's declared tree
+(`e2694f2f…500d`). Every suite that `APPLY.md` listed as NOT RUN for that
+checkpoint was run here, plus the ones it did list:
+
+Python discovery 66 pass; owner-safety mutations 7/7 broken and restored;
+evidence mutations 10/10; S2 mutations 22/22 broken assertion failures and 22
+restored passes; planning validation and placeholder scan pass. Node: typecheck
+clean, Prettier clean, 36 Vitest pass, web+worker build (wrangler dry-run) exit
+0, 12 Playwright e2e pass, 1 production-PWA offline test pass. Android with
+jdk-17.0.21+9 and SDK 35: `testDebugUnitTest lint` BUILD SUCCESSFUL in 3m46s.
+
+Real `apksigner`/`aapt` output was fed through the new `apk_safety` code: the
+locally built debug APK reports cert `f4569691…` and `candidate_ephemeral:
+false`; the delivered debug APK reports `3b761748…6e3838` and
+`candidate_ephemeral: true`, so the pinned ephemeral constant is correct. With
+no phone attached both stop at `PACKAGE_STATE_UNVERIFIED` and
+`owner_device_run.py --preflight` exits 2 `DEVICE_NOT_IDENTIFIED` — fail-closed,
+not a pass.
+
+One real defect fixed: `device_evidence.collect` assigned `safe['unavailable']`
+twice, making the in-`finally` value dead. Duplicate removed; all suites re-run
+afterwards. Exact output: [VERIFICATION-LOG §16](VERIFICATION-LOG.md#16-independent-re-verification-of-ebfb6ca-on-the-owner-machine--2026-11-08).
+
+Still unverified: signing compatibility with the installed app, install,
+readback, launch, native usability, capture, credential lifecycle, Cloudflare
+path isolation, provider/push. No APK was rebuilt for the phone and no key was
+touched. Notification access remains last recorded false; no listener event has
+ever occurred. M0 and all other release gates remain incomplete.

@@ -883,3 +883,78 @@ smokes remain historical, not proof for this APK. Notification access remains
 last recorded false; no listener event or capture has ever occurred. No milestone
 is complete. Actual device-discovered application defects can only be fixed once
 the owner supplies a real run; none is invented or claimed resolved in advance.
+
+## 16. Independent re-verification of `ebfb6ca` on the owner machine — 2026-11-08
+
+Received `Academic-OS-System-ebfb6ca.zip` (newest of the delivered archives, 350
+files, includes `START-HERE.md`/`APPLY.md`/`academic-os.patch`). Applied the
+patch with `git am --3way` on branch `owner-evidence` from base `e7417ce`; the
+resulting commit is `6db80bf` and its tree hash is
+`e2694f2f99a0095a08190a4a856ec0c3cf20500d`, identical to the archive's declared
+tree. `diff -rq` of `source/` against the checkout reported no differences
+outside generated build/cache directories.
+
+Everything below was run on this machine, not copied from `APPLY.md`.
+
+```text
+.venv/bin/python -m unittest discover -s collectors/local/tests
+Ran 66 tests ... OK
+
+.venv/bin/python scripts/check_owner_safety_mutations.py --output-dir <local>
+PASS: 7 intended failures; 7 restored passes; 0 survivors; working tools untouched.
+
+.venv/bin/python scripts/check_evidence_mutations.py --output-dir <local>
+PASS: 10 intended failures; 10 restored passes; 0 survivors; working tools untouched.
+
+.venv/bin/python scripts/check_s2_mutations.py --output-dir <local>
+PASS: 22 broken assertion failures; 22 restored passes; sources restored.
+
+.venv/bin/python scripts/validate_planning.py
+PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 110 local
+links; 30 features; 34 test IDs.
+
+.venv/bin/python scripts/check_placeholders.py
+PASS: no common private-key/provider-token formats found.
+
+npx tsc --noEmit                     exit 0
+npx prettier --check <all sources>   exit 0, 0 warnings
+npx vitest run                       4 files / 36 tests passed
+npm run build                        web + worker, wrangler dry-run exit 0
+npx playwright test                  12 passed (58.3s)
+npm run test:pwa                     1 passed (12.8s)
+```
+
+Android, with the pinned toolchain (`jdk-17.0.21+9`, SDK 35, build-tools
+35.0.0): `./gradlew testDebugUnitTest lint --no-daemon` → `BUILD SUCCESSFUL in
+3m 46s`, 6 queue-privacy and 5 native-policy JVM cases, lint clean. Node 26.12.0,
+npm 12.2.1, Python 3.14.8 (.venv), Gradle 8.11.1.
+
+### Real SDK inspection of real APKs (no device)
+
+The new `apk_safety.certificate`/`check_update` were run against genuine
+`apksigner`/`aapt` output rather than only the modeled unit fixtures:
+
+- locally built `app-debug.apk` → package `id.academicos.companion` ok, cert
+  `f45696913edb824a924976ad5c3e2628ed1b35293dce3ab956fb76ea59bd03c9`,
+  `candidate_ephemeral: false`.
+- previously delivered `Academic-OS-debug.apk` → cert
+  `3b761748…6e3838`, `candidate_ephemeral: true`, confirming the hard-coded
+  `EPHEMERAL_CERT` constant matches the real artifact.
+
+Both stopped at `PACKAGE_STATE_UNVERIFIED` because `adb devices` lists no
+attached phone, and `owner_device_run.py --preflight` exited 2 with
+`DEVICE_NOT_IDENTIFIED`. That is the fail-closed path working, not a pass:
+signing compatibility with the installed app is still unknown.
+
+### One defect found and fixed here
+
+`device_evidence.collect` assigned `safe['unavailable']` twice (once inside the
+`finally`, once after it). The second assignment made the in-`finally` value
+dead. Removed the duplicate; no behaviour change, all suites re-run after it.
+This was the only duplicated statement found when scanning the new files.
+
+NOT RUN: any device, install, readback, launch, notification capture,
+enrollment/activation/revocation, Cloudflare/Access/D1/provider/push check. No
+APK was rebuilt for the phone and no signing key was touched. Notification
+access remains last recorded false; no listener event has ever occurred. M0 and
+all release gates remain incomplete.

@@ -169,7 +169,6 @@ def collect(apk=None,sdk=None):
   safe['crash_window_started']=monitor.started.is_set() if hasattr(monitor,'started') else None
   safe['crash_window_ended']=monitor.ended.is_set() if hasattr(monitor,'ended') else None
   safe['crash_coverage_complete']=monitor.coverage_complete() if hasattr(monitor,'coverage_complete') else None
-  safe['unavailable']=[k for k,v in safe.items() if v is None]
  safe['unavailable']=[k for k,v in safe.items() if v is None]
  return safe
 
