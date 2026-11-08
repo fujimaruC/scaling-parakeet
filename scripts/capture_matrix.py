@@ -59,11 +59,12 @@ def main():
   try:print(json.dumps({'integrity':'verified','cases':verify(a.output)}))
   except (OSError,ValueError,KeyError):raise SystemExit('INCOMPLETE_OR_MODIFIED_EVIDENCE')
   return
+ if not os.isatty(0):raise SystemExit('OWNER_TERMINAL_REQUIRED')
  journal=Journal(a.output)
  try:
   # Install/build smoke remains observations, never a substitute for capture.
   smoke=collect(a.apk);print(json.dumps(smoke,sort_keys=True))
-  if smoke.get('error_code')=='DEVICE_NOT_IDENTIFIED':raise ValueError('Device identity unavailable')
+  if smoke.get('error_code') or (a.apk is not None and smoke.get('install_ok') is not True):raise ValueError('Device or installed artifact unverified')
   for case in CASES:
    input('Case '+case+': Enter to begin; perform ONLY synthetic owner-controlled case. ')
    window=CrashWindow();window.start();before=passive();token=str(uuid.uuid4());start=time.monotonic_ns()

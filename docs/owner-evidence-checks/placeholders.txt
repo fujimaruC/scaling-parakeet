@@ -1,0 +1,1 @@
+PASS: no common private-key/provider-token formats found in project files; configuration examples remain placeholders.

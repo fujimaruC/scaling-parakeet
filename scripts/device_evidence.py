@@ -31,7 +31,10 @@ def installed_artifact():
   except (ValueError,KeyError,OSError,zipfile.BadZipFile):pass
   return digest,commit
 
-def install(apk):
+def install(apk,sdk=None):
+ from apk_safety import check_update
+ safety=check_update(apk,sdk)
+ if safety['allowed'] is not True:return False if safety['allowed'] is False else None
  code,text=command('install','-r',str(apk))
  if code==0 and any(line.strip()=='Success' for line in text.splitlines()):return True
  if code is not None and (code!=0 or 'Failure [' in text):return False
@@ -42,22 +45,30 @@ class CrashWindow:
  Missing markers/EOF/parser ambiguity means unknown, never crash-free.
  """
  def __init__(self):
-  self.token=str(uuid.uuid4());self.started=threading.Event();self.ended=threading.Event();self.fatal=set();self.target=set();self.identified=set();self.bad=False;self.native=False;self.proc=None
+  self.token=str(uuid.uuid4());self.started=threading.Event();self.ended=threading.Event();self.fatal=set();self.target=set();self.identified=set();self.bad=False;self.native=False;self.proc=None;self.names={}
  def feed(self,line):
-  if self.token+' END' in line and self.started.is_set():self.ended.set();return
-  if self.token+' START' in line:self.started.set();return
+  marker=re.fullmatch(r'I/AOS-RUN\s*\(\s*\d+\):\s*'+re.escape(self.token)+r' (START|END)\s*',line)
+  if marker:
+   if marker[1]=='START':
+    if self.started.is_set():self.bad=True
+    self.started.set()
+   elif self.started.is_set():self.ended.set()
+   return
   if not self.started.is_set() or self.ended.is_set():return
-  if re.match(r'F/DEBUG\(',line) and '>>> '+PKG+' <<<' in line:self.native=True
-  if re.match(r'[EF]/(?:DEBUG|libc)\(',line):self.bad=True
-  if 'dropped' in line.lower() or '/chatty(' in line or line.startswith('logcat:'):self.bad=True
-  m=re.match(r'[EF]/AndroidRuntime\(\s*(\d+)\):\s*(.*)',line)
+  if re.match(r'F/DEBUG\s*\(',line) and '>>> '+PKG+' <<<' in line:self.native=True
+  if re.match(r'[EF]/(?:DEBUG|libc)\s*\(',line):self.bad=True
+  if 'dropped' in line.lower() or re.search(r'/chatty\s*\(',line) or line.startswith('logcat:'):self.bad=True
+  m=re.match(r'[EF]/AndroidRuntime\s*\(\s*(\d+)\):\s*(.*)',line)
   if not m:
    if 'AndroidRuntime' in line:self.bad=True
    return
   pid,body=m.groups()
   if 'FATAL EXCEPTION:' in body:self.fatal.add(pid)
-  if re.match(r'Process: [A-Za-z0-9_.:]+, PID: '+pid+r'\b',body):self.identified.add(pid)
-  if re.match(r'Process: '+re.escape(PKG)+r'(?:\:[A-Za-z0-9_.]+)?, PID: '+pid+r'\b',body):self.target.add(pid)
+  identity=re.fullmatch(r'Process: ([A-Za-z0-9_.:]+), PID: '+pid+r'\s*',body)
+  if identity:
+   names=self.names.setdefault(pid,set());names.add(identity[1]);self.identified.add(pid)
+   if len(names)>1:self.bad=True;self.target.discard(pid)
+   elif identity[1]==PKG or identity[1].startswith(PKG+':'):self.target.add(pid)
  def start(self):
   try:self.proc=subprocess.Popen(['adb',*(['-s',_serial] if _serial else []),'logcat','-b','main','-b','crash','-v','brief','AOS-RUN:I','AndroidRuntime:E','DEBUG:F','libc:F','chatty:I','*:S'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,errors='replace')
   except OSError:return
@@ -81,16 +92,20 @@ class CrashWindow:
    try:self.proc.wait(timeout=3)
    except subprocess.TimeoutExpired:self.proc.kill();self.proc.wait()
    self.thread.join(timeout=3);self.errors_thread.join(timeout=3)
+   if self.thread.is_alive() or self.errors_thread.is_alive():self.bad=True
   return self.result()
+ def coverage_complete(self):
+  return self.started.is_set() and self.ended.is_set() and not self.bad and not (self.fatal-self.identified)
  def result(self):
   if self.native or self.fatal & self.target:return True
-  if self.started.is_set() and self.ended.is_set() and not self.bad and not (self.fatal-self.identified):return False
+  if self.coverage_complete():return False
   return None
 
-def collect(apk=None):
+def collect(apk=None,sdk=None):
  global _serial
  run=str(uuid.uuid4());records=[];observed=[];cold_pid=None
  safe={'run':run,'source_commit':None,'apk_sha256':None,'repair_code':None,'owner_reset_performed':None,'install_ok':None,'fatal_exception_observed':None,'smoke_result':'unverified','capture':'not_run','transport':'not_run','key_loss_recovery':'not_run','backup_exclusion':'not_run'}
+ for key in ['launch_stays_open','reopen_ok','notification_access','low_ram','repair_required','android_api','queue_count','observed_gap_count','device_model','device_build','version']:safe.setdefault(key,None)
  code,serial=command('get-serialno')
  if code!=0 or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,120}',serial.strip()) or serial.strip()=='unknown':
   safe.update({'launch_stays_open':None,'reopen_ok':None,'error_code':'DEVICE_NOT_IDENTIFIED'})
@@ -101,10 +116,15 @@ def collect(apk=None):
  # Begin monitoring before install/cold start so early crashes are not lost.
  monitor=CrashWindow();monitor.start()
  try:
-  if apk is not None:safe['install_ok']=install(apk)
+  if apk is not None:
+   safe['install_ok']=install(apk,sdk)
+   if safe['install_ok'] is not True:
+    safe.update(launch_stays_open=None,reopen_ok=None,error_code='INSTALL_NOT_CONFIRMED');return safe
   before_digest,before_commit=installed_artifact()
   if apk is not None and safe['install_ok'] is True:
    safe['install_ok']=None if before_digest is None else before_digest==hashlib.sha256(Path(apk).read_bytes()).hexdigest()
+  if apk is not None and safe['install_ok'] is not True:
+   safe.update(launch_stays_open=None,reopen_ok=None,error_code='INSTALL_READBACK_UNVERIFIED');return safe
   stop_code,_=command('shell','am','force-stop',PKG)
   pid_code,pid_text=command('shell','pidof',PKG)
   stopped=stop_code==0 and pid_code==1 and not pid_text.strip()
@@ -144,15 +164,22 @@ def collect(apk=None):
     safe[k]=r[k] if type(r.get(k)) is int and r[k]>=0 else None
    for k in ['device_model','device_build','version']:
     v=r.get(k);safe[k]=v if isinstance(v,str) and re.fullmatch(r'[A-Za-z0-9._ -]{1,120}',v) else None
- finally:safe['fatal_exception_observed']=monitor.stop()
+ finally:
+  safe['fatal_exception_observed']=monitor.stop()
+  safe['crash_window_started']=monitor.started.is_set() if hasattr(monitor,'started') else None
+  safe['crash_window_ended']=monitor.ended.is_set() if hasattr(monitor,'ended') else None
+  safe['crash_coverage_complete']=monitor.coverage_complete() if hasattr(monitor,'coverage_complete') else None
+  safe['unavailable']=[k for k,v in safe.items() if v is None]
  safe['unavailable']=[k for k,v in safe.items() if v is None]
  return safe
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--samples',type=int,default=1);p.add_argument('--apk',type=Path);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--samples',type=int,default=1);p.add_argument('--apk',type=Path);p.add_argument('--sdk',type=Path);a=p.parse_args()
  if not 1<=a.samples<=120:p.error('samples must be 1..120')
  if a.apk is not None and not a.apk.is_file():p.error('APK must exist locally')
  for i in range(a.samples):
-  print(json.dumps(collect(a.apk if i==0 else None),sort_keys=True),flush=True)
+  record=collect(a.apk if i==0 else None,a.sdk)
+  print(json.dumps(record,sort_keys=True),flush=True)
+  if record.get('error_code') or (a.apk is not None and i==0 and record.get('install_ok') is not True):raise SystemExit(2)
   if i+1<a.samples:time.sleep(10)
 if __name__=='__main__':main()

@@ -1,0 +1,16 @@
+baseline: exit 0
+marker-substring-broken: exit 1
+marker-substring-restored: exit 0
+pid-reuse-broken: exit 1
+pid-reuse-restored: exit 0
+signing-bypass-broken: exit 1
+signing-bypass-restored: exit 0
+retained-data-as-fresh-broken: exit 1
+retained-data-as-fresh-restored: exit 0
+skipped-case-claimed-broken: exit 1
+skipped-case-claimed-restored: exit 0
+missing-marker-case-broken: exit 1
+missing-marker-case-restored: exit 0
+unverified-readback-launch-broken: exit 1
+unverified-readback-launch-restored: exit 0
+PASS: 7 intended failures; 7 restored passes; 0 survivors; working tools untouched.

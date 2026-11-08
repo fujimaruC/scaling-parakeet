@@ -1,6 +1,6 @@
-"""Reproducible synthetic fault checks; no adb/device needed; restore in finally."""
+"""Synthetic faults in private temporary copies. Never mutate the real working tools."""
+import argparse,fcntl,shutil,subprocess,sys,tempfile
 from pathlib import Path
-import argparse,subprocess,fcntl
 ROOT=Path(__file__).resolve().parents[1]
 CASES=[
  ('issued-install','scripts/device_evidence.py',"if code==0 and any(line.strip()=='Success' for line in text.splitlines()):","if True:",'test_device_evidence.py'),
@@ -15,21 +15,27 @@ CASES=[
  ('stale-boot','scripts/device_evidence.py','if not boot or boot_end_code!=0 or boot_end.strip()!=boot:','if not boot:','test_device_evidence.py'),
 ]
 def main():
- lock=(ROOT/'.git/evidence-mutations.lock').open('w')
+ p=argparse.ArgumentParser();p.add_argument('--output-dir',type=Path,required=True);a=p.parse_args();a.output_dir=a.output_dir.resolve();a.output_dir.mkdir(parents=True,exist_ok=True)
+ lock=(a.output_dir/'runner.lock').open('w')
  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
- except BlockingIOError:raise SystemExit('Another evidence mutation run is active')
- p=argparse.ArgumentParser();p.add_argument('--output-dir',type=Path,required=True);a=p.parse_args();a.output_dir.mkdir(parents=True,exist_ok=True)
- for name,file,before,after,pattern in CASES:
-  path=ROOT/file;original=path.read_bytes();assert original.decode().count(before)==1,name
-  def run(state):
-   cmd=['.venv/bin/python','-X','pycache_prefix='+str(a.output_dir/(name+'-'+state+'-cache')),'-m','unittest','discover','-s','collectors/local/tests','-p',pattern,'-v']
-   with (a.output_dir/(name+'-'+state+'.log')).open('w') as log:r=subprocess.run(cmd,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
-   print(name,state,'exit',r.returncode,flush=True);return r.returncode
-  assert run('baseline')==0,'Nonpassing baseline: '+name
-  try:
-   path.write_text(original.decode().replace(before,after));assert run('broken')!=0,name
-   assert 'FAIL:' in (a.output_dir/(name+'-broken.log')).read_text(), 'Unexpected failure rather than assertion: '+name
-  finally:path.write_bytes(original)
-  assert run('restored')==0,name
- print('PASS: '+str(len(CASES))+' faults failed and '+str(len(CASES))+' restored runs passed; sources restored.')
+ except BlockingIOError:raise SystemExit('MUTATION_RUN_ALREADY_ACTIVE')
+ with tempfile.TemporaryDirectory(prefix='aos-evidence-fixture-') as directory:
+  work=Path(directory)
+  files=['scripts/device_evidence.py','scripts/apk_safety.py','scripts/owner_device_run.py','scripts/capture_matrix.py','collectors/local/tests/test_device_evidence.py']
+  for name in files:
+   target=work/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/name,target)
+  def run(name):
+   cmd=[sys.executable,'-X','pycache_prefix='+str(a.output_dir/(name+'-cache')),'-m','unittest','discover','-s','collectors/local/tests','-p','test_device_evidence.py','-v']
+   with (a.output_dir/(name+'.txt')).open('w') as out:r=subprocess.run(cmd,cwd=work,stdout=out,stderr=subprocess.STDOUT)
+   print(name+': exit '+str(r.returncode),flush=True);return r.returncode
+  if run('baseline'):raise RuntimeError('Baseline failed')
+  for case in CASES:
+   name,file,before,after=case[:4];path=work/file;original=path.read_bytes();assert original.decode().count(before)==1,name
+   try:
+    path.write_text(original.decode().replace(before,after))
+    assert run(name+'-broken')!=0,name
+    assert 'FAIL:' in (a.output_dir/(name+'-broken.txt')).read_text(),'Unexpected failure: '+name
+   finally:path.write_bytes(original)
+   assert run(name+'-restored')==0,name
+  print(f'PASS: {len(CASES)} intended failures; {len(CASES)} restored passes; 0 survivors; working tools untouched.')
 if __name__=='__main__':main()

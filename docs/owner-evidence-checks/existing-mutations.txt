@@ -1,0 +1,22 @@
+baseline: exit 0
+issued-install-broken: exit 1
+issued-install-restored: exit 0
+historical-activity-broken: exit 1
+historical-activity-restored: exit 0
+truncated-crash-broken: exit 1
+truncated-crash-restored: exit 0
+missing-crash-boundary-broken: exit 1
+missing-crash-boundary-restored: exit 0
+dirty-provenance-broken: exit 1
+dirty-provenance-restored: exit 0
+case-without-run-broken: exit 1
+case-without-run-restored: exit 0
+edited-journal-broken: exit 1
+edited-journal-restored: exit 0
+replaced-installed-artifact-broken: exit 1
+replaced-installed-artifact-restored: exit 0
+leftover-warm-process-broken: exit 1
+leftover-warm-process-restored: exit 0
+stale-boot-broken: exit 1
+stale-boot-restored: exit 0
+PASS: 10 intended failures; 10 restored passes; 0 survivors; working tools untouched.

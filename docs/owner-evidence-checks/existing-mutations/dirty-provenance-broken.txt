@@ -1,0 +1,25 @@
+test_activity_history_cannot_satisfy_resumed (test_device_evidence.DeviceEvidenceTests.test_activity_history_cannot_satisfy_resumed) ... ok
+test_case_cannot_pass_without_real_permission_transition_and_complete_window (test_device_evidence.DeviceEvidenceTests.test_case_cannot_pass_without_real_permission_transition_and_complete_window) ... ok
+test_crash_window_ignores_old_and_unrelated_but_retains_early_crash (test_device_evidence.DeviceEvidenceTests.test_crash_window_ignores_old_and_unrelated_but_retains_early_crash) ... ok
+test_dirty_or_missing_provenance_is_unknown (test_device_evidence.DeviceEvidenceTests.test_dirty_or_missing_provenance_is_unknown) ... FAIL
+test_incomplete_or_ambiguous_stream_is_unknown (test_device_evidence.DeviceEvidenceTests.test_incomplete_or_ambiguous_stream_is_unknown) ... ok
+test_install_success_is_not_issued_or_cached (test_device_evidence.DeviceEvidenceTests.test_install_success_is_not_issued_or_cached) ... ok
+test_live_command_receives_its_own_markers_and_detects_in_window_crash (test_device_evidence.DeviceEvidenceTests.test_live_command_receives_its_own_markers_and_detects_in_window_crash) ... ok
+test_native_crash_and_incomplete_fatal_attribution (test_device_evidence.DeviceEvidenceTests.test_native_crash_and_incomplete_fatal_attribution) ... ok
+test_readback_hash_and_embedded_clean_revision (test_device_evidence.DeviceEvidenceTests.test_readback_hash_and_embedded_clean_revision) ... ok
+test_run_binds_cold_process_warm_resume_and_installed_identity (test_device_evidence.DeviceEvidenceTests.test_run_binds_cold_process_warm_resume_and_installed_identity) ... ok
+test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning (test_device_evidence.DeviceEvidenceTests.test_sealed_cases_reject_edits_truncation_and_finishing_without_beginning) ... ok
+
+======================================================================
+FAIL: test_dirty_or_missing_provenance_is_unknown (test_device_evidence.DeviceEvidenceTests.test_dirty_or_missing_provenance_is_unknown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-evidence-fixture-yff6p_17/collectors/local/tests/test_device_evidence.py", line 73, in test_dirty_or_missing_provenance_is_unknown
+    with patch.object(d,'adb',return_value='package:/data/app/a/base.apk'),patch.object(d,'command',side_effect=cmd):self.assertIsNone(d.installed_artifact()[1])
+                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' is not None
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.022s
+
+FAILED (failures=1)

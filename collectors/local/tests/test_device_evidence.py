@@ -28,7 +28,7 @@ class DeviceEvidenceTests(unittest.TestCase):
    monitor=d.CrashWindow()
    def marker(*args):
     if '-T' not in monitor.proc.args and '-t' not in monitor.proc.args:
-     monitor.proc.stdout.rows.put('I/AOS-RUN( 1): '+args[-1]+'\n')
+     monitor.proc.stdout.rows.put('I/AOS-RUN ( 1): '+args[-1]+'\n')
      if args[-1].endswith('START') and crash:
       monitor.proc.stdout.rows.put('E/AndroidRuntime( 9): FATAL EXCEPTION: main\n')
       monitor.proc.stdout.rows.put('E/AndroidRuntime( 9): Process: '+d.PKG+', PID: 9\n')
@@ -40,7 +40,7 @@ class DeviceEvidenceTests(unittest.TestCase):
    self.assertIs(result,crash)
  def test_install_success_is_not_issued_or_cached(self):
   for code,text,expected in [(0,'Success\n',True),(1,'Failure [TEST]',False),(None,'',None),(0,'issued',None)]:
-   with patch.object(d,'command',return_value=(code,text)):self.assertIs(d.install('fixture.apk'),expected)
+   with patch('apk_safety.check_update',return_value={'allowed':True}),patch.object(d,'command',return_value=(code,text)):self.assertIs(d.install('fixture.apk'),expected)
  def test_activity_history_cannot_satisfy_resumed(self):
   self.assertFalse(d.resumed('Hist #0: '+d.COMP))
   self.assertTrue(d.resumed('mResumedActivity: ActivityRecord{xyz u0 '+d.COMP+' t1}'))
@@ -50,14 +50,14 @@ class DeviceEvidenceTests(unittest.TestCase):
   c.feed('I/AOS-RUN( 1): '+c.token+' START')
   c.feed('E/AndroidRuntime( 3): FATAL EXCEPTION: main');c.feed('E/AndroidRuntime( 3): Process: other.app, PID: 3')
   c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),False)
-  c=d.CrashWindow();c.feed(c.token+' START');c.feed('E/AndroidRuntime( 4): FATAL EXCEPTION: main');c.feed('E/AndroidRuntime( 4): Process: '+d.PKG+', PID: 4')
+  c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('E/AndroidRuntime( 4): FATAL EXCEPTION: main');c.feed('E/AndroidRuntime( 4): Process: '+d.PKG+', PID: 4')
   for i in range(1000):c.feed('unrelated')
-  c.feed(c.token+' END');self.assertIs(c.result(),True)
+  c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),True)
  def test_incomplete_or_ambiguous_stream_is_unknown(self):
-  c=d.CrashWindow();self.assertIsNone(c.result());c.feed(c.token+' START');self.assertIsNone(c.result());c.feed('logcat: dropped events');c.feed(c.token+' END');self.assertIsNone(c.result())
+  c=d.CrashWindow();self.assertIsNone(c.result());c.feed('I/AOS-RUN( 1): '+c.token+' START');self.assertIsNone(c.result());c.feed('logcat: dropped events');c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result())
  def test_native_crash_and_incomplete_fatal_attribution(self):
-  c=d.CrashWindow();c.feed(c.token+' START');c.feed('F/DEBUG( 5): pid: 1, tid: 1 >>> '+d.PKG+' <<<');c.feed(c.token+' END');self.assertIs(c.result(),True)
-  c=d.CrashWindow();c.feed(c.token+' START');c.feed('E/AndroidRuntime( 4): FATAL EXCEPTION: main');c.feed(c.token+' END');self.assertIsNone(c.result())
+  c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('F/DEBUG( 5): pid: 1, tid: 1 >>> '+d.PKG+' <<<');c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),True)
+  c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('E/AndroidRuntime( 4): FATAL EXCEPTION: main');c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result())
  def test_readback_hash_and_embedded_clean_revision(self):
   with tempfile.TemporaryDirectory() as temp:
    def cmd(*args):

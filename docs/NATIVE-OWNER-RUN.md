@@ -5,6 +5,13 @@ real enrollment and Cloudflare routing are **unverified**. The PWA stays in plac
 until native parity and owner acceptance. No milestone is complete. Notification
 access is last recorded false; no listener event or capture has ever occurred.
 
+## Current short procedure
+
+Use [OWNER-DEVICE-SESSION](OWNER-DEVICE-SESSION.md) for the owner-driven recorder,
+[SIGNING-SAFETY](SIGNING-SAFETY.md) before any update, and
+[NATIVE-CLOUD-CHECK](NATIVE-CLOUD-CHECK.md) for real-account acceptance. The older
+commands below describe preparation, not permission to bypass a signature mismatch.
+
 ## Install safely
 
 Build with the owner's existing local signing identity and update in place:

@@ -1,0 +1,8 @@
+test_padded_brief_markers_are_real_markers (test_owner_safety.BriefFormatCompatibilityTests.test_padded_brief_markers_are_real_markers) ... ok
+test_padded_chatty_suppression_is_incomplete_coverage (test_owner_safety.BriefFormatCompatibilityTests.test_padded_chatty_suppression_is_incomplete_coverage) ... ok
+test_padded_native_fatal_is_not_reported_clean (test_owner_safety.BriefFormatCompatibilityTests.test_padded_native_fatal_is_not_reported_clean) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK

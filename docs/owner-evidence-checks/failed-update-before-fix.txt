@@ -1,0 +1,39 @@
+test_matrix_cannot_test_an_old_app_after_an_unconfirmed_update (test_owner_safety.FailedUpdateEntryTests.test_matrix_cannot_test_an_old_app_after_an_unconfirmed_update) ... FAIL
+test_smoke_sampling_stops_after_unconfirmed_install (test_owner_safety.FailedUpdateEntryTests.test_smoke_sampling_stops_after_unconfirmed_install) ... FAIL
+
+======================================================================
+FAIL: test_matrix_cannot_test_an_old_app_after_an_unconfirmed_update (test_owner_safety.FailedUpdateEntryTests.test_matrix_cannot_test_an_old_app_after_an_unconfirmed_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 157, in test_matrix_cannot_test_an_old_app_after_an_unconfirmed_update
+    with self.assertRaises(ValueError):m.main()
+                                       ^^^^^^^^
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/scripts/capture_matrix.py", line 69, in main
+    input('Case '+case+': Enter to begin; perform ONLY synthetic owner-controlled case. ')
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1204, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 156, in <lambda>
+    with patch.object(sys,'argv',['capture_matrix.py','--output','/tmp/synthetic','--apk','synthetic.apk']),patch.object(m.os,'isatty',return_value=True),patch.object(m,'Journal'),patch.object(m,'collect',return_value={'install_ok':False,'error_code':'INSTALL_NOT_CONFIRMED'}),patch('builtins.print'),patch('builtins.input',side_effect=lambda *args:self.fail('Case started after failed update')) as ask:
+                                                                                                                                                                                                                                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Case started after failed update
+
+======================================================================
+FAIL: test_smoke_sampling_stops_after_unconfirmed_install (test_owner_safety.FailedUpdateEntryTests.test_smoke_sampling_stops_after_unconfirmed_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 152, in test_smoke_sampling_stops_after_unconfirmed_install
+    with self.assertRaises(SystemExit):d.main()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SystemExit not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 10.008s
+
+FAILED (failures=2)

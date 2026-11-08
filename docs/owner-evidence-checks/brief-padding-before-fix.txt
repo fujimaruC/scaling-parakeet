@@ -1,0 +1,35 @@
+test_padded_brief_markers_are_real_markers (test_owner_safety.BriefFormatCompatibilityTests.test_padded_brief_markers_are_real_markers) ... FAIL
+test_padded_chatty_suppression_is_incomplete_coverage (test_owner_safety.BriefFormatCompatibilityTests.test_padded_chatty_suppression_is_incomplete_coverage) ... FAIL
+test_padded_native_fatal_is_not_reported_clean (test_owner_safety.BriefFormatCompatibilityTests.test_padded_native_fatal_is_not_reported_clean) ... FAIL
+
+======================================================================
+FAIL: test_padded_brief_markers_are_real_markers (test_owner_safety.BriefFormatCompatibilityTests.test_padded_brief_markers_are_real_markers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 162, in test_padded_brief_markers_are_real_markers
+    self.assertTrue(c.started.is_set());self.assertTrue(c.ended.is_set());self.assertIs(c.result(),False)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_padded_chatty_suppression_is_incomplete_coverage (test_owner_safety.BriefFormatCompatibilityTests.test_padded_chatty_suppression_is_incomplete_coverage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 167, in test_padded_chatty_suppression_is_incomplete_coverage
+    c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('I/chatty  ( 71): identical lines suppressed');c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIsNone(c.result())
+                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not None
+
+======================================================================
+FAIL: test_padded_native_fatal_is_not_reported_clean (test_owner_safety.BriefFormatCompatibilityTests.test_padded_native_fatal_is_not_reported_clean)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 165, in test_padded_native_fatal_is_not_reported_clean
+    c=d.CrashWindow();c.feed('I/AOS-RUN( 1): '+c.token+' START');c.feed('F/'+tag+'   ( 71): '+body);c.feed('I/AOS-RUN( 1): '+c.token+' END');self.assertIs(c.result(),expected)
+                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not None
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+FAILED (failures=3)

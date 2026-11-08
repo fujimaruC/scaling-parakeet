@@ -352,3 +352,26 @@ docs/native-checks. Node24.22.1/npm11.9.0/Python3.12.14/OpenJDK17.0.20;
 Gradle8.11.1/Kotlin2.1.21/AGP8.9.2; SDK platforms28/35 and build-tools35.0.0.
 These are local/synthetic results. All native runtime/device/account gates above
 remain unverified; none is silently converted to complete.
+
+## Owner-run evidence preparation — base e7417ce, 2026-11-08
+
+The native implementation and §14 independent local verification are preserved.
+This follow-up adds owner-local certificate/package checks before install-r,
+refuses mismatched/unknown/retained-data states, and provides a terminal-only
+sanitized recorder. Crash markers must match the exact log protocol; ambiguous
+PID reuse cannot manufacture an app crash. Separate window-start/end/complete
+fields distinguish unobserved coverage from an observed clean interval. No
+uninstall, clear-data, permission grant or automatic account action is performed.
+
+Actual local checks: Python discovery66 pass; owner-safety mutations7 intended
+failures/7 restored passes/0 survivors; existing evidence mutations10 broken/
+10 restored passes; planning/placeholder checks pass. Full output and limits:
+[VERIFICATION-LOG §15](VERIFICATION-LOG.md#15-owner-signing-and-device-evidence-preparation--base-e7417ce-2026-11-08).
+No app rebuild, npm/browser/Gradle rerun, real apksigner/device/account/provider/
+push test was performed. Android, Worker and PWA source/build files are unchanged.
+
+Use [the short owner procedure](OWNER-DEVICE-SESSION.md) and return only its JSON.
+Real signing compatibility, install, native launch/usability, credential lifecycle,
+Cloudflare path isolation and capture remain unverified. No new native hardware
+result exists. Notification access is last recorded false; no capture/listener
+event has ever occurred. M0 and all other release gates remain incomplete.

@@ -766,3 +766,120 @@ gap in the runner.
   HTTPS behaviour on device, Keystore/SQLite/power-loss recovery, TalkBack,
   200% text, and the capture matrix all remain unverified.
 - `notification_access` remains false. No listener event or capture has ever run.
+
+---
+
+## 15. Owner signing and device-evidence preparation — base e7417ce, 2026-11-08
+
+Fresh clone/fetch plus GitHub API confirmed main
+`e7417ce5db47e9ab16cb7bd24bc17827a4885a67`. Read §14, NATIVE-OWNER-RUN,
+DEVICE-SMOKE, PLAN-NATIVE, STATUS and AGENTS before implementation. Scope
+F08/F22/F24: safe owner update, observation integrity and the next real native
+run. The native app is already implemented/verified locally by §14; it was not
+rewritten, rebuilt or retested as a device app here. No dependency, native UI,
+Worker, Origin guard, approval rule or API-28 guard changed. No push/deployment,
+paid service, account, provider or phone test.
+
+### Implemented
+
+- `scripts/apk_safety.py` inspects candidate/installed APK certificates using the
+  owner's existing SDK35 aapt/apksigner. It rejects mismatched/unverified signers,
+  wrong packages, unknown inventory and retained-data records without a readable
+  APK. A genuine first-install state is distinct from an unknown/mismatched
+  existing install. `device_evidence.install` repeats this guard before install-r.
+  No uninstall/clear/downgrade/permission grant or app-data backup exists.
+- `scripts/owner_device_run.py` requires an owner terminal, first checks signing,
+  reads back the intended APK and reuses the cold/warm smoke and live crash
+  monitor. Each manual case also binds to that requested APK and boot interval.
+  It saves an atomic private JSON after every stage, with fixed codes/counts/
+  booleans and build identity only. Skipped/unavailable/interrupted cases do not
+  acquire successful owner answers. Native observations are owner-reported,
+  separate from instrumented fields; there is no overall PASS. The tool cannot
+  defend against a malicious owner/root editing its code or report and does not
+  claim such an attestation. Capture matrix startup also now rejects headless
+  input before creating its journal.
+- A false/missing installation acknowledgment or installed-byte readback stops
+  before launching the old app. Crash coverage now has separate started/ended/
+  complete fields. A missing marker or ambiguous attribution never means clean.
+
+### Existing defects found, and what was already correct
+
+Two parser defects were demonstrated before fixing them:
+
+1. A token-looking substring in a different log tag could open/close the crash
+   window. Markers now require the exact AOS-RUN/tag/PID/token protocol.
+2. Reusing a PID after an earlier owner Process line could label another app's
+   fatal as this app's crash. Conflicting process identities now become unknown,
+   not a false positive or a clean window.
+
+The initial regression command ran three cases: two assertion failures, one
+pass. **Unattributed native-fatal handling in the unpadded fixture was already correct** and remains
+covered; it is not a third defect fix. Full before-fix output is retained.
+Legacy sampler/matrix entrypoints could also continue testing the old install
+after a requested update was unconfirmed. Two added regressions failed before
+fixing those entrypoints and now pass: they stop before further samples/cases.
+Additional brief-format regressions exposed padded-tag gaps: strict markers
+must allow formatting whitespace, and padded native-fatal/chatty tags must not
+escape detection. Those three tests fail before correction and pass afterwards;
+the live reader-thread model now also emits padded markers. These are format/
+process-boundary models, not an observed OPPO log stream.
+The existing warm-resume process/foreground logic and no-`-T 1` live logcat
+command remain. Their process-boundary regression still runs. Reader threads
+must finish before a window can be certified complete; unknown coverage is
+never silently converted into fatal_exception_observed=false.
+
+### Commands actually run (all local/synthetic)
+
+Complete stdout/stderr and individual broken/restored logs are in
+[owner-evidence-checks](owner-evidence-checks/README.md).
+
+```text
+.venv/bin/python -m unittest discover -s collectors/local/tests -v
+Ran 66 tests in 1.651s
+OK
+
+.venv/bin/python scripts/check_owner_safety_mutations.py --output-dir <local-dir>
+PASS: 7 intended failures; 7 restored passes; 0 survivors; working tools untouched.
+
+.venv/bin/python scripts/check_evidence_mutations.py --output-dir <local-dir>
+PASS: 10 intended failures; 10 restored passes; 0 survivors; working tools untouched.
+```
+
+The 66 tests comprise the previous40 and26 new owner-safety regressions. The new
+fault runner declares7 faults, with one baseline plus7 broken plus7 restored
+runs (15 logs). The existing **evidence** mutation runner declares10 faults,
+with one baseline plus10 broken and10 restored runs (21 logs). These are not the prior native
+Gradle mutation suite, and no Android runtime is used. Failure reasons must be
+assertions; an unexpected runtime/import failure is rejected. Faults run in private temporary fixture copies; those copies restore exactly
+in finally and the actual working tools are never mutated. Earlier development
+runs revealed that shared-folder fault injection could leak a transient mutant
+through workspace synchronization. Both runners now avoid that failure class by
+staging only the required scripts/tests outside the working tree. The before-fix parser log has two failures, not three.
+
+Python3.12.14. Existing locked Python requirements were installed in a fresh
+venv; no package/dependency declaration changed. Planning validation and the
+placeholder scan also ran; their exact outcomes are retained alongside the
+logs. No SDK/JDK was installed or executed for APK inspection in this session.
+SDK output is modeled in unit tests, not claimed verified on the phone.
+
+NOT RUN here: npm/Vitest, browser/PWA tests, Gradle/verifyApi28, actual apksigner/
+aapt, APK install/readback/launch, enrollment, any cloud/Access/D1/provider/push
+check. These app suites remain the separately verified §14 baseline; application
+source and build configuration are byte-identical to it. The new scripts do not
+extract credentials or make account requests.
+
+### Owner handoff and remaining observations
+
+Run [OWNER-DEVICE-SESSION](OWNER-DEVICE-SESSION.md), starting with
+[SIGNING-SAFETY](SIGNING-SAFETY.md), and return only its sanitized JSON. Use
+[NATIVE-CLOUD-CHECK](NATIVE-CLOUD-CHECK.md) for exact account observations/failure
+conditions. GUI pending state alone does not prove server-side pending denial;
+server expiry cannot be proven by changing the phone clock. All absent real
+observations remain unverified. If signing keys are unavailable, keep the
+existing install intact. No uninstall/clear fallback is offered.
+
+The new native task application has no real-device observation. Older companion
+smokes remain historical, not proof for this APK. Notification access remains
+last recorded false; no listener event or capture has ever occurred. No milestone
+is complete. Actual device-discovered application defects can only be fixed once
+the owner supplies a real run; none is invented or claimed resolved in advance.

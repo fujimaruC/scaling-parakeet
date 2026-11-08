@@ -1,0 +1,25 @@
+test_marker_looking_message_cannot_open_a_window (test_owner_safety.CrashCoverageRegressionTests.test_marker_looking_message_cannot_open_a_window) ... FAIL
+test_pid_reuse_cannot_attribute_another_process_crash_to_this_app (test_owner_safety.CrashCoverageRegressionTests.test_pid_reuse_cannot_attribute_another_process_crash_to_this_app) ... FAIL
+test_unattributed_native_fatal_is_unknown_not_clean (test_owner_safety.CrashCoverageRegressionTests.test_unattributed_native_fatal_is_unknown_not_clean) ... ok
+
+======================================================================
+FAIL: test_marker_looking_message_cannot_open_a_window (test_owner_safety.CrashCoverageRegressionTests.test_marker_looking_message_cannot_open_a_window)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 14, in test_marker_looking_message_cannot_open_a_window
+    self.assertFalse(c.started.is_set());self.assertIsNone(c.result())
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_pid_reuse_cannot_attribute_another_process_crash_to_this_app (test_owner_safety.CrashCoverageRegressionTests.test_pid_reuse_cannot_attribute_another_process_crash_to_this_app)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-device-evidence/collectors/local/tests/test_owner_safety.py", line 21, in test_pid_reuse_cannot_attribute_another_process_crash_to_this_app
+    self.assertIsNone(c.result())
+AssertionError: True is not None
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=2)
