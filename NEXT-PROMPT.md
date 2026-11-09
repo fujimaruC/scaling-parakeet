@@ -13,7 +13,7 @@
 
 ## Part 1 — State of the system (for the owner, 2026-11-09)
 
-**Base:** `main` at the commit that introduced this file.
+**Base:** `main` at the commit that introduced this file — the HEAD you get from a fresh clone.
 
 Last round added Web Push, durable operational counters, and paged global
 history (`201de46`), plus one verification fix (`959181d`). That package's tree
@@ -63,9 +63,13 @@ one zip.
 REPOSITORY
   https://github.com/fujimaruC/scaling-parakeet
   Branch: main
-  Base: main at the commit that introduced this file
-  Verify: git log --oneline -1 -- NEXT-PROMPT.md
-  Do not check out an older commit; the brief only exists from this one on.
+  Base: whatever HEAD is in your fresh clone. Do not check out an older commit;
+        this brief only exists from this revision onward.
+  Record it:  git rev-parse HEAD    ->  put that exact sha in APPLY.md as the
+              base commit your patch applies against. The verifier will check out
+              that same sha and run `git am --3way` on it.
+  Sanity check: git log --oneline -3 should end at this brief's own commit, and
+                NEXT-PROMPT.md must exist in the tree.
 
 You are the BUILDER. A separate verifier runs your output here, on the owner's
 real Android 9 phone and against the real Cloudflare account when those are
