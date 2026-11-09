@@ -532,8 +532,18 @@ group` with an assertion, not a compile error; sources are restored afterwards.
 APK `a3bd5b12…` is signed with the installed debug identity, so the next update is
 in place.
 
-**Not run:** the guarded APK has not been installed. The phone left USB before
-that step, so the crash-count confirmation on hardware is outstanding. The
-earlier crash remains the only one recorded for this package. Notification access
-stays granted, pairing and the synthetic mapping are intact, and capture and
+The guarded APK was then installed in place once. Preflight returned
+`allowed: true` / `signature_match: true`, `install_ok: true`, and the crash
+buffer for this package stayed at **1 before, 1 after** — the same 08:37 event,
+no new fatal, where the previous build crashed at exactly that point. A fresh
+window straight afterwards reported `crash_coverage_complete: true` with
+`fatal_exception_observed: false`. The installation run itself reports coverage
+incomplete, because replacing the process inside the window is a disrupted
+interval, not a clean one.
+
+Configuration survived: the synthetic mapping is still `enabled=true`, one sealed
+pairing `config` remains, and the listener is `connected` after rebind.
+
+**Not run:** the positive capture test — no notification has ever been captured
+and it needs one owner-controlled WhatsApp self-chat message. Capture and
 transport remain `not_run`. M0 and every release gate remain incomplete.

@@ -1263,9 +1263,36 @@ both sides normalise (a previously saved raw title still matches a clean observe
 one) and that `Ana: Maria` never matches a verified `Ana`. APK `a3bd5b12…`,
 versionCode 2, cert `f4569691…`, identical to the installed debug identity.
 
-**Not run:** the guarded build has not been installed. The phone left USB
-(`adb devices` empty, no OPPO on the bus) before the install step, so the
-crash-count check that would confirm the guard on hardware is still outstanding.
-The crash above is the only crash recorded for this package (cumulative count 1
-before the guarded build). Notification access remains granted, pairing and the
-synthetic mapping are intact, and capture/transport remain `not_run`.
+### The guarded build installed, and the crash did not recur
+
+The phone was reconnected and the guarded APK was installed in place once:
+
+```text
+owner_device_run.py --preflight
+{"allowed": true, "candidate_ephemeral": false, "candidate_package_ok": true,
+ "error_code": null, "package_present": true, "signature_match": true}
+
+device_evidence.py --apk apk-v2/app-debug.apk --sdk $ANDROID_HOME
+install_ok: true    apk_sha256: a3bd5b12…    version: 0.2-native-preview
+launch_stays_open: true    reopen_ok: true    notification_access: true
+queue_count: 0    repair_required: false
+```
+
+Crash buffer for this package: **1 before the update, 1 after** — the same
+08:37 event, no new fatal. The previous build crashed at exactly this point, so
+the guard is confirmed on hardware rather than only in review.
+
+That install run reported `crash_coverage_complete: false`, because installing
+replaces the app process inside the crash window. A fresh window collected
+immediately afterwards reported `crash_coverage_complete: true`,
+`fatal_exception_observed: false`, `crash_window_started/ended: true`, so the
+window itself is now complete and clean. The false value was the tool refusing to
+call a disrupted interval clean, which is the intended behaviour.
+
+Configuration survived the update: `capture.xml` still holds the synthetic
+mapping (`enabled=true`), `private-pairing.xml` still holds one sealed `config`,
+and `health.xml` reports `listener=connected` after the rebind.
+
+**Still not run:** the positive capture test. No notification has ever been
+captured; it needs one owner-controlled WhatsApp self-chat message. Capture and
+transport remain `not_run` in the tool's own record.
