@@ -371,7 +371,9 @@ it('a year ledger searches beyond the first 100, escapes wildcard queries and pa
   );
   expect(boundary.items.some((t) => t.id === 'exact-boundary')).toBe(true);
   expect(boundary.items.some((t) => t.id === 'next-year')).toBe(false);
-}, 20000);
+  // Seeds 1200 rows. Measured 18.2s alone and 38s under full-suite load, so the
+  // original 20s bound was inside the noise; 120s keeps the assertion strict.
+}, 120000);
 it('global history reaches old events with opaque descending cursors, even when new rows arrive between pages', async () => {
   for (let i = 0; i < 230; i++) await task('history-' + i);
   const expected = (

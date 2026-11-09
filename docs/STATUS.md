@@ -594,3 +594,22 @@ errors/2 unchanged Transport warnings),16 intended fault failures/restored passe
 Latest full browser run:14 passed/1 design-kit 200% layout failure; isolated retry1
 passed, earlier full run15 passed. This flake remains unresolved, not a green
 latest suite. No device/account/push result is claimed. Full actual output: §20.
+
+## Independent verification of the release-gap package — 2026-11-09
+
+`Academic-OS-System-2b88131.zip` applied to `c4497da` reproduces its declared tree
+`e5f36ec1…` exactly. Verified here: 52 Vitest, 15 Playwright e2e, 1 production PWA,
+70 Python, Gradle `assembleDebug lint testDebugUnitTest` green in 8m13s (8
+native-policy + 6 queue-privacy), planning/placeholder scans, and the new
+`check_release_mutations.py` at 16 intended failures / 16 restored, run twice.
+
+One real defect in the package was found and fixed: the 1200-row scale test
+carried a 20s override, measured at 18.2s alone and 38s under full-suite load, so
+`npm run check` failed intermittently. Raised to 120s with the measurement in a
+comment; assertions unchanged. Exact record: [VERIFICATION-LOG §21](VERIFICATION-LOG.md#21-independent-verification-of-2b88131-on-the-owner-machine--2026-11-09).
+
+The rebuilt APK (`bc4bd4a2…`, cert `f4569691…`, same signing identity) was **not**
+installed: the phone left USB first. No new device claim is made. Positive
+notification capture, private-network transport, account enrollment, real push
+delivery, provider, production migration/restore and the owner pilot remain
+unverified. No milestone is complete.

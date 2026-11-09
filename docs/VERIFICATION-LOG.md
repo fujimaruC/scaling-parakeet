@@ -1413,3 +1413,61 @@ migration0008/restore/quota, real browser push, provider, native layout/TalkBack
 deployment or provisioning ran here. Inbox acceptance is not physical delivery;
 fresh source sync is not current permission or complete coverage. Both ingestion
 methods and explicit AI approval remain mandatory. No milestone is complete.
+
+## 21. Independent verification of `2b88131` on the owner machine — 2026-11-09
+
+Received `Academic-OS-System-2b88131.zip` (declared base `c4497da`, commit
+`2b88131`, tree `e5f36ec1e89b54e045f8daecba27f58ca5fe760d`). Applied with
+`git am --3way` on branch `build/release-gaps` from `c4497da`; the resulting tree
+hash matched the declared one exactly, so the archive is internally consistent.
+
+Everything below was run here, not copied from the archive's `APPLY.md`.
+
+```text
+npm ci --ignore-scripts                    exit 0
+npm run check (first run)                  7 files, 51 passed, 1 failed (timeout)
+npm run check (after the fix below)        exit 0, 7 files / 52 tests passed
+npx vitest run                             exit 0, 52 passed
+npx playwright test                        exit 0, 15 passed (1.6m)
+npm run test:pwa                           exit 0, 1 passed
+playwright foundation --grep "200%"        exit 0, 1 passed (isolated retry)
+./gradlew assembleDebug lint testDebugUnitTest
+                                           BUILD SUCCESSFUL in 8m 13s
+                                           native policy 8, queue privacy 6
+.venv/bin/python -m unittest discover      70 tests OK
+scripts/validate_planning.py               PASS, 128 links, 30 features, 34 IDs
+scripts/check_placeholders.py              PASS
+scripts/check_release_mutations.py         PASS 16 intended failures / 16 restored
+                                           (run twice, before and after the fix)
+```
+
+### One real defect in the delivered package, and the fix
+
+The archive reported "14 passed / 1 failed" on e2e and left the kit flake
+unresolved. On this machine the e2e suite passed 15/15, but `npm run check`
+failed once with a Vitest timeout in
+`tests/integration/release-gaps.test.ts` — the 1200-row scale test.
+
+Measured rather than guessed:
+
+```text
+scale test alone, 20s bound        18.2s  (1.8s margin)
+scale test under full-suite load   38s    (timed out)
+```
+
+The test carried its own `}, 20000)` override, so the 30s global config did not
+apply. The bound sat inside the noise of the machine, not near the real cost.
+Raised to `120000` with the measurement recorded in a comment. The assertions are
+unchanged; only the ceiling moved. The mutation runner's subprocess cap is 90s and
+the test completes well inside it, so no hang path was introduced — verified by
+re-running the full mutation suite afterwards (16/16 both times).
+
+### Device status
+
+The phone left USB before the rebuilt APK could be installed, so this session
+makes **no** new device claim. The APK built here is `bc4bd4a2…`, signed with the
+installed debug identity `f4569691…`, and is installable in place when the phone
+returns. Notification capture remains unobserved; the positive path still needs
+one owner-controlled self-chat message.
+
+No milestone is complete. No deployment, provisioning or account action occurred.
