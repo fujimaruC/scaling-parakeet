@@ -661,3 +661,34 @@ Local outcomes: npm ci/check exit0 (58 Vitest), browser16 pass, production-PWA1
 pass, Python80 pass, new fault proofs14/14 and inherited release proofs16/16 with
 0 survivors; Gradle assemble/lint/API28/JVM exit0 (14 JVM,0 lint errors/2 inherited
 warnings). These are synthetic/local checks only. Exact output and limitations: §22.
+
+## Independent verification of the canonical-export package — 2026-11-09
+
+`Academic-OS-System-4f75f3a.zip` applied to `af1879b` reproduces its declared tree
+`574ee405…` exactly. Verified here: 58 Vitest, 16 Playwright, 1 production PWA,
+80 Python, planning (150 links) and placeholder scans, Gradle
+`assembleDebug lint testDebugUnitTest` green in 5m44s (8 native-policy + 6
+queue-privacy), and both fault suites at 14/14 and 16/16 with zero survivors.
+
+Android source is byte-identical to `af1879b`, so the APK was not reinstalled. The
+phone stayed on `0.2-native-preview`, crash count 1, listener connected, mapping
+enabled, pairing sealed.
+
+One defect in the delivered package was found and fixed: the durable-budget test
+fired 120 concurrent `db.batch()` calls, and Miniflare's D1 RPC layer asserts
+under that load. `account()` converts every non-budget failure into
+`BUDGET_ACCOUNTING_UNAVAILABLE`, so the harness limit looked like a budget
+refusal. Measured 2 failures in 6 runs here and 2 in 6 at the pre-patch base
+`af1879b` — inherited, not introduced. Concurrency is now bounded to eight:
+0 failures in 8 runs, and the `budget-cap` mutation still fails the test. Exact
+record: [VERIFICATION-LOG §23](VERIFICATION-LOG.md#23-independent-verification-of-4f75f3a-on-the-owner-machine--2026-11-09).
+
+The CSV contract is real: `format=json|csv`, 422 on unknown formats, one shared
+eleven-table allowlist with the Python backup, `= + - @ TAB CR` neutralised before
+RFC 4180 quoting, credentials and push/operational tables asserted absent. The
+reported redaction leak is fixed; pattern redaction remains a heuristic and is
+documented as one.
+
+Not verified: any real provider call, physical push delivery, private networking,
+positive notification capture, production D1 restore/CPU/row costs, native UI and
+accessibility acceptance, the pilot. No milestone is complete.

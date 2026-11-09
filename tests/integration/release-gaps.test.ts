@@ -243,9 +243,16 @@ it('browser push lifecycle remains authenticated and same-origin; device namespa
   expect((await call('/api/device/v1/push/config', 'GET')).status).toBe(401);
 });
 it('persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation', async () => {
-  await Promise.all(
-    Array.from({ length: LIMITS.write }, () => account(db, 'write', at)),
-  );
+  // Miniflare's D1 RPC layer asserts under 120 simultaneous batch calls, which
+  // made this test fail 2/6 on the pre-patch base too. Bound the parallelism:
+  // atomicity is still proven because the 121st call must observe every prior
+  // increment, and the budget-cap mutation still flips it to resolving.
+  for (let i = 0; i < LIMITS.write; i += 8)
+    await Promise.all(
+      Array.from({ length: Math.min(8, LIMITS.write - i) }, () =>
+        account(db, 'write', at),
+      ),
+    );
   await expect(account(db, 'write', at)).rejects.toThrow(
     'REQUEST_BUDGET_EXCEEDED',
   );

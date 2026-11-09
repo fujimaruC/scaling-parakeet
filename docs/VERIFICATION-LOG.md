@@ -1594,3 +1594,89 @@ network/interruption matrix and pilot. Inherited owner observations §17–21 ar
 not relabeled as this builder's device test. No device or account was contacted;
 no capture selector, permission grant, signing configuration, approval or privacy
 rule was weakened. No milestone complete; no push/deploy/provisioning.
+
+## 23. Independent verification of `4f75f3a` on the owner machine — 2026-11-09
+
+Received `Academic-OS-System-4f75f3a.zip` (declared base `af1879b`, commit
+`4f75f3a`, tree `574ee405839ed118e10674634dda251546665cbb`). Applied with
+`git am --3way` on branch `canonical-contracts` from `af1879b`; the resulting tree
+hash matched the declared one exactly.
+
+Every figure below was produced here, not copied from the archive's `APPLY.md`.
+
+```text
+npm ci --ignore-scripts                    exit 0
+npm run check                              exit 0, 9 files / 58 tests passed
+npx playwright test                        exit 0, 16 passed (1.6m)
+npm run test:pwa                           exit 0, 1 passed (9.3s)
+.venv/bin/python -m unittest discover      80 tests OK
+scripts/validate_planning.py               PASS, 150 links, 30 features, 34 IDs
+scripts/check_placeholders.py              PASS
+scripts/check_contract_mutations.py        PASS 14 intended / 14 restored / 0 survivors
+scripts/check_release_mutations.py         PASS 16 intended / 16 restored / 0 survivors
+./gradlew assembleDebug lint testDebugUnitTest
+                                           BUILD SUCCESSFUL in 5m 44s
+                                           native policy 8, queue privacy 6
+```
+
+Android source is byte-identical to `af1879b` in this package, so the APK was not
+rebuilt or reinstalled. The phone stayed on `0.2-native-preview`
+(`lastUpdateTime` 2026-11-09 09:11:05), crash count 1, listener connected,
+mapping `AOS_SYNTHETIC_SELF_TEST` enabled, pairing sealed.
+
+### Defect found in the delivered package: an inherited, quantified flake
+
+`check_release_mutations.py` failed twice in a row, on different cases:
+
+```text
+run 1  budget-cap-restored   BUDGET_ACCOUNTING_UNAVAILABLE
+run 2  budget-cap-broken     "did not fail an assertion"
+```
+
+The durable-budget test fired `LIMITS.write` (120) `account()` calls through one
+`Promise.all`; each call is a two-statement `db.batch()`. Instrumenting the
+catch-all in `account()` surfaced the real cause:
+
+```text
+ACCOUNT_RAW_ERROR AssertionError: false == true
+  at assert (node-internal:internal_assertion_error)
+  at Native (miniflare/src/workers/core/proxy.worker.ts:150:4)
+  at hydrate (devalue/src/parse.js:89)
+```
+
+Miniflare's D1 RPC layer asserts under 120 simultaneous batches, and `account()`
+converts every non-`BudgetError` into `BUDGET_ACCOUNTING_UNAVAILABLE`, so the
+harness limit surfaced as a budget refusal.
+
+Failure rate before the fix: **2 of 6 runs**. The same test and the same
+`account()` exist at `af1879b`, and a worktree at that base failed **2 of 6** as
+well — inherited, not introduced by this package.
+
+Fix: bound the parallelism to eight concurrent calls. Atomicity is still proven,
+because the 121st call must observe every prior increment. After the change:
+**0 failures in 8 runs**, and applying the `budget-cap` mutation by hand still
+fails the test (verified, then restored). The full release suite then passed
+16/16 twice.
+
+This is a test-harness defect, not a production one: a real Worker takes
+concurrent requests across isolates, not 120 batches inside one RPC channel. It is
+recorded rather than hidden because a flaky guard is worth nothing.
+
+### What the new contracts actually do
+
+CSV export honours `format=json|csv`, rejects unknown formats with 422, and shares
+one eleven-table allowlist with the Python backup via
+`packages/contracts/canonical-tables.json`. Cells starting `= + - @ TAB CR` are
+prefixed before RFC 4180 quoting; the test parses the output with Python's `csv`
+module rather than trusting the writer. Credentials, push endpoints and
+operational tables are asserted absent from both the CSV body and the JSON.
+
+The redaction gap the builder reported is real and fixed: contact-only redaction
+let secret-shaped source values reach the provider JSON, and six synthetic
+assertions failed before the fix. Pattern redaction remains a heuristic — an
+unfamiliar secret format can still pass — and that limitation is documented
+rather than claimed away.
+
+Not verified: any real provider call, physical push delivery, private networking,
+positive notification capture, production D1 restore/CPU/row costs, native UI or
+accessibility acceptance, and the pilot. No milestone is complete.
