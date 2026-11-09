@@ -6,6 +6,11 @@ the phone. The build work goes to a cloud agent via [NEXT-PROMPT](../NEXT-PROMPT
 **Base:** the commit that introduced this file. Confirm with
 `git log --oneline -1 -- docs/NEXT-SLICE.md`
 
+> **Phone testing is deferred as of 2026-11-09.** The CPH2015 left USB before the
+> rebuilt APK (`bc4bd4a2…`) could be installed. Everything in Part 2 below stays
+> valid and is the first thing to run when the device is available again; nothing
+> in the current build round depends on it.
+
 **Role split, stated once:** the cloud agent writes code. This agent verifies it
 on the CPH2015, against a real account when one exists, and records what was
 actually observed. Verification does not fix code opportunistically unless the
@@ -15,9 +20,11 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ## Part 1 — Where the project stands (2026-11-09)
 
-`main` was at `f36c410` when these measurements were taken. The four commits
-since `6ea3b61` closed the capture selector, an install-time crash, and a reboot
-gap in the sync job.
+The measurements below were taken at `f36c410`. Since then the release-gap
+package landed (`201de46`: Web Push, durable operational counters, paged global
+history) and one verification fix (`959181d`: the 1200-row scale-test timeout).
+The suite was re-run after both: 52 Vitest, 15 Playwright, 1 production PWA,
+70 Python, Gradle green, 16/16 release mutations.
 
 **Measured on this machine at `f36c410` (the commit these numbers describe):**
 
