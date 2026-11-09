@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_restart_mid_backoff -v
+test_restart_mid_backoff_keeps_due_time_and_attempt_count (test_retry.RetryTests.test_restart_mid_backoff_keeps_due_time_and_attempt_count) ... FAIL
+
+======================================================================
+FAIL: test_restart_mid_backoff_keeps_due_time_and_attempt_count (test_retry.RetryTests.test_restart_mid_backoff_keeps_due_time_and_attempt_count)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 54, in test_restart_mid_backoff_keeps_due_time_and_attempt_count
+    self.now=1029;tick(self.p,self.source);self.assertEqual(self.extractor.call_count,1)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (failures=1)
+
+EXIT: 1

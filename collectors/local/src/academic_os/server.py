@@ -6,8 +6,10 @@ from uuid import uuid4
 from .core import Store, Invalid
 from .pipeline import Pipeline
 from .pairing import Pairing
+from . import operations
+from urllib.parse import parse_qs,urlsplit
 
-PAGE = """<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Academic OS · Linux</title><style>body{font:16px system-ui;max-width:720px;margin:40px auto;padding:20px;background:#f7f8f2;color:#203b34}input,button,textarea{font:inherit;display:block;padding:12px;margin:12px 0;box-sizing:border-box;width:100%}pre{white-space:pre-wrap}button{background:#176b58;color:white;border:0;border-radius:8px}</style><h1>Academic OS · Linux</h1><p>Raw imports stay on this Linux machine. AI requires explicit source/provider consent. Keep real credentials on your own computer.</p><form id=login><label>Local setup token<input id=token type=password required></label><button>Unlock</button></form><section id=workspace hidden><h2>Selected source</h2><label>Source UUID<input id=source required></label><button id=enroll>Enroll source locally</button><h2>Pair capture device</h2><button id=invite>Create 5-minute pairing invitation</button><p>Enter the token on your own Android with the private HTTPS receiver address and its certificate fingerprint. No account key is needed.</p><h2>Import export</h2><label>WhatsApp text export<input id=file type=file accept='.txt,text/plain'></label><button id=preview>Preview and import locally</button><h2>Local evidence</h2><button id=load>Read local evidence</button><div id=selection></div><h2>Extraction and cloud proposals</h2><button id=config>Show configured provider (no keys)</button><button id=redact>Preview selected redacted messages</button><button id=consent>Enable this source for the configured provider</button><button id=revoke>Revoke source AI consent</button><button id=extract>Extract proposals from selected messages</button><p>Review the structured projection below. Queuing it only sends proposals; each task still needs approval in the PWA.</p><label>Job ID<input id=job></label><button id=queue>Confirm projection & queue proposals</button><button id=send>Sync queued proposals</button><button id=jobs>Show jobs and retry status</button><pre id=output></pre></section><script>
+PAGE = """<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Academic OS · Linux</title><style>body{font:16px system-ui;max-width:720px;margin:40px auto;padding:20px;background:#f7f8f2;color:#203b34}input,button,textarea{font:inherit;display:block;padding:12px;margin:12px 0;box-sizing:border-box;width:100%}pre{white-space:pre-wrap}button{background:#176b58;color:white;border:0;border-radius:8px}</style><h1>Academic OS · Linux</h1><p>Raw imports stay on this Linux machine. AI requires explicit source/provider consent. Keep real credentials on your own computer.</p><form id=login><label>Local setup token<input id=token type=password required></label><button>Unlock</button></form><section id=workspace hidden><p><a href="/operations">Manage all sources and durable job states</a></p><h2>Selected source</h2><label>Source UUID<input id=source required></label><button id=enroll>Enroll source locally</button><h2>Pair capture device</h2><button id=invite>Create 5-minute pairing invitation</button><p>Enter the token on your own Android with the private HTTPS receiver address and its certificate fingerprint. No account key is needed.</p><h2>Import export</h2><label>WhatsApp text export<input id=file type=file accept='.txt,text/plain'></label><button id=preview>Preview and import locally</button><h2>Local evidence</h2><button id=load>Read local evidence</button><div id=selection></div><h2>Extraction and cloud proposals</h2><button id=config>Show configured provider (no keys)</button><button id=redact>Preview selected redacted messages</button><p><a href="/operations">Enable or revoke AI consent per source in Local operations</a></p><button id=extract>Extract proposals from selected messages</button><p>Review the structured projection below. Queuing it only sends proposals; each task still needs approval in the PWA.</p><label>Job ID<input id=job></label><button id=queue>Confirm projection & queue proposals</button><button id=send>Sync queued proposals</button><button id=jobs>Show jobs and retry status</button><pre id=output></pre></section><script>
 async function call(path,value){const r=await fetch(path,{method:value===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},body:value===undefined?undefined:JSON.stringify(value)});const v=await r.json();if(!r.ok)throw Error(v.error);return v}
 function show(value){document.querySelector('#output').textContent=JSON.stringify(value,null,2)}
 function attempt(fn){return async e=>{e.preventDefault();try{show(await fn())}catch(err){show({error:err.message})}}}
@@ -19,8 +21,6 @@ document.querySelector('#invite').onclick=attempt(()=>call('/pairing/invite',{so
 const source=()=>document.querySelector('#source').value;const ids=()=>Array.from(document.querySelectorAll('.evidence-choice:checked')).map(x=>x.value);
 document.querySelector('#config').onclick=attempt(()=>call('/processing/config'));
 document.querySelector('#redact').onclick=attempt(()=>call('/processing/preview',{source_id:source(),evidence_ids:ids()}));
-document.querySelector('#consent').onclick=attempt(async()=>{const config=await call('/processing/config');if(!config.ai_configured)throw Error('Configure provider/model/key locally first. Placeholders cannot send requests.');if(!confirm('Send selected redacted content via '+config.provider+' / '+config.model+' at '+config.route+'? This source permission remains until revoked or route policy changes.'))return {};return call('/processing/consent',{source_id:source(),approved:true})});
-document.querySelector('#revoke').onclick=attempt(()=>call('/processing/consent',{source_id:source(),approved:false}));
 document.querySelector('#extract').onclick=attempt(async()=>{const job=await call('/processing/extract',{source_id:source(),evidence_ids:ids()});document.querySelector('#job').value=job.id;return job});
 document.querySelector('#queue').onclick=attempt(()=>{if(!confirm('I reviewed the structured projection and want to sync these unapproved proposals.'))return {};return call('/jobs/'+document.querySelector('#job').value+'/queue',{approved:true})});
 document.querySelector('#send').onclick=attempt(()=>call('/jobs/'+document.querySelector('#job').value+'/send',{}));
@@ -72,6 +72,14 @@ def make_handler(store,token,origin,receiver=False):
             if self.headers.get('Host')!=origin.split('://',1)[1]:self.reply(403,{'error':'INVALID_HOST'});return
             if self.path=='/':self.reply(200,PAGE);return
             if not self.authorized():self.reply(401,{'error':'AUTH_REQUIRED'});return
+            if urlsplit(self.path).path=='/operations':
+                try:
+                    query=parse_qs(urlsplit(self.path).query)
+                    before=int(query['before'][0]) if 'before' in query else None
+                    self.reply(200,operations.page(pipeline,before=before))
+                except (ValueError,Invalid):self.reply(422,{'error':'INVALID_JOB_CURSOR'})
+                return
+            if self.path=='/sources':self.reply(200,operations.sources(pipeline));return
             if self.path=='/evidence':self.reply(200,store.evidence());return
             if self.path=='/processing/config':self.reply(200,pipeline.public_config());return
             if self.path=='/jobs':self.reply(200,pipeline.jobs());return
@@ -83,6 +91,20 @@ def make_handler(store,token,origin,receiver=False):
         def do_POST(self):
             try:
                 if not receiver and (self.headers.get('Origin')!=origin or self.headers.get('Host')!=origin.split('://',1)[1]):raise Invalid('INVALID_ORIGIN')
+                if not receiver and self.path=='/operations/action':
+                    if not self.authorized():self.reply(401,{'error':'AUTH_REQUIRED'});return
+                    if self.headers.get('Transfer-Encoding'):raise Invalid('UNSUPPORTED_ENCODING')
+                    length=int(self.headers.get('Content-Length','0'))
+                    if not 0<length<=8192:raise Invalid('INVALID_SIZE')
+                    raw=self.rfile.read(length)
+                    if len(raw)!=length:raise Invalid('INTERRUPTED_BODY')
+                    fields=parse_qs(raw.decode(),keep_blank_values=True,strict_parsing=True)
+                    if any(len(v)!=1 for v in fields.values()):raise Invalid('INVALID_REQUEST')
+                    try:
+                        operations.action(pipeline,{k:v[0] for k,v in fields.items()})
+                        self.reply(303,'',{'Location':'/operations'})
+                    except Invalid as error:self.reply(422,operations.page(pipeline,str(error)))
+                    return
                 raw,value=self.read_body(262144 if receiver else 26*1024*1024)
                 if receiver:
                     if self.path=='/local/v1/pair':self.reply(200,pairing.accept(value.get('token'),value.get('device_id')));return
@@ -98,7 +120,7 @@ def make_handler(store,token,origin,receiver=False):
                 if self.path=='/imports':self.reply(200,store.import_text(value['source_id'],value['text']));return
                 if self.path=='/pairing/invite':self.reply(200,pairing.invite(value['source_id']));return
                 if self.path=='/processing/preview':self.reply(200,pipeline.preview(value['source_id'],value['evidence_ids']));return
-                if self.path=='/processing/consent':self.reply(200,pipeline.consent(value['source_id'],value.get('approved')));return
+                if self.path=='/processing/consent':self.reply(200,operations.action(pipeline,{**value,'action':'consent' if value.get('approved') is True else 'revoke'}));return
                 if self.path=='/processing/extract':self.reply(200,pipeline.run(value['source_id'],value['evidence_ids']));return
                 if self.path.startswith('/jobs/'):
                     parts=self.path.split('/')

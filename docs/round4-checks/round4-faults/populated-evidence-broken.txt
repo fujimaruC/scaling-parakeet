@@ -1,0 +1,22 @@
+COMMAND: node --import tsx scripts/measure_resources.ts /tmp/aos-round4/round4-faults-shipped/populated-evidence-broken.json
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: POPULATED_LEDGER_REQUIRED candidate_evidence
+
+0 !== 100
+
+    at <anonymous> (/tmp/aos-round4-faults-msjc78bg/scripts/measure_resources.ts:171:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 100,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.1
+
+EXIT: 1

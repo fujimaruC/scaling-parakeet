@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_revoked_or_changed -v
+test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.077s
+
+OK
+
+EXIT: 0

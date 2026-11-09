@@ -1,0 +1,17 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_purge_stays -v
+test_purge_stays_pending_until_explicit_linux_and_known_phone_acks (test_operations.OperationsTests.test_purge_stays_pending_until_explicit_linux_and_known_phone_acks) ... FAIL
+
+======================================================================
+FAIL: test_purge_stays_pending_until_explicit_linux_and_known_phone_acks (test_operations.OperationsTests.test_purge_stays_pending_until_explicit_linux_and_known_phone_acks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_operations.py", line 73, in test_purge_stays_pending_until_explicit_linux_and_known_phone_acks
+    self.assertTrue({r['source_id']:r for r in sources(self.p)}[self.b]['pending_purge'])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (failures=1)
+
+EXIT: 1

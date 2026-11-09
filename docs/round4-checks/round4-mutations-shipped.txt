@@ -1,0 +1,22 @@
+COMMAND: .venv/bin/python scripts/check_round4_mutations.py --output-dir /tmp/aos-round4/round4-faults-shipped
+populated-evidence: intended failure; restored PASS
+safe-refusal: intended failure; restored PASS
+backoff: intended failure; restored PASS
+exhaustion: intended failure; restored PASS
+unknown-not-replayed: intended failure; restored PASS
+crash-claim: intended failure; restored PASS
+retry-consent: intended failure; restored PASS
+sync-receipt: intended failure; restored PASS
+source-isolation: intended failure; restored PASS
+stale-form: intended failure; restored PASS
+pause-not-wipe: intended failure; restored PASS
+missing-selection: intended failure; restored PASS
+purge-needs-linux-ack: intended failure; restored PASS
+terminal-job-pages: intended failure; restored PASS
+stale-gate: intended failure; restored PASS
+false-unverified: intended failure; restored PASS
+failed-local-proof: intended failure; restored PASS
+missing-gate-test: intended failure; restored PASS
+PASS: 18 intended failures; 18 restored passes; 0 survivors; working sources untouched.
+
+EXIT: 0

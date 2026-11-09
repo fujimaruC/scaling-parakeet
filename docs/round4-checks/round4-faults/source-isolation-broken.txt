@@ -1,0 +1,21 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_two_sources -v
+test_two_sources_consent_revoke_and_evidence_are_independent (test_operations.OperationsTests.test_two_sources_consent_revoke_and_evidence_are_independent) ... FAIL
+
+======================================================================
+FAIL: test_two_sources_consent_revoke_and_evidence_are_independent (test_operations.OperationsTests.test_two_sources_consent_revoke_and_evidence_are_independent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_operations.py", line 26, in test_two_sources_consent_revoke_and_evidence_are_independent
+    self.assertEqual(rows[self.a]['consent_mode'],'disabled');self.assertEqual(rows[self.b]['consent_mode'],'external_selected')
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'disabled' != 'external_selected'
+- disabled
++ external_selected
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.036s
+
+FAILED (failures=1)
+
+EXIT: 1

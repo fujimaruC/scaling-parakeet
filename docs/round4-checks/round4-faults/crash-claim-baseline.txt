@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_process_death -v
+test_process_death_after_durable_claim_is_unknown_on_restart (test_retry.RetryTests.test_process_death_after_durable_claim_is_unknown_on_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+OK
+
+EXIT: 0

@@ -11,6 +11,7 @@ def reconcile(store,env=None):
  if not all(configured(env.get(k,'')) for k in keys):return {'state':'unconfigured'}
  source=env['COLLECTOR_SOURCE_ID'];url,key,secret=[env[k] for k in keys[:3]]
  status=source_status(source,url,key,secret)
+ store.observe_source(source,status)
  pairing=Pairing(store)
  devices=[r[0] for r in store.db.execute('SELECT id FROM devices WHERE source_id=?',(source,))]
  observations=[]
@@ -26,12 +27,16 @@ def reconcile(store,env=None):
   # Exact generation prevents repeated poll increments and stale queue resurrection.
   row=store.db.execute('SELECT generation,enabled FROM sources WHERE id=?',(source,)).fetchone()
   if not row:raise ValueError('LOCAL_SOURCE_UNAVAILABLE')
-  if row[1] or row[0]!=status['generation']:
+  purged=store.db.execute('SELECT purged FROM source_operations WHERE source_id=?',(source,)).fetchone()[0]
+  if not purged or row[1] or row[0]!=status['generation']:
    store.purge(source)
    with store.db:store.db.execute('UPDATE sources SET generation=? WHERE id=?',(status['generation'],source))
  collector_request(url,key,secret,'/api/v1/sync/device-actions','POST',{'source_id':source,'devices':devices,'observations':observations,'receipts':receipts[-100:]})
  with store.db:store.db.execute('INSERT OR REPLACE INTO control_cursor VALUES(?,?)',(source,offset+50 if receipts else 0))
- if status.get('purge_required'):purge_ack(source,status['generation'],url,key,secret)
+ if status.get('purge_required'):
+  ack=purge_ack(source,status['generation'],url,key,secret)
+  if not isinstance(ack,dict) or ack.get('acknowledged') is not True:raise ValueError('PURGE_ACK_UNVERIFIED')
+  store.mark_purge_ack(source,status['generation'])
  return {'state':'checked'}
 
 def main():

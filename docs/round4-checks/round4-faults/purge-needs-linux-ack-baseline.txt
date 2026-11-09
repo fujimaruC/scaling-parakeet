@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_purge_stays -v
+test_purge_stays_pending_until_explicit_linux_and_known_phone_acks (test_operations.OperationsTests.test_purge_stays_pending_until_explicit_linux_and_known_phone_acks) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+OK
+
+EXIT: 0

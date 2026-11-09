@@ -1,0 +1,9 @@
+COMMAND: .venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_sync_only -v
+test_sync_only_confirms_a_matching_durable_batch_receipt (test_retry.RetryTests.test_sync_only_confirms_a_matching_durable_batch_receipt) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.099s
+
+OK
+
+EXIT: 0

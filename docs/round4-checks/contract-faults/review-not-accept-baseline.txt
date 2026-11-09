@@ -1,0 +1,14 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t reject and clarify only audit
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-i92ozlmt
+
+ ✓ tests/integration/review-boundary.test.ts (3 tests | 2 skipped) 1783ms
+   ✓ reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task  1144ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  16:42:29
+   Duration  2.49s (transform 155ms, setup 0ms, collect 529ms, tests 1.78s, environment 0ms, prepare 54ms)
+
+
+EXIT: 0

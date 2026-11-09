@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t a year ledger
+
+ RUN  v3.2.7 /tmp/aos-release-faults-lre02l9s
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 9061ms
+   ✓ a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions  8199ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  16:44:05
+   Duration  9.80s (transform 157ms, setup 0ms, collect 544ms, tests 9.06s, environment 0ms, prepare 60ms)
+

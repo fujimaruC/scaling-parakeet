@@ -1,0 +1,29 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_terminal_jobs -v
+test_terminal_jobs_remain_navigable_after_first_hundred (test_operations.OperationsTests.test_terminal_jobs_remain_navigable_after_first_hundred) ... FAIL
+
+======================================================================
+FAIL: test_terminal_jobs_remain_navigable_after_first_hundred (test_operations.OperationsTests.test_terminal_jobs_remain_navigable_after_first_hundred)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_operations.py", line 78, in test_terminal_jobs_remain_navigable_after_first_hundred
+    self.assertEqual([j['id'] for j in second],['synthetic-job-0']);self.assertIn('synthetic-job-0',page(self.p,before=first[-1]['cursor']))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['synthetic-job-1', 'synthetic-job-0'] != ['synthetic-job-0']
+
+First differing element 0:
+'synthetic-job-1'
+'synthetic-job-0'
+
+First list contains 1 additional elements.
+First extra element 1:
+'synthetic-job-0'
+
+- ['synthetic-job-1', 'synthetic-job-0']
++ ['synthetic-job-0']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.163s
+
+FAILED (failures=1)
+
+EXIT: 1

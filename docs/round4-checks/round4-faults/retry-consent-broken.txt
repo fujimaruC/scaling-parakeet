@@ -1,0 +1,39 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_revoked_or_changed -v
+test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) ... 
+  test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='revoke') ... FAIL
+  test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='provider') ... FAIL
+  test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='generation') ... FAIL
+
+======================================================================
+FAIL: test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='revoke')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 80, in test_revoked_or_changed_consent_and_generation_prevent_retry
+    self.now+=1000;tick(self.p,self.source);self.assertEqual(self.extractor.call_count,before);self.assertEqual(self.p.get(ident)['retry']['state'],'failed')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='provider')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 80, in test_revoked_or_changed_consent_and_generation_prevent_retry
+    self.now+=1000;tick(self.p,self.source);self.assertEqual(self.extractor.call_count,before);self.assertEqual(self.p.get(ident)['retry']['state'],'failed')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 3
+
+======================================================================
+FAIL: test_revoked_or_changed_consent_and_generation_prevent_retry (test_retry.RetryTests.test_revoked_or_changed_consent_and_generation_prevent_retry) (change='generation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 80, in test_revoked_or_changed_consent_and_generation_prevent_retry
+    self.now+=1000;tick(self.p,self.source);self.assertEqual(self.extractor.call_count,before);self.assertEqual(self.p.get(ident)['retry']['state'],'failed')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 6 != 5
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=3)
+
+EXIT: 1

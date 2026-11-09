@@ -1,0 +1,20 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python scripts/check_gate_claims.py
+test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials) ... FAIL
+
+======================================================================
+FAIL: test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_restore_contract.py", line 28, in test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials
+    counts=restore(root/'backup.enc',root/'backup.key',root/'restored.sqlite',ROOT/'apps/worker/migrations');self.assertEqual(counts,{t:len(rows) for t,rows in tables.items()})
+                                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'contexts': 0, 'tasks': 0, 'task_events': 0, 'sources[141 chars]': 0} != {'contexts': 1, 'tasks': 1, 'task_events': 1, 'sources[141 chars]': 1}
+Diff is 932 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.077s
+
+FAILED (failures=1)
+GATE_TEST_FAILED backup-tombstones-sqlite
+
+EXIT: 1

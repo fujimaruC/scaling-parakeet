@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_two_sources -v
+test_two_sources_consent_revoke_and_evidence_are_independent (test_operations.OperationsTests.test_two_sources_consent_revoke_and_evidence_are_independent) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+OK
+
+EXIT: 0

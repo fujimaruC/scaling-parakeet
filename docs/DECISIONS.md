@@ -323,3 +323,33 @@ Document measured query shape and proposed review thresholds rather than adding
 speculative indexing or claiming local wall time is Worker CPU/billing. All real
 account/device/positive capture/provider/restore gates remain open. No signing,
 capture selector, deployment or paid provisioning change.
+
+
+## ADR-027 — Measure before indexing; conservative durable retries and source forms
+
+2026-11-09, base b79092b, W00/W30/W22/W42. No new dependency. Populated10,000-task
+handler samples and full cursor traversal precede any index choice. Keep current
+indexes: scan/sort is real, but local page latency has not crossed the existing
+review ceiling. FTS/materialized sort keys are deferred pending actual account
+row/CPU evidence. Full CSV exceeds the8MiB review threshold and remains unbounded;
+do not claim page bounds solve export memory or silently truncate a backup.
+
+Use a separate source-specific Linux job loop, durable pre-request claims and
+standard-library process locking. Reject broad retries of timeouts/5xx: a provider
+may have processed them. Only definite429 refusals or pre-connection DNS/refusal,
+and read-only preflight failures, retry automatically. Extraction totals2 attempts,
+sync5, exponential30s to900s; terminal and unknown states stay visible. Immutable
+manual sync retry remains allowed under existing Worker idempotency. No automatic
+extraction replay after uncertainty and no automatic projection/canonical approval.
+Known successful local persistence can settle a disrupted attempt; absent evidence
+cannot. Existing jobs without scheduling metadata remain manual-only.
+
+Use server-rendered forms for many source rows rather than adding a UI framework.
+Bind every action to source+generation and current disclosure. Per-source consent
+includes generation; old unbound policies require reconfirmation. A separate local
+pause flag protects phone data: `sources.enabled=0` means revoked to existing phone
+clients and could trigger destruction. Pause must never impersonate revocation.
+One source-scoped credential per job/control process; no shared cloud authority.
+Local status timestamps are observations, not live phone guarantees. The small
+explicit gate/test/claim table and actual named test execution catch stated doc
+contradictions while production/device gates stay unverified.

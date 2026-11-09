@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_adapter_itself_checks_consent -v
+test_adapter_itself_checks_consent_before_any_provider_request (test_injection.InjectionBoundaryTests.test_adapter_itself_checks_consent_before_any_provider_request) ... FAIL
+
+======================================================================
+FAIL: test_adapter_itself_checks_consent_before_any_provider_request (test_injection.InjectionBoundaryTests.test_adapter_itself_checks_consent_before_any_provider_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-contract-faults-i92ozlmt/collectors/local/tests/test_injection.py", line 93, in test_adapter_itself_checks_consent_before_any_provider_request
+    with self.assertRaisesRegex(Invalid,'CONSENT_REQUIRED'):extract(messages,{},self.policy['route'],self.policy['model'],'synthetic-auth-not-real',validator('ai-extraction.schema.json'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Invalid not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)
+
+EXIT: 1

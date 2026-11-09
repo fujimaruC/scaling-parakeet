@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_pause_cannot -v
+test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence (test_operations.OperationsTests.test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.032s
+
+OK
+
+EXIT: 0

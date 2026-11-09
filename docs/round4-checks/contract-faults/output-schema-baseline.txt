@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_schema_rejects_no_evidence -v
+test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+OK
+
+EXIT: 0

@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_ambiguous_extraction -v
+test_ambiguous_extraction_or_upload_never_automatically_replays (test_retry.RetryTests.test_ambiguous_extraction_or_upload_never_automatically_replays) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+OK
+
+EXIT: 0

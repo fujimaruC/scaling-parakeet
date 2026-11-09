@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_permanent_failure -v
+test_permanent_failure_is_terminal_and_refusals_exhaust (test_retry.RetryTests.test_permanent_failure_is_terminal_and_refusals_exhaust) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.101s
+
+OK
+
+EXIT: 0

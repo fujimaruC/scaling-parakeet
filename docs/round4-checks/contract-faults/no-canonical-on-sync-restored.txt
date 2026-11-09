@@ -1,0 +1,13 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t AI-shaped proposals
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-i92ozlmt
+
+ ✓ tests/integration/review-boundary.test.ts (3 tests | 2 skipped) 911ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  16:42:41
+   Duration  1.65s (transform 166ms, setup 0ms, collect 556ms, tests 911ms, environment 0ms, prepare 54ms)
+
+
+EXIT: 0

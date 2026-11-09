@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_evidence_subset_and_invalid_json -v
+test_evidence_subset_and_invalid_json_fail_before_projection (test_injection.InjectionBoundaryTests.test_evidence_subset_and_invalid_json_fail_before_projection) ... FAIL
+
+======================================================================
+FAIL: test_evidence_subset_and_invalid_json_fail_before_projection (test_injection.InjectionBoundaryTests.test_evidence_subset_and_invalid_json_fail_before_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-contract-faults-i92ozlmt/collectors/local/tests/test_injection.py", line 56, in test_evidence_subset_and_invalid_json_fail_before_projection
+    with self.assertRaisesRegex(Invalid,'EVIDENCE_UNAVAILABLE'):self.call(messages,out)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Invalid not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (failures=1)
+
+EXIT: 1

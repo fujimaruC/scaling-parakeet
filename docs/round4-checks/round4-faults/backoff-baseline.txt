@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_restart_mid_backoff -v
+test_restart_mid_backoff_keeps_due_time_and_attempt_count (test_retry.RetryTests.test_restart_mid_backoff_keeps_due_time_and_attempt_count) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+OK
+
+EXIT: 0

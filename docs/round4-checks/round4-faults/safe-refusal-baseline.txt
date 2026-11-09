@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_transient_refusal -v
+test_transient_refusal_then_success_stops_at_projection_review (test_retry.RetryTests.test_transient_refusal_then_success_stops_at_projection_review) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.045s
+
+OK
+
+EXIT: 0

@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_pause_cannot -v
+test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence (test_operations.OperationsTests.test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence) ... FAIL
+
+======================================================================
+FAIL: test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence (test_operations.OperationsTests.test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_operations.py", line 38, in test_pause_cannot_masquerade_as_phone_revocation_or_erase_evidence
+    action(self.p,self.value(self.a,'pause'));self.assertFalse(self.pair.status(device)['revoked'])
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (failures=1)
+
+EXIT: 1

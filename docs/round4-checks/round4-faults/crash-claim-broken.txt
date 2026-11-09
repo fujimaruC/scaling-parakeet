@@ -1,0 +1,21 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_process_death -v
+test_process_death_after_durable_claim_is_unknown_on_restart (test_retry.RetryTests.test_process_death_after_durable_claim_is_unknown_on_restart) ... FAIL
+
+======================================================================
+FAIL: test_process_death_after_durable_claim_is_unknown_on_restart (test_retry.RetryTests.test_process_death_after_durable_claim_is_unknown_on_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 69, in test_process_death_after_durable_claim_is_unknown_on_restart
+    tick(self.p,self.source);self.assertEqual(self.extractor.call_count,1);self.assertEqual(self.p.get(ident)['retry']['state'],'unknown')
+                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'exhausted' != 'unknown'
+- exhausted
++ unknown
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=1)
+
+EXIT: 1

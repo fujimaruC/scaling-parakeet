@@ -3,6 +3,7 @@ import { Miniflare } from 'miniflare';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import assert from 'node:assert/strict';
 import { createApp, type Env } from '../apps/worker/src/index';
 import { LIMITS } from '../apps/worker/src/operations';
 const output = process.argv[2];
@@ -85,35 +86,94 @@ try {
   };
   const app = createApp(async () => true);
   const profiles: any[] = [];
+  const traversals: any[] = [];
   async function seed(start: number, end: number) {
-    for (let i = start; i < end; i += 80) {
-      const ops = [];
-      for (let n = i; n < Math.min(i + 80, end); n++) {
-        const month = String(1 + (n % 12)).padStart(2, '0');
-        ops.push(
-          db
-            .prepare(
-              "INSERT INTO tasks(id,title,kind,status,priority,due_json,created_at,updated_at) VALUES(?,?,'assignment','todo','normal',?,'2030-01-01T00:00:00Z','2030-01-01T00:00:00Z')",
-            )
-            .bind(
-              'resource-' + String(n).padStart(5, '0'),
-              n === end - 1 ? 'Synthetic needle' : 'Synthetic task ' + n,
-              JSON.stringify({
-                precision: 'date_only',
-                local_date: '2035-' + month + '-15',
-                local_datetime: null,
-                timezone: 'Asia/Makassar',
-              }),
-            ),
-        );
-      }
-      await db.batch(ops);
+    // Fixture construction only. Bounded set-based chunks avoid thousands of
+    // remote statement proxies; these inserts are outside measured requests.
+    for (let low = start; low < end; low += 1000) {
+      await db
+        .prepare(
+          `WITH RECURSIVE seq(n) AS (
+        SELECT ? UNION ALL SELECT n+1 FROM seq WHERE n+1<?
+      ) INSERT INTO tasks(id,title,kind,status,priority,due_json,created_at,updated_at)
+      SELECT printf('resource-%05d',n),
+        CASE WHEN n=? THEN 'Synthetic needle' ELSE 'Synthetic task '||n END,
+        'assignment','todo','normal',json_object('precision','date_only',
+        'local_date',printf('2035-%02d-15',1+(n%12)),
+        'local_datetime',NULL,'timezone','Asia/Makassar'),
+        '2030-01-01T00:00:00Z','2030-01-01T00:00:00Z' FROM seq`,
+        )
+        .bind(low, Math.min(low + 1000, end), end - 1)
+        .run();
     }
   }
+  await db
+    .prepare(
+      "INSERT INTO sources(id,display_name,kind) VALUES('resource-source','Synthetic source','whatsapp_export')",
+    )
+    .run();
   let count = 0;
-  for (const size of [100, 1200]) {
+  for (const size of [100, 1200, 10000]) {
     await seed(count, size);
+    // Populate related rows with four set-based statements, avoiding thousands
+    // of RPC objects. Only synthetic fixture setup changes; handlers are untouched.
+    const low = 'resource-' + String(count).padStart(5, '0');
+    const high = 'resource-' + String(size).padStart(5, '0');
+    await db.batch([
+      db
+        .prepare(
+          "INSERT INTO source_items SELECT id,'resource-source',1,'2030-01-01T00:00:00Z',NULL,1,NULL FROM tasks WHERE id>=? AND id<?",
+        )
+        .bind(low, high),
+      db
+        .prepare(
+          "INSERT INTO task_evidence SELECT id,id,'synthetic-approval' FROM tasks WHERE id>=? AND id<?",
+        )
+        .bind(low, high),
+      db
+        .prepare(
+          "INSERT INTO candidates(id,source_id,generation,fields_json,issues_json,created_at,updated_at) SELECT id,'resource-source',1,?,'[]','2030-01-01T00:00:00Z','2030-01-01T00:00:00Z' FROM tasks WHERE id>=? AND id<?",
+        )
+        .bind(
+          JSON.stringify({
+            title: 'Synthetic proposal',
+            kind: 'assignment',
+            priority: 'normal',
+            due: {
+              precision: 'unknown',
+              local_date: null,
+              local_datetime: null,
+              timezone: null,
+            },
+          }),
+          low,
+          high,
+        ),
+      db
+        .prepare(
+          'INSERT INTO candidate_evidence SELECT id,id FROM tasks WHERE id>=? AND id<?',
+        )
+        .bind(low, high),
+    ]);
     count = size;
+    const population: Record<string, number> = {};
+    for (const table of [
+      'tasks',
+      'task_events',
+      'source_items',
+      'task_evidence',
+      'candidates',
+      'candidate_evidence',
+    ]) {
+      population[table] = (
+        await db.prepare('SELECT count(*) n FROM ' + table).first<any>()
+      ).n;
+      assert.equal(
+        population[table],
+        size,
+        'POPULATED_LEDGER_REQUIRED ' + table,
+      );
+    }
     const event = await db
       .prepare('SELECT max(id) id FROM task_events')
       .first<any>();
@@ -135,6 +195,8 @@ try {
       const times: number[] = [];
       let bytes = 0;
       let queries: Query[] = [];
+      let returnedRows: number | null = null;
+      let hasNextPage: boolean | null = null;
       const repetitions = path.startsWith('/export') ? 1 : 6;
       for (let sample = 0; sample < repetitions; sample++) {
         captured = [];
@@ -149,6 +211,22 @@ try {
           throw Error(
             'MEASUREMENT_ROUTE_FAILED ' + path + ' ' + response.status,
           );
+        if (!path.startsWith('/export')) {
+          const result = JSON.parse(new TextDecoder().decode(body));
+          if (Array.isArray(result.data)) {
+            returnedRows = result.data.length;
+            hasNextPage = Boolean(result.meta?.next_cursor);
+            assert.ok(
+              returnedRows! <=
+                Number(
+                  new URL('https://synthetic' + path).searchParams.get(
+                    'limit',
+                  ) ?? 100,
+                ),
+              'RESULT_PAGE_UNBOUNDED',
+            );
+          }
+        }
         bytes = body.byteLength;
         queries = captured;
         if (sample > 0 || repetitions === 1) times.push(elapsed);
@@ -165,6 +243,7 @@ try {
       const sorted = times.toSorted((a, b) => a - b);
       profiles.push({
         tasks: size,
+        population,
         path,
         samples: times.length,
         wall_ms: times.map((t) => Number(t.toFixed(3))),
@@ -173,8 +252,50 @@ try {
         ),
         max_wall_ms: Number(Math.max(...times).toFixed(3)),
         response_bytes: bytes,
+        returned_rows: returnedRows,
+        has_next_page: hasNextPage,
         prepared_statements_per_request: queries.length,
         queries: plans,
+      });
+    }
+    for (const basePath of paths.slice(0, 3)) {
+      const ids = new Set<string>();
+      let cursor: string | null = null,
+        pages = 0;
+      const start = performance.now();
+      do {
+        const response = await app.fetch(
+          new Request(
+            'https://resource.synthetic/api/v1' +
+              basePath +
+              (cursor ? '&cursor=' + cursor : ''),
+          ),
+          env,
+        );
+        assert.equal(response.status, 200, 'TRAVERSAL_ROUTE_FAILED');
+        const value = (await response.json()) as any;
+        assert.ok(value.data.length <= 100, 'RESULT_PAGE_UNBOUNDED');
+        for (const row of value.data) {
+          assert.ok(!ids.has(row.id), 'DUPLICATE_PAGE_ROW');
+          ids.add(row.id);
+        }
+        cursor = value.meta?.next_cursor ?? null;
+        pages++;
+        assert.ok(pages <= Math.ceil(size / 100) + 1, 'CURSOR_LOOP');
+      } while (cursor);
+      const expected = basePath.includes('q=')
+        ? [100, 1200, 10000].filter((n) => n <= size).length
+        : basePath.includes('date_from=')
+          ? Math.floor(size / 12)
+          : size;
+      assert.equal(ids.size, expected, 'PAGINATION_COVERAGE');
+      traversals.push({
+        tasks: size,
+        path: basePath,
+        pages,
+        unique_rows: ids.size,
+        expected_rows: expected,
+        wall_ms: Number((performance.now() - start).toFixed(3)),
       });
     }
   }
@@ -199,6 +320,7 @@ try {
     request_limits_per_minute: LIMITS,
     daily_request_limit: 10000,
     profiles,
+    traversals,
     measurement_process_rss_bytes: process.memoryUsage().rss,
     includes_workerd_process: false,
     worker_cpu_ms: null,

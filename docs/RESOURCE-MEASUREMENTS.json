@@ -1,7 +1,7 @@
 {
   "kind": "local_synthetic_not_account_measurement",
   "node": "v24.22.1",
-  "measurement_time": "2026-11-09T06:10:51.965Z",
+  "measurement_time": "2026-11-09T09:52:08.581Z",
   "gzip_level": 9,
   "bundles": [
     {
@@ -94,18 +94,28 @@
   "profiles": [
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/tasks?limit=100",
       "samples": 5,
       "wall_ms": [
-        59.234,
-        59.038,
-        58.286,
-        72.784,
-        143.024
+        46.73,
+        54.156,
+        45.985,
+        45.177,
+        43.989
       ],
-      "median_wall_ms": 59.234,
-      "max_wall_ms": 143.024,
-      "response_bytes": 43120,
+      "median_wall_ms": 45.985,
+      "max_wall_ms": 54.156,
+      "response_bytes": 43318,
+      "returned_rows": 100,
+      "has_next_page": false,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -119,18 +129,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/tasks?limit=100&title_only=1&q=needle",
       "samples": 5,
       "wall_ms": [
-        53.32,
-        64.942,
-        60.163,
-        62.557,
-        78.785
+        37.401,
+        48.185,
+        39.947,
+        40.44,
+        40.605
       ],
-      "median_wall_ms": 62.557,
-      "max_wall_ms": 78.785,
+      "median_wall_ms": 40.44,
+      "max_wall_ms": 48.185,
       "response_bytes": 560,
+      "returned_rows": 1,
+      "has_next_page": false,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -144,18 +164,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
       "samples": 5,
       "wall_ms": [
-        46.321,
-        47.827,
-        49.164,
-        60.831,
-        59.136
+        42.512,
+        43.532,
+        49.188,
+        48.598,
+        39.383
       ],
-      "median_wall_ms": 49.164,
-      "max_wall_ms": 60.831,
-      "response_bytes": 3571,
+      "median_wall_ms": 43.532,
+      "max_wall_ms": 49.188,
+      "response_bytes": 3587,
+      "returned_rows": 8,
+      "has_next_page": false,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -169,18 +199,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/history?limit=50",
       "samples": 5,
       "wall_ms": [
-        120.227,
-        56.005,
-        49.52,
-        48.806,
-        50.298
+        41.712,
+        47.828,
+        50.298,
+        39.152,
+        36.326
       ],
-      "median_wall_ms": 50.298,
-      "max_wall_ms": 120.227,
-      "response_bytes": 15502,
+      "median_wall_ms": 41.712,
+      "max_wall_ms": 50.298,
+      "response_bytes": 15600,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -193,18 +233,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/history?limit=50&cursor=WyJoaXN0b3J5LXYxIiw4MF0",
       "samples": 5,
       "wall_ms": [
-        44.993,
-        59.508,
-        51.208,
-        126.282,
-        81.146
+        43.854,
+        37.768,
+        36.773,
+        35.228,
+        36.975
       ],
-      "median_wall_ms": 59.508,
-      "max_wall_ms": 126.282,
-      "response_bytes": 15502,
+      "median_wall_ms": 36.975,
+      "max_wall_ms": 43.854,
+      "response_bytes": 15602,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -217,18 +267,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/tasks/resource-00000?view=read",
       "samples": 5,
       "wall_ms": [
-        109.099,
-        95.099,
-        312.198,
-        314.346,
-        522.398
+        50.136,
+        52.982,
+        51.267,
+        50.389,
+        58.479
       ],
-      "median_wall_ms": 312.198,
-      "max_wall_ms": 522.398,
-      "response_bytes": 1053,
+      "median_wall_ms": 51.267,
+      "max_wall_ms": 58.479,
+      "response_bytes": 1115,
+      "returned_rows": null,
+      "has_next_page": null,
       "prepared_statements_per_request": 6,
       "queries": [
         {
@@ -263,18 +323,28 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/candidates?limit=50",
       "samples": 5,
       "wall_ms": [
-        65.66,
-        74.05,
-        85.279,
-        130.007,
-        68.784
+        39.94,
+        35.314,
+        43.34,
+        36.955,
+        39.23
       ],
-      "median_wall_ms": 74.05,
-      "max_wall_ms": 130.007,
-      "response_bytes": 132,
+      "median_wall_ms": 39.23,
+      "max_wall_ms": 43.34,
+      "response_bytes": 23643,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -293,14 +363,24 @@
     },
     {
       "tasks": 100,
+      "population": {
+        "tasks": 100,
+        "task_events": 100,
+        "source_items": 100,
+        "task_evidence": 100,
+        "candidates": 100,
+        "candidate_evidence": 100
+      },
       "path": "/export?format=csv",
       "samples": 1,
       "wall_ms": [
-        200.01
+        90.795
       ],
-      "median_wall_ms": 200.01,
-      "max_wall_ms": 200.01,
-      "response_bytes": 95073,
+      "median_wall_ms": 90.795,
+      "max_wall_ms": 90.795,
+      "response_bytes": 235965,
+      "returned_rows": null,
+      "has_next_page": null,
       "prepared_statements_per_request": 24,
       "queries": [
         {
@@ -373,18 +453,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/tasks?limit=100",
       "samples": 5,
       "wall_ms": [
-        60.616,
-        59.919,
-        60.565,
-        58.115,
-        54.688
+        40.948,
+        39.963,
+        39.901,
+        39.937,
+        38.13
       ],
-      "median_wall_ms": 59.919,
-      "max_wall_ms": 60.616,
-      "response_bytes": 43383,
+      "median_wall_ms": 39.937,
+      "max_wall_ms": 40.948,
+      "response_bytes": 43583,
+      "returned_rows": 100,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -398,18 +488,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/tasks?limit=100&title_only=1&q=needle",
       "samples": 5,
       "wall_ms": [
-        44.928,
-        40.905,
-        51.249,
-        56.689,
-        46.88
+        32.925,
+        35.807,
+        34.441,
+        44.77,
+        37.312
       ],
-      "median_wall_ms": 46.88,
-      "max_wall_ms": 56.689,
+      "median_wall_ms": 35.807,
+      "max_wall_ms": 44.77,
       "response_bytes": 989,
+      "returned_rows": 2,
+      "has_next_page": false,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -423,18 +523,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
       "samples": 5,
       "wall_ms": [
-        56.636,
-        78.344,
-        59.037,
-        59.888,
-        54.525
+        39.687,
+        40.416,
+        46.204,
+        43.876,
+        46.935
       ],
-      "median_wall_ms": 59.037,
-      "max_wall_ms": 78.344,
-      "response_bytes": 43237,
+      "median_wall_ms": 43.876,
+      "max_wall_ms": 46.935,
+      "response_bytes": 43435,
+      "returned_rows": 100,
+      "has_next_page": false,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -448,18 +558,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/history?limit=50",
       "samples": 5,
       "wall_ms": [
-        43.204,
-        50.123,
-        43.573,
-        44.715,
-        41.296
+        36.514,
+        38.787,
+        36.901,
+        36.668,
+        39.652
       ],
-      "median_wall_ms": 43.573,
-      "max_wall_ms": 50.123,
-      "response_bytes": 15702,
+      "median_wall_ms": 36.901,
+      "max_wall_ms": 39.652,
+      "response_bytes": 15800,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -472,18 +592,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/history?limit=50&cursor=WyJoaXN0b3J5LXYxIiwxMTgwXQ",
       "samples": 5,
       "wall_ms": [
-        48.832,
-        37.777,
-        40.943,
-        45.358,
-        47.227
+        37.517,
+        37.793,
+        36.554,
+        35.178,
+        35.231
       ],
-      "median_wall_ms": 45.358,
-      "max_wall_ms": 48.832,
-      "response_bytes": 15705,
+      "median_wall_ms": 36.554,
+      "max_wall_ms": 37.793,
+      "response_bytes": 15805,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -496,18 +626,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/tasks/resource-00000?view=read",
       "samples": 5,
       "wall_ms": [
-        63.297,
-        62.572,
-        84.927,
-        60.813,
-        57.519
+        49.714,
+        56.097,
+        47.653,
+        49.34,
+        46.632
       ],
-      "median_wall_ms": 62.572,
-      "max_wall_ms": 84.927,
-      "response_bytes": 1053,
+      "median_wall_ms": 49.34,
+      "max_wall_ms": 56.097,
+      "response_bytes": 1115,
+      "returned_rows": null,
+      "has_next_page": null,
       "prepared_statements_per_request": 6,
       "queries": [
         {
@@ -542,18 +682,28 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/candidates?limit=50",
       "samples": 5,
       "wall_ms": [
-        42.566,
-        43.585,
-        47.376,
-        47.008,
-        46.477
+        37.541,
+        40.817,
+        36.178,
+        40.575,
+        37.017
       ],
-      "median_wall_ms": 46.477,
-      "max_wall_ms": 47.376,
-      "response_bytes": 132,
+      "median_wall_ms": 37.541,
+      "max_wall_ms": 40.817,
+      "response_bytes": 23643,
+      "returned_rows": 50,
+      "has_next_page": true,
       "prepared_statements_per_request": 3,
       "queries": [
         {
@@ -572,14 +722,383 @@
     },
     {
       "tasks": 1200,
+      "population": {
+        "tasks": 1200,
+        "task_events": 1200,
+        "source_items": 1200,
+        "task_evidence": 1200,
+        "candidates": 1200,
+        "candidate_evidence": 1200
+      },
       "path": "/export?format=csv",
       "samples": 1,
       "wall_ms": [
-        289.121
+        242.451
       ],
-      "median_wall_ms": 289.121,
-      "max_wall_ms": 289.121,
-      "response_bytes": 1124168,
+      "median_wall_ms": 242.451,
+      "max_wall_ms": 242.451,
+      "response_bytes": 2811656,
+      "returned_rows": null,
+      "has_next_page": null,
+      "prepared_statements_per_request": 24,
+      "queries": [
+        {
+          "sql": "SELECT * FROM \"contexts\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN contexts USING INDEX sqlite_autoindex_contexts_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"tasks\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN tasks USING INDEX sqlite_autoindex_tasks_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_events\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN task_events"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"sources\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN sources USING INDEX sqlite_autoindex_sources_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_items\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN source_items USING INDEX sqlite_autoindex_source_items_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidates\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN candidates USING INDEX sqlite_autoindex_candidates_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidate_evidence\" ORDER BY \"candidate_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN candidate_evidence USING COVERING INDEX sqlite_autoindex_candidate_evidence_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"review_actions\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN review_actions USING INDEX sqlite_autoindex_review_actions_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_tombstones\" ORDER BY \"source_id\",\"generation\"",
+          "plan": [
+            "SCAN source_tombstones USING INDEX sqlite_autoindex_source_tombstones_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"settings\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN settings"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_evidence\" ORDER BY \"task_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN task_evidence USING INDEX sqlite_autoindex_task_evidence_1"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/tasks?limit=100",
+      "samples": 5,
+      "wall_ms": [
+        79.617,
+        45.126,
+        44.942,
+        42.941,
+        48.214
+      ],
+      "median_wall_ms": 45.126,
+      "max_wall_ms": 79.617,
+      "response_bytes": 43583,
+      "returned_rows": 100,
+      "has_next_page": true,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "samples": 5,
+      "wall_ms": [
+        43.698,
+        46.336,
+        43.308,
+        44.96,
+        43.361
+      ],
+      "median_wall_ms": 43.698,
+      "max_wall_ms": 46.336,
+      "response_bytes": 1418,
+      "returned_rows": 3,
+      "has_next_page": false,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND title LIKE ? ESCAPE '\\') ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "samples": 5,
+      "wall_ms": [
+        45.965,
+        49.294,
+        48.985,
+        47.041,
+        54.702
+      ],
+      "median_wall_ms": 48.985,
+      "max_wall_ms": 54.702,
+      "response_bytes": 43581,
+      "returned_rows": 100,
+      "has_next_page": true,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND ((json_extract(due_json,'$.precision')='datetime' AND due_at_utc>=? AND due_at_utc<?) OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date')>=? AND json_extract(due_json,'$.local_date')<=?))) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/history?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        34.364,
+        35.347,
+        33.265,
+        32.8,
+        32.684
+      ],
+      "median_wall_ms": 33.265,
+      "max_wall_ms": 35.347,
+      "response_bytes": 15801,
+      "returned_rows": 50,
+      "has_next_page": true,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SCAN task_events"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/history?limit=50&cursor=WyJoaXN0b3J5LXYxIiw5OTgwXQ",
+      "samples": 5,
+      "wall_ms": [
+        39.652,
+        33.692,
+        32.534,
+        35.852,
+        32.39
+      ],
+      "median_wall_ms": 33.692,
+      "max_wall_ms": 39.652,
+      "response_bytes": 15805,
+      "returned_rows": 50,
+      "has_next_page": true,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events WHERE id<? ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SEARCH task_events USING INTEGER PRIMARY KEY (rowid<?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/tasks/resource-00000?view=read",
+      "samples": 5,
+      "wall_ms": [
+        55.21,
+        47.841,
+        45.673,
+        47.106,
+        45.828
+      ],
+      "median_wall_ms": 47.106,
+      "max_wall_ms": 55.21,
+      "response_bytes": 1115,
+      "returned_rows": null,
+      "has_next_page": null,
+      "prepared_statements_per_request": 6,
+      "queries": [
+        {
+          "sql": "SELECT * FROM tasks WHERE id=? AND deleted_at IS NULL",
+          "plan": [
+            "SEARCH tasks USING INDEX sqlite_autoindex_tasks_1 (id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT id,task_id,event_type,before_json,after_json,created_at FROM task_events WHERE task_id=? ORDER BY id DESC LIMIT 31",
+          "plan": [
+            "SEARCH task_events USING INDEX task_events_task_cursor (task_id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT DISTINCT s.id,s.display_name FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id JOIN sources s ON s.id=si.source_id WHERE te.task_id=? AND si.removed_at IS NULL AND s.purged_at IS NULL AND si.generation=s.generation ORDER BY s.id",
+          "plan": [
+            "SEARCH te USING COVERING INDEX sqlite_autoindex_task_evidence_1 (task_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR DISTINCT",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        },
+        {
+          "sql": "SELECT value_json FROM settings WHERE id=1",
+          "plan": [
+            "SEARCH settings USING INTEGER PRIMARY KEY (rowid=?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/candidates?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        37.219,
+        50.241,
+        40.735,
+        37.794,
+        37.104
+      ],
+      "median_wall_ms": 37.794,
+      "max_wall_ms": 50.241,
+      "response_bytes": 23643,
+      "returned_rows": 50,
+      "has_next_page": true,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT c.*,s.display_name source_label,\n            (SELECT json_group_array(si.id) FROM candidate_evidence ce JOIN source_items si ON si.id=ce.source_item_id JOIN sources es ON es.id=si.source_id WHERE ce.candidate_id=c.id AND si.removed_at IS NULL AND es.purged_at IS NULL AND es.generation=si.generation) evidence_json\n            FROM candidates c JOIN sources s ON s.id=c.source_id WHERE c.review_status IN ('pending','needs_clarification') AND s.purged_at IS NULL AND s.generation=c.generation AND c.id>? ORDER BY c.id LIMIT ?",
+          "plan": [
+            "SEARCH c USING INDEX candidates_review_cursor (review_status=? AND id>?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "CORRELATED SCALAR SUBQUERY 1",
+            "SEARCH ce USING COVERING INDEX sqlite_autoindex_candidate_evidence_1 (candidate_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH es USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 10000,
+      "population": {
+        "tasks": 10000,
+        "task_events": 10000,
+        "source_items": 10000,
+        "task_evidence": 10000,
+        "candidates": 10000,
+        "candidate_evidence": 10000
+      },
+      "path": "/export?format=csv",
+      "samples": 1,
+      "wall_ms": [
+        1265.611
+      ],
+      "median_wall_ms": 1265.611,
+      "max_wall_ms": 1265.611,
+      "response_bytes": 23438847,
+      "returned_rows": null,
+      "has_next_page": null,
       "prepared_statements_per_request": 24,
       "queries": [
         {
@@ -651,7 +1170,81 @@
       ]
     }
   ],
-  "measurement_process_rss_bytes": 420970496,
+  "traversals": [
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100",
+      "pages": 1,
+      "unique_rows": 100,
+      "expected_rows": 100,
+      "wall_ms": 36.909
+    },
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "pages": 1,
+      "unique_rows": 1,
+      "expected_rows": 1,
+      "wall_ms": 38.366
+    },
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "pages": 1,
+      "unique_rows": 8,
+      "expected_rows": 8,
+      "wall_ms": 40.689
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100",
+      "pages": 12,
+      "unique_rows": 1200,
+      "expected_rows": 1200,
+      "wall_ms": 470.902
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "pages": 1,
+      "unique_rows": 2,
+      "expected_rows": 2,
+      "wall_ms": 35.255
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "pages": 1,
+      "unique_rows": 100,
+      "expected_rows": 100,
+      "wall_ms": 37.441
+    },
+    {
+      "tasks": 10000,
+      "path": "/tasks?limit=100",
+      "pages": 100,
+      "unique_rows": 10000,
+      "expected_rows": 10000,
+      "wall_ms": 4884.428
+    },
+    {
+      "tasks": 10000,
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "pages": 1,
+      "unique_rows": 3,
+      "expected_rows": 3,
+      "wall_ms": 44.262
+    },
+    {
+      "tasks": 10000,
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "pages": 9,
+      "unique_rows": 833,
+      "expected_rows": 833,
+      "wall_ms": 424.412
+    }
+  ],
+  "measurement_process_rss_bytes": 524808192,
   "includes_workerd_process": false,
   "worker_cpu_ms": null,
   "production_d1_rows_read": null,

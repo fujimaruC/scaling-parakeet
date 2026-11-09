@@ -1,0 +1,4 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python scripts/check_gate_claims.py
+GATE_CLAIM_DRIFT backup-tombstones-sqlite
+
+EXIT: 1

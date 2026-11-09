@@ -31,7 +31,17 @@ def upload(value,url,key_id,secret):
     raw=json.dumps(value,separators=(',',':'),ensure_ascii=False).encode();stamp=str(int(time.time()));nonce=uuid.uuid4().hex;digest=hashlib.sha256(raw).hexdigest()
     canonical='\n'.join(['POST','/api/v1/sync',stamp,nonce,digest]);signature=base64.urlsafe_b64encode(hmac.new(secret.encode(),canonical.encode(),hashlib.sha256).digest()).decode().rstrip('=')
     request=urllib.request.Request(url+'/sync',data=raw,headers={'Content-Type':'application/json','X-Collector-Key-Id':key_id,'X-Request-Timestamp':stamp,'X-Nonce':nonce,'X-Body-SHA256':digest,'X-Signature':signature})
-    with urllib.request.urlopen(request,timeout=30) as response:return json.loads(response.read(262144))
+    with urllib.request.urlopen(request,timeout=30) as response:
+        raw=response.read(262145)
+        try:
+            receipt=json.loads(raw)
+            if len(raw)>262144 or not isinstance(receipt,dict) or not isinstance(receipt.get('data'),dict) or receipt['data'].get('batch_id')!=value['batch_id']:
+                raise ValueError('unverified receipt')
+        except (ValueError,TypeError):
+            # An HTTP response without the matching batch receipt cannot prove
+            # commit. Do not call it synced or retry it automatically.
+            raise OSError('SYNC_RECEIPT_UNVERIFIED') from None
+        return receipt
 
 def collector_request(url,key_id,secret,path,method='GET',value=None):
     if not url.startswith('https://') or not url.endswith('/api/v1'):raise Invalid('INVALID_CLOUD_URL')

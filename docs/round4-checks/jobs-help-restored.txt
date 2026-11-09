@@ -1,0 +1,6 @@
+usage: jobs.py [-h] --data-dir DATA_DIR [--watch]
+
+options:
+  -h, --help           show this help message and exit
+  --data-dir DATA_DIR
+  --watch

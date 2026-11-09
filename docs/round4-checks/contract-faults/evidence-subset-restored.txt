@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_evidence_subset_and_invalid_json -v
+test_evidence_subset_and_invalid_json_fail_before_projection (test_injection.InjectionBoundaryTests.test_evidence_subset_and_invalid_json_fail_before_projection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+OK
+
+EXIT: 0

@@ -7,7 +7,7 @@ class PipelineTests(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.store=Store(self.temp.name);self.source=str(uuid.uuid4());self.store.enroll(self.source);self.store.import_text(self.source,'05/11/26, 19.00 - A: Raw private message contact a@example.com')
   self.ids=[m['id'] for m in self.store.evidence()];self.calls=[]
-  self.env={'AI_BASE_URL':'http://127.0.0.1:20128/v1','AI_PROVIDER_ID':'synthetic-provider','AI_MODEL':'synthetic-model','AI_API_KEY':'synthetic-test-only','ACADEMIC_OS_API_URL':'https://synthetic.invalid/api/v1','COLLECTOR_KEY_ID':'synthetic','COLLECTOR_HMAC_SECRET':'synthetic-test-only'}
+  self.env={'AI_BASE_URL':'http://127.0.0.1:20128/v1','AI_PROVIDER_ID':'synthetic-provider','AI_MODEL':'synthetic-model','AI_API_KEY':'synthetic-test-only','ACADEMIC_OS_API_URL':'https://synthetic.invalid/api/v1','COLLECTOR_SOURCE_ID':self.source,'COLLECTOR_KEY_ID':'synthetic','COLLECTOR_HMAC_SECRET':'synthetic-test-only'}
  def tearDown(self):self.store.db.close();self.temp.cleanup()
  def extract(self,*args):
   root=Path(__file__).resolve().parents[3];v=json.loads((root/'examples/ai-extraction.synthetic.json').read_text());v['candidates'][0]['evidence_ids']=self.ids;return v

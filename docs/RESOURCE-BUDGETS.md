@@ -1,9 +1,23 @@
 # Resource budgets: observations and proposals
 
-Base af1879bfb561774e6eca20a6f9d4c7cffa0ae83b; builder working tree.
-No account, provider, deployment or device was used. These are application
-measurements/guardrails, **not billing or account quota enforcement**. T33 remains
-partial until real CPU/row usage and owner review exist.
+Fresh clone base b79092bc80906e6c3d13816ac241ff405ae6da43, 2026-11-09.
+Application guardrails, **not billing/account quota enforcement**. No owner
+account, provider, deployment or device was used. No milestone is complete.
+
+## Decision after measurement
+
+Keep the current indexes. Do not add FTS or a materialized sort key yet.
+The populated 10,000-task list/search/calendar samples below remain below the
+existing 1,000 ms local review ceiling. Their plans still scan and sort; result
+pages are bounded, scanned rows are **not** bounded by a seek. An index guessed
+from the temporary sort alone would add write/storage cost without an observed
+local latency benefit. Production D1 rows and CPU remain unmeasured and could
+justify a later migration. No limit was raised and no migration changed.
+
+A different issue is measured: the populated 10,000-task CSV exceeds the existing
+8 MiB review threshold. The full snapshot is explicitly unbounded and must not
+be silently truncated. Streaming/chunking export deserves a separate design
+before using large real ledgers; this slice does not claim that risk solved.
 
 ## Method and reproduction
 
@@ -13,78 +27,84 @@ npm run build
 node --import tsx scripts/measure_resources.ts /absolute/outside/repo/resources.json
 ```
 
-The script inventories the actual production `apps/web/dist` and dry-run Worker
-`apps/worker/dist/index.js`, compressing each file with Node zlib gzip level9.
-It uses disposable Miniflare/D1, all8 migrations, and synthetic100/1,200-task
-profiles. Each seeded task generates an audit event. Owner identity is injected
-only in this non-deployed script; production JWT cost is not measured. The real
-shared routes and durable accounting execute. Warm one request, measure five
-complete response reads; export runs once per profile to respect its budget.
-Wall time includes Node/Miniflare IPC, D1, serialization and response consumption.
-Five samples support observed median/max, **not a credible production p95**.
-EXPLAIN QUERY PLAN runs against the SQL captured from those actual handlers.
-Candidate tables are empty in this task-ledger profile; candidate fanout is not
-benchmarked. No private account, chat input, outbound push or AI is involved.
+Only the output argument outside the repository is written. Disposable Miniflare
+uses all eight migrations. Profiles have 100, 1,200 and 10,000 tasks, with one
+audit event, source item, task evidence, pending candidate and candidate evidence
+per task. Counts are asserted before requests. All records are synthetic. Set-based
+fixture inserts avoid the previously measured RPC fanout problem. Candidate pages
+and task-detail evidence are now populated, unlike the earlier empty profile.
 
-Captured 2026-11-09T14:10:51.965000+08:00; Node v24.22.1. Machine load and runtime versions can change timings/gzip output.
-Exact per-file bytes, SQL and every sample: [RESOURCE-MEASUREMENTS.json](RESOURCE-MEASUREMENTS.json).
+Each real shared route is warmed once, then five full responses are timed; export
+runs once per profile to respect the existing four/minute budget. Wall time
+includes Node/Miniflare IPC, D1 and serialization; it excludes production JWT
+verification. Five samples are not a production p95. SQL plans are captured from
+actual handler statements. Separate list/title-search/month traversals follow
+real cursors to exhaustion and assert exact independent counts and no duplicates.
+They do not raise the API page size. No contents are printed.
 
-## Production artifact bytes
+Captured 2026-11-09T09:52:08.581Z, Node v24.22.1. Timing and gzip output vary
+with load/runtime. Full plans/samples/counts: [RESOURCE-MEASUREMENTS.json](RESOURCE-MEASUREMENTS.json).
 
-| Artifact | Raw bytes | gzip bytes (level9) |
+## Production artifacts
+
+| Artifact | Raw bytes | gzip level9 bytes |
 |---|---:|---:|
-| Application JS (excludes service worker) | 309,154 | 98,262 |
-| CSS | 23,180 | 5,804 |
-| Fonts | 487,948 | 485,604 |
-| All public build bytes | 838,061 | 597,993 |
-| Worker dry-run bundle (server) | 497,776 | 99,629 |
+| Application JS | 309,154 | 98,262 |
+| Worker dry-run bundle | 497,776 | 99,629 |
 
-The 200 KiB gzip initial-JS target in the test strategy applies to application
-JS, not fonts or the server bundle. This inventory includes all emitted app JS;
-there are no assumed deferred-route savings. File gzip is not measured network
-transfer compression. Fonts remain self-hosted. No mobile startup claim follows.
+The JSON inventories all 14 public files. JS is below the proposed 200 KiB gzip
+initial-JS ceiling. This is file compression, not measured transfer or phone startup.
 
-## Observed local route profiles
+## Actual local route observations
 
-| Tasks | Route | Samples | Median ms | Max ms | Response bytes | Prepared statements/request |
-|---:|---|---:|---:|---:|---:|---:|
-| 100 | Task page | 5 | 59.234 | 143.024 | 43,120 | 3 |
-| 100 | Title search | 5 | 62.557 | 78.785 | 560 | 3 |
-| 100 | Calendar month | 5 | 49.164 | 60.831 | 3,571 | 3 |
-| 100 | Global history first page | 5 | 50.298 | 120.227 | 15,502 | 3 |
-| 100 | Global history cursor | 5 | 59.508 | 126.282 | 15,502 | 3 |
-| 100 | Task detail/scoped history | 5 | 312.198 | 522.398 | 1,053 | 6 |
-| 100 | Candidate page (empty) | 5 | 74.050 | 130.007 | 132 | 3 |
-| 100 | Full CSV snapshot | 1 | 200.010 | 200.010 | 95,073 | 24 |
-| 1200 | Task page | 5 | 59.919 | 60.616 | 43,383 | 3 |
-| 1200 | Title search | 5 | 46.880 | 56.689 | 989 | 3 |
-| 1200 | Calendar month | 5 | 59.037 | 78.344 | 43,237 | 3 |
-| 1200 | Global history first page | 5 | 43.573 | 50.123 | 15,702 | 3 |
-| 1200 | Global history cursor | 5 | 45.358 | 48.832 | 15,705 | 3 |
-| 1200 | Task detail/scoped history | 5 | 62.572 | 84.927 | 1,053 | 6 |
-| 1200 | Candidate page (empty) | 5 | 46.477 | 47.376 | 132 | 3 |
-| 1200 | Full CSV snapshot | 1 | 289.121 | 289.121 | 1,124,168 | 24 |
+| Tasks | Route | Median ms | Max ms | Response bytes | Statements |
+|---:|---|---:|---:|---:|---:|
+| 100 | `/tasks?limit=100` | 45.985 | 54.156 | 43,318 | 3 |
+| 100 | `/tasks?limit=100&title_only=1&q=needle` | 40.44 | 48.185 | 560 | 3 |
+| 100 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 43.532 | 49.188 | 3,587 | 3 |
+| 100 | `/history?limit=50` | 41.712 | 50.298 | 15,600 | 3 |
+| 100 | `/history?limit=50` | 36.975 | 43.854 | 15,602 | 3 |
+| 100 | `/tasks/resource-00000?view=read` | 51.267 | 58.479 | 1,115 | 6 |
+| 100 | `/candidates?limit=50` | 39.23 | 43.34 | 23,643 | 3 |
+| 100 | `/export?format=csv` | 90.795 | 90.795 | 235,965 | 24 |
+| 1200 | `/tasks?limit=100` | 39.937 | 40.948 | 43,583 | 3 |
+| 1200 | `/tasks?limit=100&title_only=1&q=needle` | 35.807 | 44.77 | 989 | 3 |
+| 1200 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 43.876 | 46.935 | 43,435 | 3 |
+| 1200 | `/history?limit=50` | 36.901 | 39.652 | 15,800 | 3 |
+| 1200 | `/history?limit=50` | 36.554 | 37.793 | 15,805 | 3 |
+| 1200 | `/tasks/resource-00000?view=read` | 49.34 | 56.097 | 1,115 | 6 |
+| 1200 | `/candidates?limit=50` | 37.541 | 40.817 | 23,643 | 3 |
+| 1200 | `/export?format=csv` | 242.451 | 242.451 | 2,811,656 | 24 |
+| 10000 | `/tasks?limit=100` | 45.126 | 79.617 | 43,583 | 3 |
+| 10000 | `/tasks?limit=100&title_only=1&q=needle` | 43.698 | 46.336 | 1,418 | 3 |
+| 10000 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 48.985 | 54.702 | 43,581 | 3 |
+| 10000 | `/history?limit=50` | 33.265 | 35.347 | 15,801 | 3 |
+| 10000 | `/history?limit=50` | 33.692 | 39.652 | 15,805 | 3 |
+| 10000 | `/tasks/resource-00000?view=read` | 47.106 | 55.21 | 1,115 | 6 |
+| 10000 | `/candidates?limit=50` | 37.794 | 50.241 | 23,643 | 3 |
+| 10000 | `/export?format=csv` | 1265.611 | 1265.611 | 23,438,847 | 24 |
 
-Statement counts include the two persistent accounting increments. Detail has
-four transactional read projections after accounting. Export has eleven schema
-queries and eleven transactional data reads after accounting. It reads the full
-canonical snapshot; pagination limits do **not** bound export memory/rows.
+Counts include the two durable accounting statements. Task detail has four read
+projections; export has eleven schema plus eleven snapshot reads. History cursor
+uses `SEARCH task_events USING INTEGER PRIMARY KEY (rowid<?)`; scoped history uses
+`task_events_task_cursor`. Task list, title search and month calendar still show
+`SCAN tasks USING INDEX tasks_local_date` and `USE TEMP B-TREE FOR ORDER BY`.
+Leading-wildcard search cannot be called an indexed title seek. Populated candidate
+evidence uses the candidate/evidence/source indexes with temporary ordering.
 
-## Query shapes and consequences
+## Cursor traversal evidence
 
-| View | Captured local plan | Consequence |
-|---|---|---|
-| Task list / title search / month calendar | `SCAN tasks USING INDEX tasks_local_date`; `USE TEMP B-TREE FOR ORDER BY` | Limit100 bounds returned rows, not scanned rows or sorting. Leading-wildcard LIKE and computed order/date predicates still need real usage review. Do not call this an indexed seek. |
-| Global history first page | `SCAN task_events` in rowid order with limit/lookahead | Ordered first page is bounded in result size; later paging must use the cursor. |
-| Global history cursor | `SEARCH task_events USING INTEGER PRIMARY KEY (rowid<?)` | Descending immutable ID continuation; no offset growth. |
-| Scoped task history | `SEARCH task_events USING INDEX task_events_task_cursor (task_id=?)` | Uses its task/event index and30+lookahead, independent of global last100. |
-| Candidates | `candidates_review_cursor` plus source/evidence index lookups and temp ordering | Only the empty-candidate case is timed here; populated evidence fanout is unmeasured. |
-| Canonical export | Full scans in deterministic primary-key order | All11 allowlisted tables, whole snapshot. CSV quoting is not a query/memory bound. |
-
-These are Miniflare SQLite plan observations, not production D1 row billing.
-Task scans are a remaining scaling risk. Measure populated10,000-task/evidence
-profiles and account rows before considering FTS/materialized sort keys; no index
-rewrite or undocumented higher limit is introduced by this measurement slice.
+| Tasks | Query | Pages | Unique rows | Expected rows | Total local wall ms |
+|---:|---|---:|---:|---:|---:|
+| 100 | `/tasks?limit=100` | 1 | 100 | 100 | 36.909 |
+| 100 | `/tasks?limit=100&title_only=1&q=needle` | 1 | 1 | 1 | 38.366 |
+| 100 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 1 | 8 | 8 | 40.689 |
+| 1200 | `/tasks?limit=100` | 12 | 1200 | 1200 | 470.902 |
+| 1200 | `/tasks?limit=100&title_only=1&q=needle` | 1 | 2 | 2 | 35.255 |
+| 1200 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 1 | 100 | 100 | 37.441 |
+| 10000 | `/tasks?limit=100` | 100 | 10000 | 10000 | 4884.428 |
+| 10000 | `/tasks?limit=100&title_only=1&q=needle` | 1 | 3 | 3 | 44.262 |
+| 10000 | `/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar` | 9 | 833 | 833 | 424.412 |
 
 ## Existing enforced limits and proposed review ceilings
 
@@ -101,10 +121,10 @@ projects. Two counting writes themselves cost D1 work; a cap is not zero billing
 | enroll | 10 | Body≤4 KiB plus existing grant/attempt limits | Keep10/min; no automatic widening on failed enrollment |
 | export | 4 | Full11-table snapshot; no total-byte cap | Review/chunking design at8 MiB raw output; never silently truncate a backup |
 
-The measurement controller's ending RSS sample was 420,970,496
+The measurement controller's ending RSS sample was 524,808,192
 bytes. It excludes the separate workerd process, browsers and Gradle. It is not
 peak RSS, a Linux parser measurement or an Android memory profile. Proposed
-review threshold for this controller sample:512 MiB (headroom above the observed sample; peak remains unmeasured); the existing parser peak
+review threshold for this controller sample:512 MiB (only about11.5MiB above this observed sample; review before larger runs, peak remains unmeasured); the existing parser peak
 RSS target256 MiB remains independently unmeasured. No process-memory guard was
 added. A result above a proposal triggers investigation, not a falsified pass or
 an automatic budget increase.

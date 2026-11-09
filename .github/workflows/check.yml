@@ -17,6 +17,7 @@ jobs:
       - run: pip install -r collectors/local/requirements.lock
       - run: python scripts/validate_planning.py
       - run: python scripts/check_placeholders.py
+      - run: python scripts/check_gate_claims.py
       - run: python -m unittest discover -s collectors/local/tests -v
       - run: npx playwright install --with-deps chromium --only-shell
       - run: npm run test:e2e

@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_sync_only -v
+test_sync_only_confirms_a_matching_durable_batch_receipt (test_retry.RetryTests.test_sync_only_confirms_a_matching_durable_batch_receipt) ... FAIL
+
+======================================================================
+FAIL: test_sync_only_confirms_a_matching_durable_batch_receipt (test_retry.RetryTests.test_sync_only_confirms_a_matching_durable_batch_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 97, in test_sync_only_confirms_a_matching_durable_batch_receipt
+    with self.assertRaisesRegex(Invalid,'SYNC_FAILED'):self.p.send(ident)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Invalid not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.067s
+
+FAILED (failures=1)
+
+EXIT: 1

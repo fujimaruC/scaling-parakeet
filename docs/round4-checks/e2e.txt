@@ -1,0 +1,36 @@
+COMMAND: npm run test:e2e
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test:e2e
+> playwright test
+
+[WebServer] (node:601) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:614) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:614) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:614) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 16 tests using 1 worker
+(node:663) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:663) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+············S2 contrast observations {"screen":"Today","theme":"light","samples":24,"min_ratio":5.851817390466204}
+S2 contrast observations {"screen":"Today","theme":"dark","samples":24,"min_ratio":6.339454211981419}
+S2 contrast observations {"screen":"Tasks","theme":"light","samples":46,"min_ratio":5.998700193644534}
+S2 contrast observations {"screen":"Tasks","theme":"dark","samples":46,"min_ratio":6.6576395847258585}
+S2 target observations {"samples":30,"min_width":44,"min_height":44}
+S2 contrast observations {"screen":"Detail","theme":"light","samples":19,"min_ratio":5.358466738754086}
+S2 contrast observations {"screen":"Detail","theme":"dark","samples":19,"min_ratio":6.530358026876049}
+S2 contrast observations {"screen":"Date sheet","theme":"light","samples":5,"min_ratio":5.851817390466204}
+S2 contrast observations {"screen":"Date sheet","theme":"dark","samples":5,"min_ratio":6.530358026876049}
+S2 contrast observations {"screen":"Quick sheet","theme":"light","samples":8,"min_ratio":5.998700193644534}
+S2 contrast observations {"screen":"Quick sheet","theme":"dark","samples":8,"min_ratio":6.6576395847258585}
+····
+  16 passed (40.1s)
+
+EXIT: 0

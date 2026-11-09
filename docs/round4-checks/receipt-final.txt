@@ -1,0 +1,6 @@
+test_sync_only_confirms_a_matching_durable_batch_receipt (test_retry.RetryTests.test_sync_only_confirms_a_matching_durable_batch_receipt) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.136s
+
+OK

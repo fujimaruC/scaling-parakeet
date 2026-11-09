@@ -1,0 +1,25 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_permanent_failure -v
+test_permanent_failure_is_terminal_and_refusals_exhaust (test_retry.RetryTests.test_permanent_failure_is_terminal_and_refusals_exhaust) ... FAIL
+
+======================================================================
+FAIL: test_permanent_failure_is_terminal_and_refusals_exhaust (test_retry.RetryTests.test_permanent_failure_is_terminal_and_refusals_exhaust)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 50, in test_permanent_failure_is_terminal_and_refusals_exhaust
+    self.assertEqual(delays,[30,60,120,240]);self.assertEqual(r['state'],'exhausted');self.now+=100000
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [30.0, 60.0, 120.0, 240.0, 480.0] != [30, 60, 120, 240]
+
+First list contains 1 additional elements.
+First extra element 4:
+480.0
+
+- [30.0, 60.0, 120.0, 240.0, 480.0]
++ [30, 60, 120, 240]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.085s
+
+FAILED (failures=1)
+
+EXIT: 1

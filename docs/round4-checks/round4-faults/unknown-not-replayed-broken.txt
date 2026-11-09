@@ -1,0 +1,21 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_ambiguous_extraction -v
+test_ambiguous_extraction_or_upload_never_automatically_replays (test_retry.RetryTests.test_ambiguous_extraction_or_upload_never_automatically_replays) ... FAIL
+
+======================================================================
+FAIL: test_ambiguous_extraction_or_upload_never_automatically_replays (test_retry.RetryTests.test_ambiguous_extraction_or_upload_never_automatically_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 59, in test_ambiguous_extraction_or_upload_never_automatically_replays
+    self.assertEqual(self.p.get(ident)['retry']['state'],'unknown');self.now+=100000;tick(self.p,self.source);self.assertEqual(self.extractor.call_count,1)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'waiting' != 'unknown'
+- waiting
++ unknown
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=1)
+
+EXIT: 1

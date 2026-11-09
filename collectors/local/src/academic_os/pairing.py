@@ -11,6 +11,7 @@ class Pairing:
  def invite(self,source):
   row=self.store.db.execute('SELECT generation FROM sources WHERE id=? AND enabled=1',(source,)).fetchone()
   if not row:raise Invalid('SOURCE_REVOKED')
+  self.store.allowed(source,row[0])
   token=secrets.token_urlsafe(32);digest=hashlib.sha256(token.encode()).hexdigest();expiry=int(time.time())+300
   with self.store.db:self.store.db.execute('INSERT INTO pairing_invites VALUES(?,?,?,?,NULL)',(digest,source,row[0],expiry))
   return {'token':token,'expires_at':expiry,'source_id':source,'source_generation':row[0]}

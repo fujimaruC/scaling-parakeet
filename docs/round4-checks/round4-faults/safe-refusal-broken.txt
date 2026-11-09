@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_retry.py -k test_transient_refusal -v
+test_transient_refusal_then_success_stops_at_projection_review (test_retry.RetryTests.test_transient_refusal_then_success_stops_at_projection_review) ... FAIL
+
+======================================================================
+FAIL: test_transient_refusal_then_success_stops_at_projection_review (test_retry.RetryTests.test_transient_refusal_then_success_stops_at_projection_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_retry.py", line 35, in test_transient_refusal_then_success_stops_at_projection_review
+    ident=self.failed_extract(self.refused());self.assertEqual(self.p.get(ident)['retry']['next_attempt_at'],1030)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None != 1030
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+FAILED (failures=1)
+
+EXIT: 1

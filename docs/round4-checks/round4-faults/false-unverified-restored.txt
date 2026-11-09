@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python scripts/check_gate_claims.py
+test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.066s
+
+OK
+PASS gate backup-tombstones-sqlite: locally_verified
+PASS gate production-d1-restore: unverified
+PASS: 2 gate claims match their scoped evidence.
+
+EXIT: 0

@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-09 · Asia/Makassar. CSV/adversarial-contract/traceability/resource builder slice, fresh-clone base af1879b. Synthetic/local evidence only; production, device and provider gates remain open. No milestone is complete.**
+**2026-11-09 · Asia/Makassar. 10,000-task measurement/durable jobs/multi-source operations/gate-drift slice, fresh-clone base b79092b. Synthetic/local evidence only; production, device and provider gates remain open. No milestone is complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -61,10 +61,10 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 1. Latest real owner observations are VERIFICATION-LOG §17–19: in-place native install/launch/reopen and a complete clean crash window; notification access granted, listener connected/recovered, local TLS pairing over USB loopback, negative filter replay with queue zero. Those are historical owner observations, not checks performed by this builder. No positive capture has ever occurred. Complete positive capture, full lifecycle/metadata/filter/queue/restart/retention/interrupted-ack matrix, actual private networking and power/background tests. Do not widen the selector or automate permission grants from this brief. Preserve the existing signing identity.
 2. Configure the owner's private network/receiver locally. No VPN/vendor/account choice or real peer pairing is claimed. Native task UI, localized resources, launcher icon and themes are implemented; signed update continuity, visual acceptance, real 200% layout, TalkBack and release packaging still require owner observations. Do not uninstall a signature-mismatched APK and lose a queue; rebuild with the existing local signing identity.
-3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
+3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. A separate source-bound Linux job process now schedules bounded safe retries and exposes terminal/unknown outcomes. Server-rendered multi-source operations show consent, pause, generations and observations. Real route/refusal behavior, long-running process operation and source-specific production credentials remain unverified; no shared credential or implicit source is introduced.
 4. Browser push subscription/revocation, empty-body VAPID dispatch and generic service-worker notification are implemented locally with synthetic tests. Real keys, browser/provider support, physical delivery, permission behavior, scheduler quotas and production D1 catch-up remain unverified. Durable inbox is independent and authoritative; provider acceptance is not device delivery. See RELEASE-GAPS.
 5. Native Today, Tasks, detail, Review, Calendar, Settings, full editor and quick/date/proposal panels now use the real shared Worker handlers. Completion/add/edit/delete, explicit review/Undo, immutable online-request recovery, encrypted observations/drafts, source status and export are implemented. Local API/policy/compiler/browser results are in NATIVE-CHECKS and VERIFICATION-LOG §13. Native behavior, large-ledger performance, accessibility and owner acceptance remain unverified. Keep the PWA until native parity and owner acceptance; a passing browser suite is not a native UI test.
-6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
+6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust and multi-source/manual-retain remain unverified release gates. Backup tombstone generations survive disposable SQLite restore (locally verified). Production D1 restore remains unverified. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
 7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, application request budgets, Worker CPU and D1 limits in the actual account. Durable request accounting and last-reported health exist locally; they are not billing/CPU/account-quota enforcement. All production bindings remain placeholders; private APIs deny access when unconfigured.
 8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
@@ -692,3 +692,48 @@ documented as one.
 Not verified: any real provider call, physical push delivery, private networking,
 positive notification capture, production D1 restore/CPU/row costs, native UI and
 accessibility acceptance, the pilot. No milestone is complete.
+
+
+## Ledger scale, bounded jobs and local operations — base b79092b, 2026-11-09
+
+Fresh clone main at b79092bc80906e6c3d13816ac241ff405ae6da43, branch
+build/ledger-jobs-operations; NEXT-PROMPT Part2 read before changes. W00/W30/W22/
+W42, F12/F21/F24/F25, T17/T18/T22/T28/T30/T32/T33. No dependency, cloud migration,
+Android source/signing/capture selector or approval change. No milestone complete.
+
+Measured 100/1,200/10,000-task ledgers with audit/evidence/proposal rows and full
+cursor traversals. List/search/month remain scan/sort queries but measured local
+page samples do not justify an index yet; no limit increase. The populated CSV
+crosses the existing8MiB review threshold (23,438,847 bytes); full export memory
+and production row/CPU costs remain risks. Resource JSON/doc contain samples,
+plans, method and all unmeasured fields. Wall time never stands in for CPU.
+
+Durable attempts precede requests. Safe refusals use bounded exponential backoff;
+ambiguous outcomes/process-death claims never auto-replay. Revoked/changed
+consent/generation and missing evidence block attempts; successful extraction
+stops at projection review. A demonstrated pre-existing defect accepted unrelated200 JSON as sync success; the adapter now requires a matching batch receipt. Source-bound sync credentials and immutable reviewed
+envelopes preserve cloud idempotency and separate final canonical approval.
+Existing consent lacking a generation must be reconfirmed, and legacy jobs stay
+manual-only. Do not silently reverse these safety choices.
+
+Multi-source local forms use explicit row identity/generation and current provider
+disclosure. Pause has its own local flag: using the existing enabled/revoked flag
+would tell the phone to wipe. It is deliberately not reused. Historical timestamps
+remain unavailable; status observations do not prove a live device or complete
+inventory. Each credential-bearing job/control process remains source-specific.
+No hidden source-wide or global consent action is added. A permanent source tombstone does not itself mean a purge is pending forever: local/cloud acknowledgment and known phone phases are recorded independently; inventory remains incomplete.
+
+Gate6 now distinguishes locally asserted SQLite tombstones from unverified
+production D1 restore. The small gate/test/claim table in the test strategy is
+checked by CI through a real named test run; it does not certify test semantics
+or any external observation. Actual acceptance output follows in VERIFICATION-LOG
+§24 and round4-checks. Device/account/provider/push/private network/production
+migration/restore/CPU/native acceptance and pilot remain unverified.
+
+
+Final local outputs for this slice: npm ci/check exit0 (58 Vitest), browser16,
+production-PWA1, Python98, inherited fault suites14/16 and new18 intended failures
+with matching restored passes and0 survivors. Gradle assembleDebug/lint/JVM/API28
+exits0 in4m40s;8 native-policy plus6 queue-privacy JVM cases; lint0 errors/2 inherited
+Transport warnings. Real device/account/provider and installed-service behavior
+remain unverified. No milestone is complete. Full output: VERIFICATION-LOG §24.

@@ -1,0 +1,18 @@
+COMMAND: .venv/bin/python scripts/check_round4_mutations.py --output-dir /tmp/aos-round4/round4-faults
+populated-evidence: intended failure; restored PASS
+safe-refusal: intended failure; restored PASS
+backoff: intended failure; restored PASS
+exhaustion: intended failure; restored PASS
+unknown-not-replayed: intended failure; restored PASS
+crash-claim: intended failure; restored PASS
+retry-consent: intended failure; restored PASS
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-next/scripts/check_round4_mutations.py", line 60, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/scratch/bbff8dae2870/academic-os-next/scripts/check_round4_mutations.py", line 51, in main
+    path=fixture/file;original=path.read_text();assert original.count(old)==1,(name,original.count(old))
+                                                       ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('sync-receipt', 2)
+
+EXIT: 1

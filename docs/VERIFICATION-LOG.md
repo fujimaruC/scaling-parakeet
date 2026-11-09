@@ -1680,3 +1680,167 @@ rather than claimed away.
 Not verified: any real provider call, physical push delivery, private networking,
 positive notification capture, production D1 restore/CPU/row costs, native UI or
 accessibility acceptance, and the pilot. No milestone is complete.
+
+
+## 24. Ledger scale, bounded jobs, multi-source operations and gate claims — 2026-11-09
+
+Fresh clone main HEAD `b79092bc80906e6c3d13816ac241ff405ae6da43`, recorded by
+`git rev-parse HEAD`; NEXT-PROMPT exists. Branch build/ledger-jobs-operations.
+W00/W30/W22/W42; F12/F21/F24/F25; T17/T18/T22/T28/T30/T32/T33. No dependency,
+cloud migration, Worker/PWA route, Android source/signing, capture selector,
+approval or Origin change. No push, deployment, paid provision or device operation.
+
+### Decisions and defects
+
+1. Measure before an index. Populated100/1,200/10,000-task fixtures include an
+   audit event, source item, task evidence, pending candidate and candidate
+   evidence per task. Captured real handler plans/warmed full-response samples
+   and full list/search/month traversal preserve counts without duplicates.
+   Keep indexes: local read samples remain below the existing1s review ceiling;
+   scan/sort and production row/CPU costs remain unresolved. FTS/materialized
+   keys would add maintenance without a measured local benefit yet. Full CSV
+   exceeds the8MiB review proposal; no silent truncation or limit increase.
+2. Use a separate source-bound job loop and standard-library process lock, not
+   a request-handler thread. Persist claims/attempts before requests, back off
+   definite refusals/pre-connection failures, cap extraction at2 and sync at5.
+   Unknown outcomes and interrupted claims do not auto-replay. Each successful
+   extraction still waits for projection review; canonical approval is separate.
+   Legacy unbound consent requires reconfirmation; legacy jobs stay manual-only.
+3. Existing defect demonstrated: unrelated200 JSON could be accepted as a sync
+   success without a matching batch receipt. The new regression failed with
+   `AssertionError: Invalid not raised` before the fix. Missing/mismatched receipts
+   now remain unknown; only the matching immutable batch receipt confirms sync.
+   Real provider/account behavior is still unverified.
+4. Use server-rendered per-source forms with generation/disclosure checks,
+   independent consent/revoke, observed timestamps and paged terminal jobs. A
+   separate local pause flag protects phone data: reusing enabled=0 would tell
+   the phone to wipe. Permanent source revocation is distinct from pending
+   cleanup; neither Linux-only nor phone-only acknowledgment supplies the other.
+   Known inventory remains explicitly incomplete; cloud status is an observation.
+5. Correct gate6: SQLite tombstone restoration is locally asserted, production D1
+   restoration remains unverified. A small explicit gate/test/claim table runs
+   the named assertion in CI. Missing/failing tests and contradictory claims fail;
+   this is not semantic certification of future test edits or external behavior.
+
+### Actual outputs
+
+Copied output lines below omit terminal colour controls only. Full command output,
+all fault baseline/broken/restored logs and development failures are retained in
+[round4-checks](round4-checks/README.md). Initial receipt-edit/harness mistakes were
+corrected and final runs supersede them; no failed development run is counted as a
+killed fault. The final Python run follows all local receipt/purge changes.
+
+```text
+npm ci
+added 170 packages in 14s
+
+npm run check
+ Test Files  9 passed (9)
+      Tests  58 passed (58)
+--dry-run: exiting now.
+EXIT: 0
+
+npm run test:e2e
+  16 passed (40.1s)
+EXIT: 0
+
+npm run test:pwa
+  1 passed (4.6s)
+EXIT: 0
+
+.venv/bin/python -m unittest discover -s collectors/local/tests -v
+Ran 98 tests in 3.214s
+OK
+EXIT: 0
+
+.venv/bin/python scripts/check_contract_mutations.py --output-dir /tmp/aos-round4/contract-faults
+PASS: 14 intended failures; 14 restored passes; 0 survivors; working sources untouched.
+EXIT: 0
+
+.venv/bin/python scripts/check_release_mutations.py --output-dir /tmp/aos-round4/release-faults
+PASS: 16 intended failures; 16 restored passes; 0 survivors; working sources untouched.
+EXIT: 0
+
+.venv/bin/python scripts/check_round4_mutations.py --output-dir /tmp/aos-round4/round4-faults-shipped
+PASS: 18 intended failures; 18 restored passes; 0 survivors; working sources untouched.
+EXIT: 0
+
+node --import tsx scripts/measure_resources.ts /tmp/aos-round4/resources-shipped.json
+MEASURED: 14 public assets; 24 local route profiles. CPU/account/device fields remain null.
+EXIT: 0
+
+cd apps/android-companion
+env ANDROID_HOME=/tmp/aos4-sdk ./gradlew assembleDebug lint testDebugUnitTest --no-daemon -Dorg.gradle.java.home=/tmp/aos4-jdk17
+Native policy cases: 8; no Android runtime, device or account used.
+Queue privacy policy: 6 tests passed (JVM only; Android Keystore/SQLite/device unverified)
+BUILD SUCCESSFUL in 4m 40s
+53 actionable tasks: 53 executed
+EXIT: 0
+0 errors, 2 warnings
+```
+
+The98 Python cases comprise inherited80 plus10 retry and8 operations cases. Vitest
+and browser counts stay58 and16; production-PWA1 is separate. JVM8+6 are policy
+checks, not Android runtime tests. The three fault runners remain independently
+reproducible: inherited14/16 and new18, each with its own declared list and all
+restored passes. New faults use private fixtures; working sources are unchanged.
+The population fault deliberately uses100 rows for cheap setup while the required
+measurement always runs all three sizes and its10,000-task coverage assertions.
+No account/device results are inferred from any passing suite.
+
+### Environment and setup
+
+Node24.22.1, npm11.9.0, Python3.12.14, OpenJDK/compiler17.0.20; Gradle8.11.1,
+AGP8.9.2/Kotlin2.1.21. SDK28 rev6, SDK35 rev2, build-tools35.0.0. No new project
+dependency or lockfile edit. Installed existing npm/Python lockfiles and editable
+collector with `pip install --no-deps -e collectors/local`. Installed pinned
+Chromium using `npx playwright install chromium --only-shell`.
+
+This runtime lacked javac and Android SDK. Downloaded official Google commandline
+tools11076708 and used sdkmanager with `--sdk_root=/tmp/aos4-sdk
+'platforms;android-28' 'platforms;android-35' 'build-tools;35.0.0'`, accepting the
+SDK licence locally. Downloaded matching Ubuntu snapshot
+`openjdk-17-jdk-headless_17.0.20+8-1~24.04_amd64.deb`, extracted with dpkg-deb and
+overlaid compiler tools on a private runtime copy at `/tmp/aos4-jdk17`.
+`javac -version` reports17.0.20. Gradle uses the explicit java.home property and
+normal environment proxy; JAVA_HOME alone would not select this wrapper's Java.
+Its SDK setup also downloaded platform-tools; adb was never invoked. Native lint
+has0 errors and only the two inherited Transport warnings. No workspace debug APK
+or signing key is shipped; owner signing identity/configuration is untouched.
+
+### Unverified / BLOCKED external observations
+
+No owner device, account or provider is available here. BLOCKED: positive capture,
+full capture/retention/interruption/private-network matrix, real provider/refusal/
+route policy, physical push, production Access/enrollment/expiry/revocation,
+production D1 restore/row/CPU/account costs, native UI/TalkBack/200% acceptance and
+the pilot. The job restart/claim tests are synthetic durable-state tests, not a
+power-cut or installed-service observation. Real continuous job operation remains
+unverified. Historical owner observations in §17–23 are unchanged, not this
+builder's results. No milestone is complete.
+
+
+Final documentation checks after the complete record was written:
+
+```text
+.venv/bin/python scripts/validate_planning.py
+PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 152 local links; 30 features; 34 test IDs.
+This validates planning artifacts only. No application/device/account tests ran.
+
+.venv/bin/python scripts/check_gate_claims.py
+test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.068s
+
+OK
+PASS gate backup-tombstones-sqlite: locally_verified
+PASS gate production-d1-restore: unverified
+PASS: 2 gate claims match their scoped evidence.
+
+.venv/bin/python scripts/check_placeholders.py
+PASS: no common private-key/provider-token formats found in project files; configuration examples remain placeholders.
+
+git diff --check
+# no output, exit0
+```

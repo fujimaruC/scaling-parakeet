@@ -1,0 +1,38 @@
+$ node --version
+v24.22.1
+$ npm --version
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+11.9.0
+$ .venv/bin/python --version
+Python 3.12.14
+$ /tmp/aos4-jdk17/bin/javac -version
+javac 17.0.20
+
+/tmp/aos4-sdk/platforms/android-28/source.properties
+Pkg.Desc=Android SDK Platform 9
+Pkg.UserSrc=false
+Platform.Version=9
+Platform.CodeName=
+Pkg.Revision=6
+AndroidVersion.ApiLevel=28
+Layoutlib.Api=15
+Layoutlib.Revision=1
+Platform.MinToolsRev=22
+
+/tmp/aos4-sdk/platforms/android-35/source.properties
+Pkg.Desc=Android SDK Platform 15
+Pkg.UserSrc=false
+Platform.Version=15
+Platform.CodeName=
+Pkg.Revision=2
+AndroidVersion.ApiLevel=35
+AndroidVersion.ExtensionLevel=13
+AndroidVersion.IsBaseSdk=true
+Layoutlib.Api=15
+Layoutlib.Revision=1
+Platform.MinToolsRev=22
+
+/tmp/aos4-sdk/build-tools/35.0.0/source.properties
+Pkg.UserSrc=false
+Pkg.Revision=35.0.0
+#Pkg.Revision=35.0.0 rc4

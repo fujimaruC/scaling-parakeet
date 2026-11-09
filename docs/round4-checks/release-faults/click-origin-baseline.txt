@@ -1,0 +1,11 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/unit/push-worker.test.ts -t notification click cannot
+
+ RUN  v3.2.7 /tmp/aos-release-faults-lre02l9s
+
+ ✓ tests/unit/push-worker.test.ts (2 tests | 1 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 1 skipped (2)
+   Start at  16:45:13
+   Duration  209ms (transform 31ms, setup 0ms, collect 26ms, tests 3ms, environment 0ms, prepare 57ms)
+

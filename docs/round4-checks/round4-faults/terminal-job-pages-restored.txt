@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_terminal_jobs -v
+test_terminal_jobs_remain_navigable_after_first_hundred (test_operations.OperationsTests.test_terminal_jobs_remain_navigable_after_first_hundred) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.178s
+
+OK
+
+EXIT: 0

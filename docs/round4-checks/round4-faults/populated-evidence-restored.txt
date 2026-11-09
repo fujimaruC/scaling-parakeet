@@ -1,0 +1,4 @@
+COMMAND: node --import tsx scripts/measure_resources.ts /tmp/aos-round4/round4-faults-shipped/populated-evidence-restored.json
+MEASURED: 14 public assets; 8 local route profiles. CPU/account/device fields remain null.
+
+EXIT: 0

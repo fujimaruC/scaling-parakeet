@@ -1,0 +1,18 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_stale_generation -v
+test_stale_generation_is_visible_and_rejected_without_consent (test_operations.OperationsTests.test_stale_generation_is_visible_and_rejected_without_consent) ... FAIL
+
+======================================================================
+FAIL: test_stale_generation_is_visible_and_rejected_without_consent (test_operations.OperationsTests.test_stale_generation_is_visible_and_rejected_without_consent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-round4-faults-msjc78bg/collectors/local/tests/test_operations.py", line 34, in test_stale_generation_is_visible_and_rejected_without_consent
+    with self.assertRaisesRegex(Invalid,'SOURCE_GENERATION_CHANGED'):action(self.p,self.value(self.a,'revoke'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Invalid not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (failures=1)
+
+EXIT: 1

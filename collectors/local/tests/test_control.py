@@ -19,7 +19,7 @@ class ControlTests(unittest.TestCase):
    with patch('academic_os.control.source_status',return_value={'purge_required':True,'generation':2}),patch('academic_os.control.collector_request',side_effect=OSError):
     with self.assertRaises(OSError):reconcile(store,env)
    self.assertEqual(store.db.execute('SELECT count(*) FROM device_action_observations').fetchone()[0],2)
-   with patch('academic_os.control.source_status',return_value={'purge_required':True,'generation':2}),patch('academic_os.control.collector_request') as relay,patch('academic_os.control.purge_ack'):
+   with patch('academic_os.control.source_status',return_value={'purge_required':True,'generation':2}),patch('academic_os.control.collector_request') as relay,patch('academic_os.control.purge_ack',return_value={'acknowledged':True}):
     reconcile(store,env);reconcile(store,env)
     self.assertEqual(store.db.execute('SELECT generation FROM sources').fetchone()[0],2)
     sent=relay.call_args.args[-1];self.assertEqual({o['phase'] for o in sent['observations']},{'delivered','applied'})

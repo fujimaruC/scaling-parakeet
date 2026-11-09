@@ -37,7 +37,7 @@ export ACADEMIC_OS_LOCAL_TOKEN="$(.venv/bin/python -c 'import secrets; print(sec
 .venv/bin/academic-os-local --data-dir /absolute/private/directory/outside/repo
 ```
 
-Use the locally generated token at `http://127.0.0.1:8765`. Enroll an explicitly selected source UUID, choose a synthetic text export, and inspect locally decrypted evidence. Keep the data directory outside cloud-sync directories. The UI binds loopback, enforces Host/Origin, uses an HttpOnly SameSite session and does not log raw requests. Local file selection is followed by explicit confirmation. The same UI now connects selected evidence → redacted preview → named provider/route consent → extraction → structured projection review → durable outbound job → cloud proposal. Preview redaction is a heuristic: review the selected material before consenting. Extraction never approves a task. The cloud review inbox requires another explicit owner decision. Jobs are encrypted locally and retries reuse the exact reviewed envelope. Retry is user-triggered; a background Linux retry daemon is not implemented.
+Use the locally generated token at `http://127.0.0.1:8765`. Enroll an explicitly selected source UUID, choose a synthetic text export, and inspect locally decrypted evidence. Keep the data directory outside cloud-sync directories. The UI binds loopback, enforces Host/Origin, uses an HttpOnly SameSite session and does not log raw requests. Local file selection is followed by explicit confirmation. The same UI now connects selected evidence → redacted preview → named provider/route consent → extraction → structured projection review → durable outbound job → cloud proposal. Preview redaction is a heuristic: review the selected material before consenting. Extraction never approves a task. The cloud review inbox requires another explicit owner decision. Jobs are encrypted locally and retries reuse the exact reviewed envelope. Automatic retries run in the separate source-bound job process documented below. Unknown outcomes require explicit recovery; projection review is never automatic. Open `/operations` after login for all-source consent, pause and job state.
 
 The `server.py --receiver` mode runs separately against the same data directory and requires a private bind address plus TLS certificate/key. The companion supports five-minute one-device invitations, exact certificate pinning with hostname verification, source-scoped HMAC batches, immutable encrypted retries, receipt-confirmed cleanup and revoked-source wipe acknowledgment. Synthetic HTTPS transport tests pass; the actual Android 9/private-overlay connection is still unverified. See the setup sequence below.
 
@@ -75,7 +75,7 @@ Do not enable a real 9Router provider route before recording provider/route/sour
 
 1. Create a WhatsApp source in PWA Settings; use a safe alias and copy its source UUID/generation. Enroll that same source locally. Source-scoped collector key ID/secret are configured only on Linux when production sync is available.
 2. Leave AI variables unconfigured for import, preview and local evidence browsing. For extraction, set `AI_BASE_URL`, `AI_MODEL`, `AI_PROVIDER_ID`, `AI_POLICY_VERSION` and `AI_API_KEY` locally. Inspect 9Router's actual upstream route; a loopback URL does not mean local inference. Changing provider/route/model/policy invalidates prior consent.
-3. Run the loopback UI above. Select only intended evidence, inspect the redacted preview, approve the disclosed source/provider policy, then extract. Inspect the structured projection before queuing it. Configure `ACADEMIC_OS_API_URL`, `COLLECTOR_KEY_ID` and `COLLECTOR_HMAC_SECRET` locally to send it. Errors display sanitized codes and retain retry state.
+3. Run the loopback UI above. Select only intended evidence, inspect the redacted preview, approve the disclosed source/provider policy, then extract. Inspect the structured projection before queuing it. Configure `ACADEMIC_OS_API_URL`, `COLLECTOR_SOURCE_ID`, `COLLECTOR_KEY_ID` and `COLLECTOR_HMAC_SECRET` locally to send it. One process credential can send only the matching source; never share a collector credential across sources. Errors display sanitized codes and retain retry state.
 4. For the phone, establish your chosen private overlay/network first. No VPN vendor account is configured by this repository. Use a receiver certificate whose subject alternative name matches the private hostname/IP; keep its private key only on Linux. Start the receiver separately:
 
 ```bash
@@ -187,3 +187,70 @@ web/Worker bundles separately from source. They retain UNCONFIGURED bindings;
 production auth/deployment is an owner-local follow-up. Apply all migrations,
 including 0006, in a disposable environment before verification. No real data or
 credentials belong in that environment. Follow the handoff before real use.
+
+
+## Bounded durable jobs and multi-source operations
+
+After login, open **Manage all sources and durable job states**. Every row names
+its source UUID and displayed generation. Consent is a deliberate checkbox plus
+submit against the disclosed route/model/provider/policy; revoke affects only that
+row. Generation changes warn and stale forms fail. Existing consent records without
+a generation are stale and require reconfirmation. Existing import/sync times are
+unavailable until an observation is recorded, never backfilled with today's time.
+Pause is local and non-destructive. It does not send phone revocation or erase a
+queue; the phone can keep collecting until its own limits. Resume cannot undo a
+purge or reconcile a mismatched cloud generation. Manual export remains available
+for an enabled explicitly enrolled source.
+
+Run one job process per source with that source's existing credential configured
+locally. It shares the private data directory with UI/receiver and is **separate**
+from `academic_os.control --watch`:
+
+```sh
+COLLECTOR_SOURCE_ID=SOURCE_UUID .venv/bin/python -m academic_os.jobs --data-dir /absolute/private/linux-directory --watch
+```
+
+Install the existing collector editable package as above first. The command polls
+every five seconds, processes at most one due job per pass and has no worker
+thread in an HTTP handler. A process lock serializes requests across UI/job runners;
+control polling remains independent. It is not installed as an OS service here.
+Laptop off means no processing. Persisted wall-clock due times survive restart;
+a backward clock can delay retries, and forward clock movement can make a due
+attempt eligible sooner. Neither changes the attempt cap or claims success.
+
+Extraction has at most two total attempts. Sync has at most five. Backoff is
+30 seconds doubled per attempt, capped at 900 seconds. Only HTTP429 refusal or
+connection-refused/DNS failures before connection can automatically replay an
+extraction/upload; a failed read-only source preflight can retry. HTTP4xx other
+than429 and validation/consent/generation failures are terminal. HTTP5xx, timeout,
+connection reset or death after a durable attempt claim are **unknown**, never
+silently replayed. A successful durable local result can close its attempt after
+restart. No raw response/error text is stored in the attempt journal.
+
+`/operations` shows ready/waiting/running/complete/failed/exhausted/unknown states,
+attempt counts, next epoch time and fixed-code attempt history. Projection review
+still requires the owner; only a reviewed immutable envelope becomes eligible for
+automatic sync. Canonical task approval remains a separate owner action in the app.
+An unknown upload (including a missing/mismatched batch receipt) may be manually retried with the same envelope/idempotency key;
+an unknown extraction requires a new deliberate selection/run and can generate
+another proposal, never an automatically accepted task. Historical jobs without
+scheduling metadata stay manual-only; historical extracting jobs are not replayed.
+No request can bypass caps by clicking repeatedly. Terminal jobs remain visible.
+
+The current UI process has one configured provider and one source-scoped cloud
+credential. It can manage consent/status for all sources; syncing a different
+source needs its separately configured job process, never a shared collector key.
+Actual provider/route behavior, installed service operation and production
+credentials remain unverified. Local synthetic acceptance cannot close these gates.
+
+```sh
+.venv/bin/python scripts/check_gate_claims.py
+.venv/bin/python scripts/check_round4_mutations.py --output-dir /absolute/outside/repo/faults
+```
+
+A source remains permanently revoked after purge. The operations screen separates
+that fact from pending cleanup: Linux/cloud acknowledgment must be explicitly
+observed and each known revoked device must report application. Phone-only
+application cannot stand in for Linux acknowledgment. `confirmed_known_inventory`
+never asserts a complete device inventory. Cloud source status alone cannot
+supply these confirmations.

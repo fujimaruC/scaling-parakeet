@@ -1,0 +1,36 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t two sources retain disagreeing
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-i92ozlmt
+
+ ❯ tests/integration/review-boundary.test.ts (3 tests | 1 failed | 2 skipped) 1646ms
+   × two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation 927ms
+     → expected '2035-01-05' to be '2035-01-20' // Object.is equality
+   ↓ AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review
+   ↓ reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/review-boundary.test.ts > two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation
+AssertionError: expected '2035-01-05' to be '2035-01-20' // Object.is equality
+
+Expected: "2035-01-20"
+Received: "2035-01-05"
+
+ ❯ tests/integration/review-boundary.test.ts:189:34
+    187|   expect(chosen.task_id).toBe(task.id);
+    188|   const current = await data(await call('/tasks/' + task.id));
+    189|   expect(current.due.local_date).toBe('2035-01-20');
+       |                                  ^
+    190|   expect(current.due_revision).toBe(2);
+    191|   const intents = await db
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  16:42:23
+   Duration  2.37s (transform 164ms, setup 0ms, collect 526ms, tests 1.65s, environment 0ms, prepare 58ms)
+
+
+EXIT: 1

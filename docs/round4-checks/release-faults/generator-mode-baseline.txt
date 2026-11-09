@@ -1,0 +1,11 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/unit/vapid-generator.test.ts -t VAPID generator writes
+
+ RUN  v3.2.7 /tmp/aos-release-faults-lre02l9s
+
+ ✓ tests/unit/vapid-generator.test.ts (2 tests | 1 skipped) 120ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 1 skipped (2)
+   Start at  16:45:09
+   Duration  342ms (transform 33ms, setup 0ms, collect 32ms, tests 120ms, environment 0ms, prepare 58ms)
+

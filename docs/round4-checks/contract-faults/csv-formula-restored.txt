@@ -1,0 +1,13 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/export-contract.test.ts -t CSV escapes
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-i92ozlmt
+
+ ✓ tests/integration/export-contract.test.ts (3 tests | 2 skipped) 688ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  16:41:49
+   Duration  1.42s (transform 156ms, setup 0ms, collect 535ms, tests 688ms, environment 0ms, prepare 56ms)
+
+
+EXIT: 0

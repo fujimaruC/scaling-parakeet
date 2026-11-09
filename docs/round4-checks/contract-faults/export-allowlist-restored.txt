@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_restore_contract.py -k test_all_eleven_tables_restore -v
+test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+OK
+
+EXIT: 0

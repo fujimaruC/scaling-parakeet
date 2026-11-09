@@ -1,0 +1,46 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t push is opt in
+
+ RUN  v3.2.7 /tmp/aos-release-faults-lre02l9s
+
+ ❯ tests/integration/release-gaps.test.ts (12 tests | 1 failed | 11 skipped) 684ms
+   ↓ push subscription lifecycle sends an empty body with verifiable VAPID and never changes the durable inbox
+   ↓ expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe
+   ↓ ambiguous push failures remain unknown and are not replayed; inbox count and contents survive failure
+   × push is opt in, rejects arbitrary outbound URLs, missing/mismatched keys and has a four-install cap 37ms
+     → expected true to be false // Object.is equality
+   ↓ browser push lifecycle remains authenticated and same-origin; device namespace cannot use it
+   ↓ persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation
+   ↓ health never invents reports, labels stale/future clocks separately, and exposes durable counts instead of billing
+   ↓ a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions
+   ↓ global history reaches old events with opaque descending cursors, even when new rows arrive between pages
+   ↓ task cursors are bound to filters and reject reuse that would silently omit matches
+   ↓ health daily count remains visible beyond bounded detail and the global daily cap refuses
+   ↓ cron health reports actual local completion or failure and never declares a misconfigured push healthy
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/release-gaps.test.ts > push is opt in, rejects arbitrary outbound URLs, missing/mismatched keys and has a four-install cap
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/integration/release-gaps.test.ts:178:54
+    176|     }),
+    177|   ).toBeNull();
+    178|   expect(validEndpoint('https://127.0.0.1/private')).toBe(false);
+       |                                                      ^
+    179|   expect(validEndpoint('https://fcm.googleapis.com@evil.test/push')).t…
+    180|     false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  16:43:03
+   Duration  1.43s (transform 154ms, setup 0ms, collect 548ms, tests 684ms, environment 0ms, prepare 59ms)
+

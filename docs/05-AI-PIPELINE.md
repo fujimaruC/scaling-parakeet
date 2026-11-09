@@ -30,7 +30,7 @@ Identify actionable academic and organizational obligations, meetings, exams, an
 
 Root `schemas/ai-extraction.schema.json` defines local extraction output. `schemas/sync-envelope.schema.json` defines strict cloud projection. Both use common task-field definitions but local evidence is referenced, not copied. `needs_review` is always true. Confidence uses low/medium/high/unknown descriptive labels and never controls auto-acceptance.
 
-Candidate identity is persisted locally, not trusted from a model-generated arbitrary ID. Schema-valid output still needs semantic checks; reject unknown evidence or unsupported target task links. Cloud repeat import must not reset owner review. Cache by evidence set + prompt/schema/provider version; reanalysis creates a revision, not duplicate tasks. Unknown fields or invalid output lead to bounded corrective retry then manual review, not indefinite calls.
+Candidate identity is persisted locally, not trusted from a model-generated arbitrary ID. Schema-valid output still needs semantic checks; reject unknown evidence or unsupported target task links. Cloud repeat import must not reset owner review. Cache by evidence set + prompt/schema/provider version; reanalysis creates a revision, not duplicate tasks. Unknown fields or invalid output are terminal for that job and require manual review. Automatic extraction retries only definite refusals/pre-connection failures, never an ambiguous provider outcome; it does not issue corrective prompts. Durable attempts, caps and separate source-bound process are documented in 18-DEVELOPMENT.
 
 ## Non-task extraction
 

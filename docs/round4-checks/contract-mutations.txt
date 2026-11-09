@@ -1,0 +1,18 @@
+COMMAND: .venv/bin/python scripts/check_contract_mutations.py --output-dir /tmp/aos-round4/contract-faults
+csv-formula: intended assertion failure; restored PASS
+csv-quotes: intended assertion failure; restored PASS
+client-format: intended assertion failure; restored PASS
+csv-format: intended assertion failure; restored PASS
+export-allowlist: intended assertion failure; restored PASS
+secret-redaction: intended assertion failure; restored PASS
+adapter-consent: intended assertion failure; restored PASS
+output-schema: intended assertion failure; restored PASS
+evidence-subset: intended assertion failure; restored PASS
+forced-review: intended assertion failure; restored PASS
+no-tools: intended assertion failure; restored PASS
+owner-choice: intended assertion failure; restored PASS
+review-not-accept: intended assertion failure; restored PASS
+no-canonical-on-sync: intended assertion failure; restored PASS
+PASS: 14 intended failures; 14 restored passes; 0 survivors; working sources untouched.
+
+EXIT: 0

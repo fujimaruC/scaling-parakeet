@@ -1,6 +1,6 @@
 import hashlib, hmac, json, os, re, sqlite3, uuid
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from cryptography.fernet import Fernet
@@ -45,12 +45,29 @@ class Store:
         CREATE TABLE IF NOT EXISTS receipts(device_id TEXT NOT NULL,batch_id TEXT NOT NULL,digest TEXT NOT NULL,count INTEGER NOT NULL,PRIMARY KEY(device_id,batch_id));
         CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,secret BLOB NOT NULL,source_id TEXT NOT NULL,generation INTEGER NOT NULL,revoked INTEGER NOT NULL DEFAULT 0);
         CREATE TABLE IF NOT EXISTS nonces(device_id TEXT NOT NULL,nonce TEXT NOT NULL,stamp INTEGER NOT NULL,PRIMARY KEY(device_id,nonce));
+        CREATE TABLE IF NOT EXISTS source_operations(source_id TEXT PRIMARY KEY REFERENCES sources(id),first_generation INTEGER NOT NULL,cloud_generation INTEGER,cloud_paused INTEGER,cloud_purge INTEGER,status_observed_at TEXT,last_import_at TEXT,last_sync_at TEXT,purged INTEGER NOT NULL DEFAULT 0,local_paused INTEGER NOT NULL DEFAULT 0,cloud_revoked INTEGER,purge_ack_generation INTEGER,purge_ack_at TEXT);
+        INSERT OR IGNORE INTO source_operations(source_id,first_generation,purged) SELECT id,generation,CASE WHEN enabled=0 THEN 1 ELSE 0 END FROM sources;
         """);self.db.commit()
     def enroll(self,source_id,generation=1):
         uuid.UUID(source_id)
-        with self.db:self.db.execute('INSERT INTO sources VALUES(?,?,1)',(source_id,generation))
+        with self.db:
+            self.db.execute('INSERT INTO sources VALUES(?,?,1)',(source_id,generation))
+            self.db.execute('INSERT INTO source_operations(source_id,first_generation) VALUES(?,?)',(source_id,generation))
     def allowed(self,source_id,generation):
-        if not self.db.execute('SELECT 1 FROM sources WHERE id=? AND generation=? AND enabled=1',(source_id,generation)).fetchone():raise Invalid('SOURCE_REVOKED')
+        if not self.db.execute('SELECT 1 FROM sources s JOIN source_operations o ON o.source_id=s.id WHERE s.id=? AND s.generation=? AND s.enabled=1 AND o.local_paused=0 AND COALESCE(o.cloud_purge,0)=0 AND (o.cloud_generation IS NULL OR o.cloud_generation=s.generation) AND COALESCE(o.cloud_paused,0)=0 AND COALESCE(o.cloud_revoked,0)=0',(source_id,generation)).fetchone():raise Invalid('SOURCE_REVOKED')
+    def observe_source(self,source,status):
+        generation=status.get('generation')
+        if not isinstance(generation,int) or isinstance(generation,bool) or generation<1:raise Invalid('INVALID_SOURCE_STATUS')
+        with self.db:
+            self.db.execute('UPDATE source_operations SET cloud_generation=?,cloud_paused=?,cloud_purge=?,cloud_revoked=?,status_observed_at=? WHERE source_id=?',(generation,int(bool(status.get('paused'))),int(bool(status.get('purge_required'))),int(bool(status.get('revoked'))),datetime.now(timezone.utc).isoformat(),source))
+            local=self.db.execute('SELECT generation FROM sources WHERE id=?',(source,)).fetchone()
+            if local and (generation!=local[0] or status.get('paused') or status.get('purge_required') or status.get('revoked')):
+                self.db.execute('UPDATE source_operations SET local_paused=1 WHERE source_id=?',(source,))
+    def mark_purge_ack(self,source,generation):
+        with self.db:
+            self.db.execute('UPDATE source_operations SET purge_ack_generation=?,purge_ack_at=? WHERE source_id=? AND purged=1 AND EXISTS(SELECT 1 FROM sources WHERE id=? AND generation=?)',(generation,datetime.now(timezone.utc).isoformat(),source,source,generation))
+    def mark_sync(self,source):
+        with self.db:self.db.execute('UPDATE source_operations SET last_sync_at=? WHERE source_id=?',(datetime.now(timezone.utc).isoformat(),source))
     def fingerprint(self,value):return hmac.new(self.key,json.dumps(value,sort_keys=True,ensure_ascii=False).encode(),hashlib.sha256).hexdigest()
     def insert(self,source_id,generation,fingerprint,payload):
         self.db.execute('INSERT OR IGNORE INTO evidence VALUES(?,?,?,?,?)',(str(uuid.uuid4()),source_id,generation,fingerprint,self.cipher.encrypt(json.dumps(payload,ensure_ascii=False).encode())))
@@ -60,6 +77,8 @@ class Store:
         records,warnings=parse_export(text);digest=self.fingerprint(text.replace('\r\n','\n'));occurrences=Counter()
         with self.db:
             if self.db.execute('UPDATE sources SET generation=generation WHERE id=? AND generation=? AND enabled=1',(source_id,generation)).rowcount!=1:raise Invalid('SOURCE_REVOKED')
+            self.db.execute('UPDATE source_operations SET last_import_at=? WHERE source_id=?',(datetime.now(timezone.utc).isoformat(),source_id))
+            self.allowed(source_id,generation)
             old=self.db.execute('SELECT id FROM imports WHERE source_id=? AND digest=?',(source_id,digest)).fetchone()
             if old:return {'import_id':old[0],'inserted':0,'warnings':warnings}
             before=self.db.execute('SELECT count(*) FROM evidence').fetchone()[0]
@@ -84,6 +103,7 @@ class Store:
         with self.db:
             live=self.db.execute('UPDATE sources SET generation=generation WHERE id=? AND generation=? AND enabled=1',(source,generation)).rowcount
             if live!=1:raise Invalid('SOURCE_REVOKED')
+            self.allowed(source,generation)
             old=self.db.execute('SELECT digest,count FROM receipts WHERE device_id=? AND batch_id=?',(device_id,batch['batch_id'])).fetchone()
             if old:
                 if old[0]!=digest:raise Invalid('IDEMPOTENCY_CONFLICT')
@@ -101,6 +121,7 @@ class Store:
     def purge(self,source):
         with self.db:
             self.db.execute('UPDATE sources SET enabled=0,generation=generation+1 WHERE id=?',(source,))
+            self.db.execute('UPDATE source_operations SET purged=1,purge_ack_generation=NULL,purge_ack_at=NULL WHERE source_id=?',(source,))
             self.db.execute('DELETE FROM evidence WHERE source_id=?',(source,));self.db.execute('DELETE FROM imports WHERE source_id=?',(source,));self.db.execute('UPDATE devices SET revoked=1 WHERE source_id=?',(source,))
             for table in ['processing_jobs','processing_consent']:
                 if self.db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",(table,)).fetchone():self.db.execute('DELETE FROM '+table+' WHERE source_id=?',(source,))

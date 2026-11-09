@@ -1,0 +1,38 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/node_modules/.bin/playwright test tests/e2e/export.spec.ts -g owner chooses CSV
+[WebServer] (node:1954) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:1967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+(node:2008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+F
+
+  1) tests/e2e/export.spec.ts:4:1 › owner chooses CSV and receives a safe download instead of the JSON envelope 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m"\"schema_version\",\"exported_at\",\"table\""[39m
+    Received string:    [31m"[object Object]"[39m
+
+      24 |   expect(file.suggestedFilename()).toBe('academic-os-export.csv');
+      25 |   const text = await readFile((await file.path())!, 'utf8');
+    > 26 |   expect(text).toContain('"schema_version","exported_at","table"');
+         |                ^
+      27 |   expect(text).toContain('"\'=cmd Synthetic CSV"');
+      28 |   expect(text).not.toContain('"meta":');
+      29 | });
+        at /tmp/aos-contract-faults-i92ozlmt/tests/e2e/export.spec.ts:26:16
+
+    Error Context: test-results/export-owner-chooses-CSV-a-14b05-nstead-of-the-JSON-envelope/error-context.md
+
+  1 failed
+    tests/e2e/export.spec.ts:4:1 › owner chooses CSV and receives a safe download instead of the JSON envelope 
+
+EXIT: 1

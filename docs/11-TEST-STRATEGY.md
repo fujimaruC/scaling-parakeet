@@ -65,7 +65,7 @@ its real-device/account observation or owner budget review is absent.
 
 | ID | Executable evidence and exact scenario | What it proves; remaining gap |
 |---|---|---|
-| T18 | [test_injection.py](../collectors/local/tests/test_injection.py): `test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review`, `test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval`, `test_evidence_subset_and_invalid_json_fail_before_projection`, `test_secret_shaped_source_values_never_reach_provider_json`, `test_provider_attempt_and_input_output_sizes_are_bounded`; [review-boundary.test.ts](../tests/integration/review-boundary.test.ts): `AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review` | Seven hostile source cases, rejected adversarial outputs, strict schema/known-evidence subset, known token-pattern redaction, one bounded provider attempt, no tool request/execution and no canonical write on sync. The HTTP provider is a local mock; model obedience and semantic grounding are unverified. Secrets outside the tested heuristic patterns can remain; owner preview/consent is still required. |
+| T18 | [test_injection.py](../collectors/local/tests/test_injection.py): `test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review`, `test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval`, `test_evidence_subset_and_invalid_json_fail_before_projection`, `test_secret_shaped_source_values_never_reach_provider_json`, `test_provider_attempt_and_input_output_sizes_are_bounded`; [review-boundary.test.ts](../tests/integration/review-boundary.test.ts): `AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review` | Seven hostile source cases, rejected adversarial outputs, strict schema/known-evidence subset, known token-pattern redaction, at most two durable extraction attempts for definite refusals only, no tool request/execution and no canonical write on sync. The HTTP provider is a local mock; model obedience and semantic grounding are unverified. Secrets outside the tested heuristic patterns can remain; owner preview/consent is still required. |
 | T19 | [ledger.test.ts](../tests/integration/ledger.test.ts): `signed ingestion remains proposal-only and explicit approval is idempotent`; [review-boundary.test.ts](../tests/integration/review-boundary.test.ts): `reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task`; [app.spec.ts](../tests/e2e/app.spec.ts): `correct a proposal before approval`; [native-owner.test.ts](../tests/integration/native-owner.test.ts): `proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables` | Real local Worker handlers preserve proposals until explicit owner acceptance, audit reject/clarify without creating tasks, apply owner edits, and replay reviews/Undo with versions. Native screen/owner usability and real account remain unverified. |
 | T20 | [review-boundary.test.ts](../tests/integration/review-boundary.test.ts): `two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation`; [ledger.test.ts](../tests/integration/ledger.test.ts): `deadline-change approval requires explicit current target and preserves history`; [test_injection.py](../collectors/local/tests/test_injection.py): `test_conflicting_deadlines_stay_two_review_proposals` | Synthetic formal-calendar and WhatsApp-export sources carry different deadlines for an organizational duty. Neither sync changes the task. Missing target/stale target version fails; owner chooses one, old intents cancel and new revision schedules; rejected/stale competing claim remains preserved. This does not verify real LMS authority or AI detection of a conflict in arbitrary language. |
 | T30 | [test_restore_contract.py](../collectors/local/tests/test_restore_contract.py): `test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials`; [test_core.py](../collectors/local/tests/test_core.py): `BackupTests.test_encrypted_disposable_restore_parity_and_no_dispatch`; [export-contract.test.ts](../tests/integration/export-contract.test.ts): `CSV and JSON export exactly the same eleven tables with per-table parity and stable columns` | Every canonical table is nonempty in the new restore fixture. Independent normalized SHA-256/count comparison preserves tombstones, while credentials, push endpoints and delivery intents remain absent; no old dispatch is restored. CSV matches JSON row counts but is a spreadsheet presentation, not a lossless restore format. Disposable SQLite/Miniflare are local models; production D1 restore is unverified. |
@@ -86,3 +86,35 @@ broken assertion and restored pass in private fixture copies. It must run withou
 another synthetic browser server on port4173. The inherited release mutation
 runner remains required and independent; never combine the two counts into a
 claim that device behavior was verified.
+
+
+## Gate claim checks
+
+This small table is executable. `scripts/check_gate_claims.py` runs the named
+local test before accepting a locally verified claim in the numbered remaining
+gate. Unverified external observations have no local test that can close them.
+This checks the declared mapping and result, not semantic correctness of future
+test edits. Reviewers must keep the assertion meaningful.
+
+<!-- gate-claims:start -->
+| Gate key | STATUS gate | Named test | Claim | Required STATUS sentence |
+|---|---:|---|---|---|
+| backup-tombstones-sqlite | 6 | test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials | locally_verified | Backup tombstone generations survive disposable SQLite restore (locally verified). |
+| production-d1-restore | 6 | none | unverified | Production D1 restore remains unverified. |
+<!-- gate-claims:end -->
+
+Run `.venv/bin/python scripts/check_gate_claims.py`; CI runs it after installing
+the existing Python lockfile. Failure/missing test or contradictory/missing claim
+fails closed. A passing SQLite test never closes the production restore gate.
+
+
+Round4 additions: `test_retry.py` exercises safe refusal→success, permanent/exhausted
+states, restart/backoff, unknown outcomes and interrupted claims, consent/generation,
+source credentials, locking and purge without resurrection (T17/T18/T32).
+`test_operations.py` covers independent consent/revocation, stale forms, local pause
+without phone revocation, unavailable timestamps, authenticated scoped forms and
+older terminal-job navigation (T28/T31/T32). The measurement now asserts populated
+10,000-task/evidence/audit/proposal counts and exact full list/search/month cursor
+coverage (T22/T33); it still cannot supply production D1 rows or CPU. See
+`check_round4_mutations.py` for broken/restored proofs, separate from the two
+inherited fault suites. Controls remain a separate process from AI jobs.

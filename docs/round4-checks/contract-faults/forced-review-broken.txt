@@ -1,0 +1,19 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_schema_rejects_no_evidence -v
+test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) ... 
+  test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) (variant=0) ... FAIL
+
+======================================================================
+FAIL: test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) (variant=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-contract-faults-i92ozlmt/collectors/local/tests/test_injection.py", line 53, in test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval
+    with self.assertRaises(ValidationError):self.call(messages,out)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+
+EXIT: 1

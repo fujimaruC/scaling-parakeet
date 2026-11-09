@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_operations.py -k test_stale_generation -v
+test_stale_generation_is_visible_and_rejected_without_consent (test_operations.OperationsTests.test_stale_generation_is_visible_and_rejected_without_consent) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+OK
+
+EXIT: 0

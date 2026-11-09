@@ -1,0 +1,6 @@
+COMMAND: npx prettier --check scripts/measure_resources.ts
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT: 0
