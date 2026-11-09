@@ -1,5 +1,8 @@
 /** Isolated synthetic harness, never bundled with the production Worker. */
 import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { seedBrowserScenario } from '../tests/fixtures/browser-seeds';
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 import { Miniflare } from 'miniflare';
@@ -77,6 +80,34 @@ const server = createServer(async (req, res) => {
   }
 
   if (
+    process.env.SYNTHETIC_FIXTURES === '1' &&
+    req.method === 'POST' &&
+    [
+      '/__synthetic/seed/partial-ledger',
+      '/__synthetic/seed/paged-history',
+    ].includes(req.url ?? '')
+  ) {
+    try {
+      const value = await seedBrowserScenario(DB, req.url!.split('/').pop()!);
+      res
+        .writeHead(200, { 'Content-Type': 'application/json' })
+        .end(JSON.stringify(value));
+    } catch {
+      res.writeHead(503).end();
+    }
+    return;
+  }
+  if (
+    process.env.SYNTHETIC_FIXTURES === '1' &&
+    req.url === '/__synthetic/interrupted.csv'
+  ) {
+    res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8' });
+    res.flushHeaders();
+    res.write('"schema_version","exported_at","table"\r\n');
+    setTimeout(() => res.destroy(), 150);
+    return;
+  }
+  if (
     !req.url?.startsWith('/api/') &&
     req.url?.split('?')[0] !== '/owner-devices'
   ) {
@@ -134,9 +165,12 @@ const server = createServer(async (req, res) => {
     });
     const response = await app.fetch(request, env);
     res.writeHead(response.status, Object.fromEntries(response.headers));
-    res.end(Buffer.from(await response.arrayBuffer()));
+    if (response.body)
+      await pipeline(Readable.fromWeb(response.body as any), res);
+    else res.end();
   } catch {
-    res.writeHead(500).end();
+    if (res.headersSent) res.destroy();
+    else res.writeHead(500).end();
   }
 });
 server.listen(4173, '127.0.0.1', () =>

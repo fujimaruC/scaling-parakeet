@@ -412,21 +412,12 @@ test('S2 keeps partial disclosure until existing bounded pages actually reach un
   page,
   request,
 }) => {
-  for (let i = 0; i < 101; i++) {
-    const r = await request.post('/api/v1/tasks', {
-      headers: { Origin: origin, 'Idempotency-Key': crypto.randomUUID() },
-      data: {
-        title: 'Synthetic ledger tail ' + i,
-        due: {
-          precision: 'date_only',
-          local_date: '2026-12-31',
-          local_datetime: null,
-          timezone: 'Asia/Makassar',
-        },
-      },
-    });
-    expect(r.ok()).toBe(true);
-  }
+  // Prior owner's measured sample:19.6s idle/31s under competing load.
+  // Fixed fixture replaces101 sequential POSTs. Re-measure this tree locally;
+  // recovery delivery intentionally ran no tests. Keep the original30s bound.
+  test.setTimeout(30000);
+  const seed = await request.post('/__synthetic/seed/partial-ledger');
+  expect(seed.ok()).toBe(true);
   await start(page, '/today');
   await expect(page.getByText(/Partial list —/)).toBeVisible();
   await expect(page.locator('.s2-unknown')).toBeVisible();
@@ -514,20 +505,12 @@ test('S2 history paging failure preserves known detail and retries a bounded pag
   page,
   request,
 }) => {
-  const created = await request.post('/api/v1/tasks', {
-    headers: { Origin: origin, 'Idempotency-Key': crypto.randomUUID() },
-    data: { title: 'Synthetic paged history' },
-  });
+  // One fixed audited fixture replaces35 sequential PATCHes. New timing is
+  // unverified; record it with scripts/report_browser_margins.ts on owner machine.
+  test.setTimeout(30000);
+  const created = await request.post('/__synthetic/seed/paged-history');
   expect(created.ok()).toBe(true);
-  let item = (await created.json()).data;
-  for (let i = 0; i < 35; i++) {
-    const r = await request.patch('/api/v1/tasks/' + item.id, {
-      headers: { Origin: origin, 'If-Match': String(item.version) },
-      data: { description: 'Synthetic revision ' + i },
-    });
-    expect(r.ok()).toBe(true);
-    item = (await r.json()).data;
-  }
+  const item = (await created.json()).task;
   await start(page, '/tasks/' + item.id);
   await expect(page.locator('.s2-timeline li')).toHaveCount(30);
   const pattern = new RegExp(

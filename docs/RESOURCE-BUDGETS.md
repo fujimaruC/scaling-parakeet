@@ -1,10 +1,31 @@
-# Resource budgets: observations and proposals
+# Resource budgets: historical observations and pending streaming profile
 
 Fresh clone base b79092bc80906e6c3d13816ac241ff405ae6da43, 2026-11-09.
 Application guardrails, **not billing/account quota enforcement**. No owner
 account, provider, deployment or device was used. No milestone is complete.
 
-## Decision after measurement
+## Recovery-delivery scope — 2026-11-10
+
+**The observations below belong to the base buffered implementation, not the
+reconstructed streaming code. No new benchmark was run by owner instruction.**
+RESOURCE-MEASUREMENTS.json retains the original historical samples and adds an
+explicit NOT_RUN streaming profile with null observations. Do not use the old
+bundle sizes/CSV timings/RSS as measurements of the new source.
+
+Configured CSV bounds:256 rows/page,8 pages/transaction,2,048 materialised rows,
+16KiB chunks. These are code settings, not observed peak memory. A small table
+starts with one page. OFFSET still scans; triggers add canonical-write work.
+The measurement script now consumes chunks without buffering a whole body and
+records SQL statements separately from binding calls, max page/batch rows,
+chunk bytes and first-chunk local wall time. Account CPU/D1 rows remain null.
+The8MiB output review threshold and512MiB controller threshold are not raised.
+JSON/browser final Blob whole-file memory remains an explicit risk.
+
+Re-run the existing reproduction command locally and replace the historical
+samples with newly observed output after review. Do not infer billing/account
+compatibility from local wall time. No paid service was provisioned.
+
+## Historical decision after measurement
 
 Keep the current indexes. Do not add FTS or a materialized sort key yet.
 The populated 10,000-task list/search/calendar samples below remain below the

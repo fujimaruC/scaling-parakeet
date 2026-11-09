@@ -91,7 +91,7 @@ def make_handler(store,token,origin,receiver=False):
         def do_POST(self):
             try:
                 if not receiver and (self.headers.get('Origin')!=origin or self.headers.get('Host')!=origin.split('://',1)[1]):raise Invalid('INVALID_ORIGIN')
-                if not receiver and self.path=='/operations/action':
+                if not receiver and self.path in ('/operations/action','/operations/job-action'):
                     if not self.authorized():self.reply(401,{'error':'AUTH_REQUIRED'});return
                     if self.headers.get('Transfer-Encoding'):raise Invalid('UNSUPPORTED_ENCODING')
                     length=int(self.headers.get('Content-Length','0'))
@@ -101,7 +101,8 @@ def make_handler(store,token,origin,receiver=False):
                     fields=parse_qs(raw.decode(),keep_blank_values=True,strict_parsing=True)
                     if any(len(v)!=1 for v in fields.values()):raise Invalid('INVALID_REQUEST')
                     try:
-                        operations.action(pipeline,{k:v[0] for k,v in fields.items()})
+                        handler=operations.job_action if self.path=='/operations/job-action' else operations.action
+                        handler(pipeline,{k:v[0] for k,v in fields.items()})
                         self.reply(303,'',{'Location':'/operations'})
                     except Invalid as error:self.reply(422,operations.page(pipeline,str(error)))
                     return

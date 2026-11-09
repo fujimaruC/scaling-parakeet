@@ -49,6 +49,9 @@ try {
       if (sql.trim()) await db.prepare(sql).run();
   type Query = { sql: string; bindings: unknown[] };
   let captured: Query[] = [];
+  let bindingCalls = 0,
+    maxExportRows = 0,
+    maxExportBatchRows = 0;
   const inners = new WeakMap<object, object>();
   const descriptions = new WeakMap<object, Query>();
   function wrap(statement: any, q: Query): any {
@@ -59,6 +62,7 @@ try {
             wrap(target.bind(...bindings), { sql: q.sql, bindings });
         if (['all', 'first', 'run', 'raw'].includes(String(key)))
           return (...args: any[]) => {
+            bindingCalls++;
             captured.push(q);
             return target[key](...args);
           };
@@ -72,10 +76,24 @@ try {
   const observed = {
     prepare: (sql: string) => wrap(db.prepare(sql), { sql, bindings: [] }),
     batch: async (statements: any[]) => {
+      bindingCalls++;
       captured.push(...statements.map((s) => descriptions.get(s)!));
-      return db.batch(
+      const result = await db.batch(
         statements.map((s) => (inners.get(s) ?? s) as D1PreparedStatement),
       );
+      let rows = 0;
+      statements.forEach((statement, i) => {
+        if (
+          /^SELECT \* FROM .* LIMIT \? OFFSET \?$/.test(
+            descriptions.get(statement)?.sql ?? '',
+          )
+        ) {
+          maxExportRows = Math.max(maxExportRows, result[i].results.length);
+          rows += result[i].results.length;
+        }
+      });
+      maxExportBatchRows = Math.max(maxExportBatchRows, rows);
+      return result;
     },
   } as D1Database;
   const env: Env = {
@@ -197,15 +215,31 @@ try {
       let queries: Query[] = [];
       let returnedRows: number | null = null;
       let hasNextPage: boolean | null = null;
+      let maxChunkBytes = 0;
+      let firstChunkMs: number | null = null;
       const repetitions = path.startsWith('/export') ? 1 : 6;
       for (let sample = 0; sample < repetitions; sample++) {
         captured = [];
+        bindingCalls = 0;
+        maxExportRows = 0;
+        maxExportBatchRows = 0;
         const start = performance.now();
         const response = await app.fetch(
           new Request('https://resource.synthetic/api/v1' + path),
           env,
         );
-        const body = await response.arrayBuffer();
+        let body: ArrayBuffer = new ArrayBuffer(0);
+        if (path.startsWith('/export')) {
+          bytes = 0;
+          const reader = response.body!.getReader();
+          while (true) {
+            const next = await reader.read();
+            if (next.done) break;
+            if (firstChunkMs === null) firstChunkMs = performance.now() - start;
+            bytes += next.value.byteLength;
+            maxChunkBytes = Math.max(maxChunkBytes, next.value.byteLength);
+          }
+        } else body = await response.arrayBuffer();
         const elapsed = performance.now() - start;
         if (response.status !== 200)
           throw Error(
@@ -227,7 +261,7 @@ try {
             );
           }
         }
-        bytes = body.byteLength;
+        if (!path.startsWith('/export')) bytes = body.byteLength;
         queries = captured;
         if (sample > 0 || repetitions === 1) times.push(elapsed);
       }
@@ -255,6 +289,17 @@ try {
         returned_rows: returnedRows,
         has_next_page: hasNextPage,
         prepared_statements_per_request: queries.length,
+        d1_binding_calls_per_request: bindingCalls,
+        export_stream: path.startsWith('/export')
+          ? {
+              max_page_rows: maxExportRows,
+              max_batch_rows: maxExportBatchRows,
+              max_chunk_bytes: maxChunkBytes,
+              first_chunk_wall_ms:
+                firstChunkMs === null ? null : Number(firstChunkMs.toFixed(3)),
+              consumer_buffers_full_body: false,
+            }
+          : null,
         queries: plans,
       });
     }

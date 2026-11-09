@@ -1924,3 +1924,115 @@ next real regression.
 Not verified: any real provider call, physical push delivery, private networking,
 positive notification capture, production D1 restore/CPU/row costs, native UI or
 accessibility acceptance, and the pilot. No milestone is complete.
+
+
+## 26. Reconstructed four-slice handoff — 2026-11-10
+
+Base `03a32ca7345252b51a537750536f3b93a45741f6`; branch
+`build/recovered-four-slices`. Workspace loss destroyed the prior uncommitted
+implementation and raw outputs. This source was reconstructed from the same fresh
+main base. It is **unverified**. Nothing said in the earlier chat is substituted
+for a test of the recovered tree. Sections1–25 remain historical base records.
+
+The owner's latest instruction overrides the test-running steps in NEXT-PROMPT:
+“Do not need to run test inside your workspaces ... ill do it myself.”
+No application check, test, build, benchmark or mutation runner was executed in
+this recovery session. No device, account, provider, push, network transport or
+deployment result is claimed. No milestone is complete.
+
+### Executed preparation, not application validation
+
+`git clone --branch main https://github.com/fujimaruC/scaling-parakeet.git academic-os-stream`
+
+`git rev-parse HEAD` actual output:
+
+```text
+03a32ca7345252b51a537750536f3b93a45741f6
+```
+
+`npm ci --ignore-scripts` actual output (dependency preparation only):
+
+```text
+added 170 packages in 12s
+```
+
+Prettier `--write` was applied only to changed TS/TSX/CSS files. Formatting is not
+a compile, lint, test or runtime result. No new dependency/lockfile change.
+
+### NOT RUN — owner performs these checks
+
+| Command / observation | Recovered-tree outcome |
+|---|---|
+| npm run check | NOT RUN |
+| npm run test:e2e, three consecutive runs | NOT RUN |
+| npm run test:pwa | NOT RUN |
+| .venv/bin/python scripts/validate_planning.py | NOT RUN |
+| .venv/bin/python scripts/check_gate_claims.py | NOT RUN |
+| Python unittest discovery | NOT RUN |
+| Inherited contract/release/round4 fault suites | NOT RUN |
+| New check_round5_mutations.py | NOT RUN |
+| scripts/measure_resources.ts | NOT RUN; all new observations null |
+| Gradle assembleDebug lint testDebugUnitTest / verifyApi28 | NOT RUN |
+| Real device/account/provider/production streaming | unverified |
+
+### Choices, rejected alternatives and caveats
+
+CSV: reject full buffering because it recreates the large-ledger memory problem.
+Use bounded transaction batches plus an epoch so a successful body cannot mix
+canonical generations. OFFSET preserves exact old ordering, including nullable
+legacy keys, but does not bound scanned rows. Each page is256 rows; max8 data
+pages/transaction means up to2,048 rows materialise, not256. Individual row bytes,
+actual heap/CPU/production limits remain unverified. There is no unlimited-size
+promise. JSON intentionally stays buffered for lossless encrypted restore.
+
+Epoch metadata avoids content digests and is outside the canonical allowlist.
+All33 INSERT/UPDATE/DELETE triggers must stay with their table. Apply migration0009
+before the new CSV route; missing metadata refuses. Do not drop metadata while
+its triggers remain. Schema version and canonical CSV columns/quoting remain2.0.
+
+An HTTP200 status cannot be retracted once sent. The producer errors its stream;
+the PWA awaits complete Blob consumption and offers no file on body failure.
+Fixed EXPORT_UNAVAILABLE/EXPORT_SNAPSHOT_CHANGED codes are internal after headers;
+a real HTTP consumer may receive only a generic failed-body error. The loopback
+interruption regression is written, NOT RUN. Real Cloudflare propagation needs
+owner verification. Direct clients must rename temporary output only on clean EOF.
+
+Reduce seed work instead of raising both30s bounds. Fixtures are two fixed named
+scenarios in a non-deployed loopback harness, not arbitrary SQL or production
+endpoints. Audit triggers still create history. Fresh timing is unavailable; the
+owner's prior19.6s/31s sample remains historical, not a new measurement.
+
+Accessibility uses Playwright's existing accessible-name matcher, avoiding both
+a dependency and a homemade naming algorithm. Disabled controls are named/sized
+but not focused. Clickable associated checkbox/radio labels are effective targets.
+A no-form screen reports label N/A; missing/duplicate coverage makes the reporter
+fail. Computed outlines do not prove perceived visibility, unclipped rendering or
+real screen-reader behavior. No PASS table was fabricated. Audit/mutation tools
+are shipped for the owner, including the deliberately unlabeled-button fault.
+
+Legacy sends use a durable one-shot journal, not automatic migration to scheduling.
+Claim is committed before source preflight/network, and an unfinished claim is
+unknown. A429 refusal, timeout or crash consumes the shot as well. This favors
+no replay over convenience. The owner must reconcile unknown receipts before
+any deliberate new projection/job. Stage labels never infer that an already
+synced legacy row needs projection review. No automatic extraction, provider call
+or canonical approval is introduced. Provider consent still gates extraction;
+structured projection upload keeps the existing source/evidence/receipt boundary.
+
+### Written verification tools — unexecuted
+
+- export-stream.test.ts: frozen-reference byte parity beyond one page, jumbo UTF-8,
+  independent page/batch/chunk bounds, every allowlisted table, empty tables,
+  revision-trigger coverage, ABA change, page failure and cancellation.
+- export.spec.ts:200 headers followed by broken body, error, zero downloads.
+- accessibility.spec.ts + structural-a11y.ts:17 scopes per locale/theme, all date
+  precisions, five structural rules. report_accessibility.ts requires complete
+  coverage; it cannot turn an absent observation into PASS.
+- test_legacy_jobs.py: one-shot/no migration, explicit source/generation/review/
+  confirmation, restart/refusal/uncertainty, authenticated scoped local forms.
+- check_round5_mutations.py: private-copy baseline/broken/restored proofs, rejects
+  missing anchors, invalid baseline, wrong failures and survivors. NOT RUN.
+
+Full owner sequence: [OWNER-VERIFY-ROUND5](OWNER-VERIFY-ROUND5.md).
+Historical resource numbers remain labeled historical; fresh values are null in
+RESOURCE-MEASUREMENTS.json. No release gate or milestone was marked complete.

@@ -27,3 +27,32 @@ test('owner chooses CSV and receives a safe download instead of the JSON envelop
   expect(text).toContain('"\'=cmd Synthetic CSV"');
   expect(text).not.toContain('"meta":');
 });
+
+test('an interrupted CSV body never becomes a successful downloadable file', async ({
+  page,
+}) => {
+  let downloads = 0,
+    sawHeaders = false;
+  page.on('download', () => downloads++);
+  page.on('response', (r) => {
+    if (
+      (r.url().includes('/api/v1/export?format=csv') ||
+        r.url().endsWith('/__synthetic/interrupted.csv')) &&
+      r.request().method() === 'GET' &&
+      r.status() === 200
+    )
+      sawHeaders = true;
+  });
+  await page.route('**/api/v1/export?format=csv', (route) =>
+    route.continue({
+      url: 'http://127.0.0.1:4173/__synthetic/interrupted.csv',
+    }),
+  );
+  await page.addInitScript(() => localStorage.setItem('locale', 'en'));
+  await page.goto('/settings');
+  await page.getByLabel('Export format', { exact: true }).selectOption('csv');
+  await page.getByRole('button', { name: 'Export data', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(sawHeaders).toBe(true);
+  expect(downloads).toBe(0);
+});

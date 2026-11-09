@@ -91,9 +91,16 @@ class Attempts:
             self.store.db.execute("UPDATE processing_retry SET state='running',attempts=?,next_attempt_at=NULL,last_attempt_at=? WHERE job_id=?", (count+1,now,ident))
             self.store.db.execute("INSERT INTO processing_attempts VALUES(?,?,?,?,NULL,'running',NULL)", (ident,phase,count+1,now))
 
+    def begin_legacy(self,ident):
+        if self.store.db.execute("SELECT 1 FROM processing_attempts WHERE job_id=? AND phase='legacy_sync'",(ident,)).fetchone():raise Invalid('LEGACY_MANUAL_ALREADY_ATTEMPTED')
+        self.store.db.execute("INSERT INTO processing_attempts VALUES(?,'legacy_sync',1,?,NULL,'running',NULL)",(ident,self.clock()))
+
     def finish(self, ident, outcome, error=None):
         row = self.store.db.execute('SELECT phase,attempts FROM processing_retry WHERE job_id=?', (ident,)).fetchone()
-        if not row:  # A concurrent purge removed the job. Never recreate it.
+        if not row:
+            # Never create a retry row, including after purge or interruption.
+            state='failed' if outcome=='retry' else outcome
+            with self.store.db:self.store.db.execute("UPDATE processing_attempts SET finished_at=?,outcome=?,error_code=? WHERE job_id=? AND phase='legacy_sync' AND attempt=1",(self.clock(),state,error,ident))
             return
         phase, count = row
         state = outcome
@@ -108,7 +115,9 @@ class Attempts:
 
     def view(self, ident):
         row = self.store.db.execute('SELECT phase,state,attempts,next_attempt_at,last_attempt_at FROM processing_retry WHERE job_id=?',(ident,)).fetchone()
-        return dict(zip(('phase','state','attempts','next_attempt_at','last_attempt_at'),row)) if row else {'state':'legacy_manual_only'}
+        if row:return dict(zip(('phase','state','attempts','next_attempt_at','last_attempt_at'),row))
+        legacy=self.store.db.execute("SELECT outcome,finished_at FROM processing_attempts WHERE job_id=? AND phase='legacy_sync'",(ident,)).fetchone()
+        return {'state':'legacy_manual_only','manual_attempted':bool(legacy),'manual_outcome':('unknown' if legacy[1] is None else legacy[0]) if legacy else None}
 
     def history(self, ident):
         return [dict(zip(('phase','attempt','started_at','finished_at','outcome','error_code'),r)) for r in self.store.db.execute('SELECT phase,attempt,started_at,finished_at,outcome,error_code FROM processing_attempts WHERE job_id=? ORDER BY started_at,phase,attempt',(ident,))]

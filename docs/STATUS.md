@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-09 · Asia/Makassar. 10,000-task measurement/durable jobs/multi-source operations/gate-drift slice, fresh-clone base b79092b. Synthetic/local evidence only; production, device and provider gates remain open. No milestone is complete.**
+**2026-11-10 · Recovered four-slice code delivery; tests/builds/benchmarks NOT RUN by owner instruction. Fresh main base03a32ca. No milestone complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -767,3 +767,50 @@ record: [VERIFICATION-LOG §25](VERIFICATION-LOG.md#25-independent-verification-
 Not verified: any real provider call, physical push delivery, private networking,
 positive notification capture, production D1 restore/CPU/row costs, native UI and
 accessibility acceptance, the pilot. No milestone is complete.
+
+
+## Recovery delivery — four slices, 2026-11-10 (Asia/Makassar)
+
+Fresh main base `03a32ca7345252b51a537750536f3b93a45741f6`, branch
+`build/recovered-four-slices`. The previous execution environment was lost before
+an artifact existed. These changes were reconstructed in a fresh clone. The owner
+explicitly instructed this builder not to run tests and will verify locally.
+**No application tests, builds, lint checks, benchmarks, device/account/provider
+checks or mutation runs were executed for this recovered tree.** Earlier chat
+results and base-repository counts are not evidence for this reconstructed source.
+No milestone is complete. No push, deployment or paid provisioning occurred.
+
+Implemented code (unverified):
+
+- CSV uses256-row pages, at most8 pages/2,048 returned rows per transaction, and
+  16KiB output chunks. A small table starts with one page to avoid unnecessary
+  empty reads. Migration0009 adds a monotonic revision and33 triggers over the
+  unchanged11-table canonical allowlist. Initial/page-batch/final checks reject
+  concurrent canonical changes, including a change subsequently reversed. Metadata
+  is not exported. JSON retains its buffered lossless restore contract.
+- PWA consumes the full Blob before offering a CSV download. Late errors abort
+  the body; HTTP200 headers already sent cannot be retracted. Direct consumers
+  must discard temporary output on failed body consumption. Production propagation
+  is unverified. OFFSET preserves old PK/null ordering but increases scan work;
+  page batching reduces binding calls while retaining a bounded working set.
+- Named synthetic-only loopback fixtures replace101 sequential POSTs and35
+  PATCHes. Both existing tests retain explicit30s bounds. New performance samples
+  and three consecutive full runs are NOT RUN. A duration/margin reporter ships.
+- Structural accessibility audit covers main routes, detail/editor and all date
+  precision sheets, ID/EN and light/dark. Names, labels, tabindex, focus outlines
+  and effective44px targets are assertions. The brand link gets44px minimum
+  height. Report missing observations as UNVERIFIED and no-form label checks as
+  N/A. Actual accessibility findings remain unverified, including screen readers.
+- /operations exposes legacy state and an explicit source/job/generation-bound
+  confirmed send. A one-shot claim commits before any request. No retry row is
+  created. Refusal/uncertainty/process death cannot enable automatic replay.
+  Source credential/evidence/review/generation and existing receipt validation
+  remain enforced. Uploading reviewed structured proposals does not invoke AI or
+  approve a canonical task. Existing extraction consent and final approval remain.
+
+Do not silently remove the export epoch checks, body-completion download boundary,
+explicit row selection, or durable one-shot policy. Real Android behavior,
+private transport, account configuration, migration/restore/CPU/D1 row costs,
+provider/push behavior and owner acceptance remain unverified. Android source,
+signing, capture selectors, Origin and privacy/approval rules are unchanged.
+See VERIFICATION-LOG §26 and OWNER-VERIFY-ROUND5.md for the owner handoff.

@@ -1,4 +1,4 @@
-import { readCanonical, canonicalCSV } from './export';
+import { readCanonical, streamCanonicalCSV, ExportError } from './export';
 import { listHistory } from './history';
 import { account, operationalHealth, BudgetError } from './operations';
 import { dispatchPush, pushConfig, subscribe, type PushEnv } from './push';
@@ -1948,18 +1948,20 @@ export function createApp(authorize: typeof owner = owner) {
           const format = url.searchParams.get('format') ?? 'json';
           if (!['json', 'csv'].includes(format))
             throw new Http(422, 'INVALID_EXPORT_FORMAT');
-          const { snapshot, columns } = await readCanonical(db, now());
-          if (format === 'json') return result(snapshot);
+          if (format === 'json')
+            return result((await readCanonical(db, now())).snapshot);
           const headers = result({}).headers;
           headers.set('Content-Type', 'text/csv; charset=utf-8');
           headers.set(
             'Content-Disposition',
             'attachment; filename="academic-os-export.csv"',
           );
-          return new Response(canonicalCSV(snapshot, columns), { headers });
+          return new Response(await streamCanonicalCSV(db, now()), { headers });
         }
         throw new Http(404, 'NOT_FOUND');
       } catch (e) {
+        if (e instanceof ExportError)
+          return result({ error: { code: e.code } }, 503);
         if (e instanceof BudgetError)
           return result(
             { error: { code: e.code } },

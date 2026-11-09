@@ -254,3 +254,16 @@ observed and each known revoked device must report application. Phone-only
 application cannot stand in for Linux acknowledgment. `confirmed_known_inventory`
 never asserts a complete device inventory. Cloud source status alone cannot
 supply these confirmations.
+
+### Recovered round5 handoff
+
+The owner requested a code-only recovery with no application tests or benchmarks.
+See [OWNER-VERIFY-ROUND5](OWNER-VERIFY-ROUND5.md). New code and written regressions
+are unverified; earlier chat runs must not be reused for this tree. Apply all
+migrations including0009 before CSV use. Missing epoch metadata refuses export.
+
+The synthetic seed and interrupted-transfer endpoints exist only in the loopback
+`dev-synthetic.ts` harness with SYNTHETIC_FIXTURES=1. Do not deploy that harness.
+The production Worker gains no seed/auth/budget bypass. Generic streaming clients
+must keep temporary output and rename only after successful body consumption.
+JSON remains the lossless encrypted backup input; CSV remains a spreadsheet view.

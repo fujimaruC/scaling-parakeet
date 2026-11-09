@@ -118,3 +118,18 @@ older terminal-job navigation (T28/T31/T32). The measurement now asserts populat
 coverage (T22/T33); it still cannot supply production D1 rows or CPU. See
 `check_round4_mutations.py` for broken/restored proofs, separate from the two
 inherited fault suites. Controls remain a separate process from AI jobs.
+
+
+## Round5 recovery mapping — all new cases NOT RUN
+
+| Gate | Written evidence | Remaining proof |
+|---|---|---|
+| T30 | [export-stream.test.ts](../tests/integration/export-stream.test.ts), frozen reference, [export.spec.ts](../tests/e2e/export.spec.ts) | Execute parity/empty/coherence/error/cancel and body-failure cases; real Cloudflare propagation unverified. |
+| T29 | [accessibility.spec.ts](../tests/e2e/accessibility.spec.ts), [structural-a11y.ts](../tests/helpers/structural-a11y.ts), [report_accessibility.ts](../scripts/report_accessibility.ts) | Execute ID/EN × themes, all scopes/rules; obtain actual table. Real screen reader/native/visual acceptance unverified. |
+| T18/T32 | [test_legacy_jobs.py](../collectors/local/tests/test_legacy_jobs.py) | Execute once-only/no retry metadata, wrong source/generation, consent/review/confirmation/credential, uncertainty/restart and local auth/Origin cases. Provider consent remains extraction-specific; upload is an already reviewed structured projection. |
+| T33 | [measure_resources.ts](../scripts/measure_resources.ts), [report_browser_margins.ts](../scripts/report_browser_margins.ts) | Measure recovered source and three full browser runs; no new values claimed. Production CPU/D1 rows/mobile remain unmeasured. |
+
+[check_round5_mutations.py](../scripts/check_round5_mutations.py) supplies private-copy
+negative/restored proofs, including an unlabeled icon and undersized brand. No
+mutation was executed in this handoff. Existing14/16/18 suites remain historical,
+not rerun evidence. No completion gate or milestone is closed.

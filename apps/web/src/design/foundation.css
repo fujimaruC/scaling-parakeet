@@ -27,6 +27,7 @@ aside {
   gap: 12px;
 }
 .brand {
+  min-height: 44px;
   font-family: var(--pix);
   font-size: 28px;
   gap: 8px;

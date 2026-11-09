@@ -353,3 +353,32 @@ One source-scoped credential per job/control process; no shared cloud authority.
 Local status timestamps are observations, not live phone guarantees. The small
 explicit gate/test/claim table and actual named test execution catch stated doc
 contradictions while production/device gates stay unverified.
+
+
+## ADR-028 — Recovered bounded CSV, fixed fixtures, structural audit, legacy one-shot
+
+2026-11-10. Base03a32ca. Owner requests code delivery with no builder-run tests.
+Implementation is unverified; details in VERIFICATION-LOG §26.
+
+Protect CSV memory and coherence with bounded pages/batches plus a transactional
+monotonic revision (migration0009). Reject full buffering and content digests:
+the first is the measured problem, the latter adds an unnecessary identifier and
+misses no-op/change-reversal semantics unless updated transactionally anyway.
+Use OFFSET to preserve old nullable PK ordering; scanned work remains unbounded.
+Batch at most8 pages to amortise calls rather than assuming unlimited invocation
+queries. This is not account verification. JSON remains the buffered restore input.
+HTTP200 headers cannot be undone; body consumption must succeed before download.
+
+Reduce browser setup with fixed synthetic scenarios instead of extending every
+30s timeout. No production seed route, arbitrary SQL, budget or auth bypass is
+added to the Worker. Report actual margins only after the owner runs it.
+
+Use existing Playwright naming computation plus DOM structural assertions instead
+of a new audit dependency. No-form label checks are N/A; absent observations are
+unverified and fail the reporter. Real accessibility remains an owner/device gate.
+
+Legacy jobs get explicit confirmed row actions and one durable pre-request claim.
+Reject silent conversion into the retry table. Even uncertainty/refusal consumes
+the shot; no automatic replay or provider/canonical approval can follow it. Preserve
+source/generation/credential/evidence/review/receipt boundaries. Unfinished journal
+entries mean unknown, never success. No privacy, signing, Origin or API28 change.

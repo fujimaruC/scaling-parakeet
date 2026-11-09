@@ -97,14 +97,33 @@ class Pipeline:
     @serialized
     def send(self,ident):
         return self._send_job(ident,manual=True)
-    def _send_job(self,ident,manual=False):
+    @serialized
+    def send_legacy(self,ident,source,generation):
+        return self._send_job(ident,manual=True,selection=(source,generation),legacy_only=True)
+    def _send_job(self,ident,manual=False,selection=None,legacy_only=False):
         job=self.get(ident)
-        if job['state']=='synced':return {'id':ident,'state':'synced'}
-        if job['state']!='sync_pending':raise Invalid('PROJECTION_REVIEW_REQUIRED')
-        if self.attempts.view(ident)['state']=='legacy_manual_only':
+        legacy=self.attempts.view(ident)['state']=='legacy_manual_only'
+        if legacy_only and not legacy:raise Invalid('LEGACY_MANUAL_REQUIRED')
+        if legacy:
             if not manual:raise Invalid('JOB_REVIEW_REQUIRED')
-            self.attempts.prepare(ident,'sync')
-        self.attempts.begin(ident,'sync',manual=manual)
+            if selection is None:raise Invalid('EXPLICIT_SOURCE_GENERATION_REQUIRED')
+            source,generation=selection
+            # Claim commits before any request. No transaction spans the network.
+            with self.store.db:
+                self.store.db.execute('BEGIN IMMEDIATE')
+                if source!=job['source_id']:raise Invalid('JOB_SOURCE_MISMATCH')
+                row=self.store.db.execute('SELECT generation FROM sources WHERE id=?',(source,)).fetchone()
+                if not row or row[0]!=generation or job['payload'].get('envelope',{}).get('source_generation')!=generation:raise Invalid('SOURCE_GENERATION_CHANGED')
+                if self.attempts.view(ident).get('manual_attempted'):raise Invalid('LEGACY_MANUAL_ALREADY_ATTEMPTED')
+                if job['state']!='sync_pending':raise Invalid('PROJECTION_REVIEW_REQUIRED')
+                if self.env.get('COLLECTOR_SOURCE_ID')!=source:raise Invalid('SOURCE_CREDENTIAL_REQUIRED')
+                if not self.public_config()['cloud_configured']:raise Invalid('CLOUD_NOT_CONFIGURED')
+                self.messages(source,job['payload']['evidence_ids'])
+                self.attempts.begin_legacy(ident)
+        else:
+            if job['state']=='synced':return {'id':ident,'state':'synced'}
+            if job['state']!='sync_pending':raise Invalid('PROJECTION_REVIEW_REQUIRED')
+            self.attempts.begin(ident,'sync',manual=manual)
         if self.env.get('COLLECTOR_SOURCE_ID')!=job['source_id']:
             self.attempts.finish(ident,'failed','SOURCE_CREDENTIAL_REQUIRED');raise Invalid('SOURCE_CREDENTIAL_REQUIRED')
         try:self.messages(job['source_id'],job['payload']['evidence_ids'])

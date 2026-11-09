@@ -1251,5 +1251,29 @@
   "production_d1_rows_written": null,
   "mobile_startup_ms": null,
   "android_callback_ms": null,
-  "linux_parser_peak_rss_bytes": null
+  "linux_parser_peak_rss_bytes": null,
+  "historical_source_base": "b79092bc80906e6c3d13816ac241ff405ae6da43",
+  "streaming_recovery": {
+    "source_base": "03a32ca7345252b51a537750536f3b93a45741f6",
+    "status": "NOT_RUN",
+    "reason": "Owner requested no builder-run tests or benchmarks; prior workspace outputs lost.",
+    "configured_bounds": {
+      "page_rows": 256,
+      "max_pages_per_batch": 8,
+      "max_batch_rows": 2048,
+      "chunk_bytes": 16384
+    },
+    "observations": {
+      "wall_ms": null,
+      "first_chunk_wall_ms": null,
+      "response_bytes": null,
+      "max_page_rows": null,
+      "max_batch_rows": null,
+      "max_chunk_bytes": null,
+      "d1_binding_calls_per_request": null,
+      "worker_cpu_ms": null,
+      "production_d1_rows_read": null,
+      "production_d1_rows_written": null
+    }
+  }
 }

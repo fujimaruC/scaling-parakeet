@@ -167,7 +167,7 @@ async function api(
       throw Object.assign(new Error('AUTH_REQUIRED'), { status: 401 });
     if (!r.headers.get('Content-Type')?.startsWith('text/csv'))
       throw Object.assign(new Error('INVALID_API_RESPONSE'), { status: 502 });
-    return r.text();
+    return r.blob();
   }
   const j: any = await r
     .json()

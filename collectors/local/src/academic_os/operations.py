@@ -53,6 +53,13 @@ def _action(pipeline,value):
     return {'source_id':ident,'state':'paused' if command=='pause' else 'enabled'}
 
 
+def job_action(pipeline,value):
+    if value.get('action')!='legacy-send' or value.get('confirmed')!='yes':raise Invalid('MANUAL_SEND_CONFIRMATION_REQUIRED')
+    try:generation=int(value.get('generation'))
+    except (TypeError,ValueError):raise Invalid('EXPLICIT_SOURCE_GENERATION_REQUIRED') from None
+    return pipeline.send_legacy(value.get('job_id'),value.get('source_id'),generation)
+
+
 def page(pipeline,error=None,before=None):
     esc=lambda v:html.escape(str(v),quote=True)
     config=pipeline.config()
@@ -79,6 +86,17 @@ def page(pipeline,error=None,before=None):
     jobs=pipeline.jobs(before)
     for j in jobs:
         r=j['retry'];out.append('<tr><th scope=row>'+esc(j['id'])+'<p>'+esc(j['source_id'])+'</p></th><td>'+esc(j['state'])+'</td><td>'+esc(r['state'])+' / '+esc(r.get('attempts','unavailable'))+'</td><td>'+esc(r.get('next_attempt_at') or 'none')+' / '+esc(j['error_code'] or 'none')+'<details><summary>Attempt history</summary><pre>'+esc(json.dumps(pipeline.attempts.history(j['id']),indent=2))+'</pre></details></td></tr>')
+        if r['state']=='legacy_manual_only':
+            out.append('<tr><td colspan=4><p>This job predates retry metadata, so it is manual-only. No automatic replay is allowed.</p>')
+            if r.get('manual_attempted'):
+                out.append('<p>One-time send already attempted: '+esc(r.get('manual_outcome'))+'. A second send is refused. An unknown result is not success; inspect attempt history before reconciling.</p>')
+            elif j['state']=='sync_pending':
+                source=pipeline.store.db.execute('SELECT generation FROM sources WHERE id=?',(j['source_id'],)).fetchone()
+                if source:
+                    out.append('<form method=post action="/operations/job-action"><input type=hidden name=job_id value="'+esc(j['id'])+'"><input type=hidden name=source_id value="'+esc(j['source_id'])+'"><input type=hidden name=generation value="'+str(source[0])+'"><label><input type=checkbox name=confirmed value=yes required> Send this already reviewed structured projection once for '+esc(j['source_id'])+'. This does not approve a canonical task.</label><button name=action value=legacy-send>Send legacy job once</button></form>')
+            else:
+                out.append('<p>No reviewed sync-pending projection is available to send. The existing stage is shown above. Extraction is never replayed from this screen.</p>')
+            out.append('</td></tr>')
     out.append('</tbody></table></div>')
     if len(jobs)==100:out.append('<a href="/operations?before='+str(jobs[-1]['cursor'])+'">Older jobs</a>')
     out.append('<p>Up to 100 jobs are shown on this page. <a href="/operations">Newest jobs</a>. Refresh this page for current local state. Detailed projection and explicit immutable sync retry are available in the import screen.</p></html>')

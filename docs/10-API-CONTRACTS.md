@@ -195,7 +195,8 @@ allowlist and export request budget apply before either format reads data.
 
 Both formats read the exact shared eleven-table allowlist in
 `packages/contracts/canonical-tables.json`, also consumed by Linux backup/restore.
-Rows for all tables are read in one D1 batch. CSV does not add raw evidence,
+JSON retains one D1 batch of canonical rows. CSV uses bounded pages below.
+Neither format adds raw evidence,
 credentials, delivery state, operational counters or push endpoints.
 
 CSV is one UTF-8 `text/csv; charset=utf-8` attachment, with RFC4180 quoted cells,
@@ -208,3 +209,26 @@ Values starting with `=`, `+`, `-`, `@`, TAB or CR receive a leading apostrophe
 before quoting. Null becomes an empty cell. Those transformations make CSV a
 spreadsheet presentation, not a lossless backup. Use JSON for encrypted restore.
 The PWA exposes an explicit format selector and preserves the CSV response bytes.
+
+
+### Streaming CSV extension — migration0009 (implementation unverified)
+
+CSV uses256-row pages, a single initial page per table and then at most8 pages
+per transactional read batch (max2,048 returned rows), with16KiB UTF-8 chunks.
+It preserves the existing allowlist/header/column/PK order, CRLF and formula
+neutralization. JSON keeps its existing buffered lossless restore contract.
+
+A monotonic canonical_export_revision is checked initially, with every batch,
+and before clean EOF. All allowlisted INSERT/UPDATE/DELETE operations advance it.
+Changed/reversed writes abort with EXPORT_SNAPSHOT_CHANGED; database problems use
+EXPORT_UNAVAILABLE. Metadata is never exported. Before headers errors return503;
+after headers the body fails, not a clean truncated file. HTTP200 alone is not
+success. Late fixed codes may not cross the HTTP transport. PWA waits for the full
+Blob; direct clients must discard temporary output on error. No completion trailer,
+size cap or silent truncation changes the bytes. Production behavior is unverified.
+
+OFFSET preserves legacy nullable PK ordering; scanned work grows. Batching trades
+bounded additional row memory for fewer binding calls. A D1 batch is transactional;
+separate batches are not one snapshot, hence the epoch. Binding-call/CPU/row/heap
+and account limits need measurement; no free-account or arbitrary-size guarantee.
+The same owner authentication, private device route and export budget apply.
