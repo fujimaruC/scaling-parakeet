@@ -1045,3 +1045,85 @@ interrupted-ack recovery, transport, enrollment/activation/revocation, cloud
 path isolation, provider and push remain unverified. `smoke_result` stays
 `unverified` because the interactive owner session has not run. No milestone is
 complete.
+
+## 18. Live listener, pairing and filter check on the CPH2015 — 2026-11-09
+
+Owner connected the phone and authorised terminal-driven interaction. Everything
+below is real-device output; no notification body, title, group name or message
+text is recorded in this file or in any tool output.
+
+### Listener grant — explicit deviation, recorded
+
+`DEVICE-SMOKE.md` says not to automate an access grant. The owner instructed that
+the grant and the checks be driven from the terminal, so it was enabled with:
+
+```text
+adb shell cmd notification allow_listener id.academicos.companion/.CaptureService
+```
+
+This is a real OS permission transition, not a bypass of a privacy setting, and
+the listener still receives only `com.whatsapp` events. It is recorded here as an
+owner-authorised deviation so it is not mistaken for the documented owner-tap
+procedure. `settings get secure enabled_notification_listeners` then contained
+the component and `dumpsys notification` listed it under allowed listeners.
+
+First observation of the whole project: the listener **connected**.
+`health.xml` → `listener=connected`.
+
+### Lifecycle recovery observed
+
+```text
+disallow_listener → health.listener=disconnected   (reported 1794182818660)
+allow_listener    → health.listener=connected      (reported 1794182822336)
+```
+
+Grant count returned to 1 after the cycle. The service reconnected on its own
+without an app restart.
+
+### Pairing against a local TLS receiver
+
+A loopback receiver was started on this machine (`--receiver`, TLS 1.2+, private
+bind, pinned cert) and reached from the phone through `adb reverse`. The phone
+paired through the Capture screen; the sealed config lives in
+`private-pairing.xml` (562 bytes, one `config` entry; contents never printed).
+
+Receiver-side proof:
+
+```text
+devices  1      nonces  5      receipts 0      evidence 0
+```
+
+`nonces` records HMAC-verified device requests, so TLS, certificate pinning,
+hostname checks and per-request signing all completed on real hardware. The
+device is stored unrevoked against source generation 1.
+
+**Scope limit:** this path is USB `adb reverse` to a loopback listener. It is not
+the private-network transport (no VPN, no private address, no mobile data), so
+transport-over-network, laptop-off queueing and receipt-after-commit remain
+unverified.
+
+### Filter check (negative)
+
+The mapping was set to a synthetic, deliberately non-matching pair
+(`AOS_SYNTHETIC_SELF_TEST` / `0|com.whatsapp|g:aos_synthetic_test`) and capture
+was enabled. The listener was then cycled, which makes `onListenerConnected`
+replay every active notification into `capture()`.
+
+```text
+individual com.whatsapp notifications present: 28
+queue_count after replay: 0
+observed_gap_count: 0
+```
+
+So unselected conversations were not persisted. This is the negative half of
+T09 on real hardware. It does **not** prove the positive half: no notification
+matching a selected conversation was ever captured, because `capture()` accepts
+only `com.whatsapp` and API 28 has no way to inject a synthetic notification for
+that package. Pointing the mapping at a real conversation would have persisted
+real message text, which the contract forbids.
+
+### Where capture stands
+
+No listener event has been captured yet. `capture` and `transport` remain
+`not_run` in the tool's own record. The positive path needs one owner-controlled
+WhatsApp self-chat message; it was not fabricated and is not claimed.

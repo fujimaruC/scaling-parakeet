@@ -437,3 +437,32 @@ Still unverified: capture, filtering, queue durability, restart survival,
 interrupted-ack recovery, transport, enrollment/activation/revocation, cloud
 path isolation, provider and push. `smoke_result` remains `unverified` until the
 interactive owner session runs. M0 and all release gates remain incomplete.
+
+## Live listener, pairing and filter check — CPH2015/API 28, 2026-11-09
+
+Driven from the terminal at the owner's instruction. The listener was enabled
+with `cmd notification allow_listener` — a real OS permission transition, not a
+bypass — and recorded as an owner-authorised deviation from the tap-in-Settings
+procedure. **This is the first time the listener connected on any device**
+(`health.xml` → `listener=connected`), and it reconnected on its own after a
+deliberate disconnect/reconnect cycle.
+
+The phone paired with a local TLS receiver over `adb reverse`. Receiver-side
+state is `devices 1`, `nonces 5`, `receipts 0`, `evidence 0`; nonces are
+HMAC-verified requests, so TLS, certificate pinning, hostname checks and
+per-request signing all completed on real hardware. This is USB loopback, **not**
+the private-network transport: VPN/private-address, laptop-off queueing and
+receipt-after-commit remain unverified.
+
+Filter check (negative half of T09): with a synthetic non-matching mapping
+enabled and 28 individual `com.whatsapp` notifications active, a listener cycle
+replayed them through `capture()` and `queue_count` stayed 0 with
+`observed_gap_count` 0 — unselected conversations were not persisted.
+
+Not observed: any captured notification. `capture` and `transport` remain
+`not_run`. The positive path needs an owner-controlled WhatsApp self-chat
+message; it was not fabricated, and no real conversation was mapped because that
+would persist real message text.
+
+Exact record: [VERIFICATION-LOG §18](VERIFICATION-LOG.md#18-live-listener-pairing-and-filter-check-on-the-cph2015--2026-11-09).
+M0 and all release gates remain incomplete.
