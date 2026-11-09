@@ -20,22 +20,25 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ## Part 1 — Where the project stands (2026-11-09)
 
-The measurements below were taken at `f36c410`. Since then the release-gap
-package landed (`201de46`: Web Push, durable operational counters, paged global
-history) and one verification fix (`959181d`: the 1200-row scale-test timeout).
-The suite was re-run after both: 52 Vitest, 15 Playwright, 1 production PWA,
-70 Python, Gradle green, 16/16 release mutations.
+Current as of `4059f60`. The canonical-export package landed as `9196619`
+(CSV export, injection corpus, acceptance traceability, resource budgets) and
+one verification fix as `bad1bb4` (the durable-budget test's concurrency bound).
 
-**Measured on this machine at `f36c410` (the commit these numbers describe):**
+**Measured on this machine at `4059f60`:**
 
 | Check | Result |
 |---|---|
-| `vitest run` | 4 files, 36 tests passed |
-| Python discovery | 70 tests OK |
-| `playwright test` | 12 tests; 11 passed, 1 failed and passed alone on retry — a flake, not a fix |
+| `vitest run` | 9 files, 58 tests passed |
+| Python discovery | 80 tests OK |
+| `playwright test` | 16 passed |
 | `npm run test:pwa` | 1 passed — offline reload, logout wipe |
-| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 6m16s; 8 native-policy, 6 queue-privacy; lint 0 errors |
-| planning / placeholders | PASS — 114 links, 30 features, 34 test IDs |
+| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 5m44s; 8 native-policy, 6 queue-privacy; lint 0 errors |
+| `check_contract_mutations.py` | 14 intended failures / 14 restored / 0 survivors |
+| `check_release_mutations.py` | 16 intended failures / 16 restored / 0 survivors |
+| planning / placeholders | PASS — 150 links, 30 features, 34 test IDs |
+
+Earlier figures at `f36c410` were 36 Vitest / 12 Playwright / 70 Python / 114
+links; they are superseded by the table above.
 
 **Measured on the phone:** install in place with no data loss, launch, reopen, a
 complete clean crash window, listener connected and self-recovering, sealed
