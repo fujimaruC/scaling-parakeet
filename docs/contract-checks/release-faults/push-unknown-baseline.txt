@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t ambiguous push failures
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 1428ms
+   ✓ ambiguous push failures remain unknown and are not replayed; inbox count and contents survive failure  394ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  13:14:31
+   Duration  2.54s (transform 216ms, setup 0ms, collect 790ms, tests 1.43s, environment 0ms, prepare 97ms)
+

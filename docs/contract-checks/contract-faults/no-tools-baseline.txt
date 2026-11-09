@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_hostile_corpus_stays -v
+test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review (test_injection.InjectionBoundaryTests.test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.032s
+
+OK
+
+EXIT: 0

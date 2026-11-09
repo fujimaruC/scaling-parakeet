@@ -1,0 +1,38 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/unit/push-worker.test.ts -t notification click cannot
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ❯ tests/unit/push-worker.test.ts (2 tests | 1 failed | 1 skipped) 11ms
+   ↓ push renders a fixed generic alert without reading payload data
+   × notification click cannot navigate to an injected external URL 10ms
+     → expected [ 'https://evil.test/private' ] to deeply equal [ 'https://synthetic/inbox' ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/push-worker.test.ts > notification click cannot navigate to an injected external URL
+AssertionError: expected [ 'https://evil.test/private' ] to deeply equal [ 'https://synthetic/inbox' ]
+
+- Expected
++ Received
+
+  [
+-   "https://synthetic/inbox",
++   "https://evil.test/private",
+  ]
+
+ ❯ tests/unit/push-worker.test.ts:80:20
+     78|   await done;
+     79|   expect(closed).toBe(true);
+     80|   expect(w.opened).toEqual(['https://synthetic/inbox']);
+       |                    ^
+     81| });
+     82| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  13:18:37
+   Duration  305ms (transform 47ms, setup 0ms, collect 34ms, tests 11ms, environment 0ms, prepare 91ms)
+

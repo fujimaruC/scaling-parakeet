@@ -1,0 +1,46 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t expired endpoints
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ❯ tests/integration/release-gaps.test.ts (12 tests | 1 failed | 11 skipped) 1469ms
+   ↓ push subscription lifecycle sends an empty body with verifiable VAPID and never changes the durable inbox
+   × expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe 410ms
+     → expected null to be '2030-05-15T00:00:00.000Z' // Object.is equality
+   ↓ ambiguous push failures remain unknown and are not replayed; inbox count and contents survive failure
+   ↓ push is opt in, rejects arbitrary outbound URLs, missing/mismatched keys and has a four-install cap
+   ↓ browser push lifecycle remains authenticated and same-origin; device namespace cannot use it
+   ↓ persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation
+   ↓ health never invents reports, labels stale/future clocks separately, and exposes durable counts instead of billing
+   ↓ a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions
+   ↓ global history reaches old events with opaque descending cursors, even when new rows arrive between pages
+   ↓ task cursors are bound to filters and reject reuse that would silently omit matches
+   ↓ health daily count remains visible beyond bounded detail and the global daily cap refuses
+   ↓ cron health reports actual local completion or failure and never declares a misconfigured push healthy
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/release-gaps.test.ts > expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe
+AssertionError: expected null to be '2030-05-15T00:00:00.000Z' // Object.is equality
+
+- Expected: 
+"2030-05-15T00:00:00.000Z"
+
++ Received: 
+null
+
+ ❯ tests/integration/release-gaps.test.ts:138:5
+    136|         .first<any>()
+    137|     ).revoked_at,
+    138|   ).toBe(at);
+       |     ^
+    139|   await expect(subscribe(env, endpoint, at)).rejects.toThrow(
+    140|     'PUSH_SUBSCRIPTION_UNAVAILABLE',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  13:14:24
+   Duration  2.79s (transform 240ms, setup 0ms, collect 988ms, tests 1.47s, environment 0ms, prepare 100ms)
+

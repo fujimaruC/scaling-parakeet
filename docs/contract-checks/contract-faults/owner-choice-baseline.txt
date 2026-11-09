@@ -1,0 +1,14 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t two sources retain disagreeing
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ✓ tests/integration/review-boundary.test.ts (3 tests | 2 skipped) 2984ms
+   ✓ two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation  1742ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  13:13:33
+   Duration  4.84s (transform 671ms, setup 0ms, collect 1.52s, tests 2.98s, environment 0ms, prepare 81ms)
+
+
+EXIT: 0

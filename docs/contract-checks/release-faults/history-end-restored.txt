@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t global history reaches
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 10480ms
+   ✓ global history reaches old events with opaque descending cursors, even when new rows arrive between pages  8718ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  13:18:12
+   Duration  11.73s (transform 259ms, setup 0ms, collect 904ms, tests 10.48s, environment 0ms, prepare 83ms)
+

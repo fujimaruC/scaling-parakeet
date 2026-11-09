@@ -162,6 +162,13 @@ async function api(
     headers: { 'Content-Type': 'application/json', ...headers },
     body: value === undefined ? undefined : JSON.stringify(value),
   });
+  if (path === '/export?format=csv' && r.ok) {
+    if (r.redirected)
+      throw Object.assign(new Error('AUTH_REQUIRED'), { status: 401 });
+    if (!r.headers.get('Content-Type')?.startsWith('text/csv'))
+      throw Object.assign(new Error('INVALID_API_RESPONSE'), { status: 502 });
+    return r.text();
+  }
   const j: any = await r
     .json()
     .catch(() => ({ error: { code: 'REQUEST_FAILED' } }));
@@ -265,6 +272,7 @@ function App() {
     document.documentElement.lang = locale;
     localStorage.setItem('locale', locale);
   }, [locale]);
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [sourceAlias, setSourceAlias] = useState('');
   const [sourceKind, setSourceKind] = useState('whatsapp_export');
   const [briefing, setBriefing] = useState<any>(null);
@@ -1116,18 +1124,46 @@ function App() {
                     onSaved={load}
                   />
                   <hr />
+                  <label htmlFor="canonical-export-format">
+                    {locale === 'en' ? 'Export format' : 'Format ekspor'}
+                  </label>
+                  <select
+                    id="canonical-export-format"
+                    value={exportFormat}
+                    onChange={(e) =>
+                      setExportFormat(e.target.value as 'json' | 'csv')
+                    }
+                  >
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                  <p>
+                    {locale === 'en'
+                      ? 'Use JSON for encrypted restore; CSV is a spreadsheet view.'
+                      : 'Gunakan JSON untuk pemulihan terenkripsi; CSV untuk tampilan lembar kerja.'}
+                  </p>
                   <button
                     disabled={offline}
                     onClick={() =>
-                      void sessionApi('/export')
+                      void sessionApi('/export?format=' + exportFormat)
                         .then((v) => {
                           const a = document.createElement('a');
                           a.href = URL.createObjectURL(
-                            new Blob([JSON.stringify(v, null, 2)], {
-                              type: 'application/json',
-                            }),
+                            new Blob(
+                              [
+                                exportFormat === 'csv'
+                                  ? v
+                                  : JSON.stringify(v, null, 2),
+                              ],
+                              {
+                                type:
+                                  exportFormat === 'csv'
+                                    ? 'text/csv;charset=utf-8'
+                                    : 'application/json',
+                              },
+                            ),
                           );
-                          a.download = 'academic-os-export.json';
+                          a.download = 'academic-os-export.' + exportFormat;
                           a.click();
                           URL.revokeObjectURL(a.href);
                         })

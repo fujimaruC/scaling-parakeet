@@ -1,0 +1,14 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/export-contract.test.ts -t CSV and JSON export
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ✓ tests/integration/export-contract.test.ts (3 tests | 2 skipped) 2027ms
+   ✓ CSV and JSON export exactly the same eleven tables with per-table parity and stable columns  706ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  13:13:23
+   Duration  3.97s (transform 318ms, setup 0ms, collect 1.34s, tests 2.03s, environment 0ms, prepare 142ms)
+
+
+EXIT: 0

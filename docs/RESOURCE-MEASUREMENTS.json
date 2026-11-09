@@ -1,0 +1,662 @@
+{
+  "kind": "local_synthetic_not_account_measurement",
+  "node": "v24.22.1",
+  "measurement_time": "2026-11-09T06:10:51.965Z",
+  "gzip_level": 9,
+  "bundles": [
+    {
+      "path": "_headers",
+      "raw_bytes": 298,
+      "gzip_bytes": 184
+    },
+    {
+      "path": "assets/index-BgXXA3uF.css",
+      "raw_bytes": 23180,
+      "gzip_bytes": 5804
+    },
+    {
+      "path": "assets/index-H6vd5_Ux.js",
+      "raw_bytes": 309154,
+      "gzip_bytes": 98262
+    },
+    {
+      "path": "fonts/README.txt",
+      "raw_bytes": 911,
+      "gzip_bytes": 601
+    },
+    {
+      "path": "fonts/inter-OFL.txt",
+      "raw_bytes": 4376,
+      "gzip_bytes": 1965
+    },
+    {
+      "path": "fonts/inter.woff",
+      "raw_bytes": 457780,
+      "gzip_bytes": 455457
+    },
+    {
+      "path": "fonts/pixelifysans-OFL.txt",
+      "raw_bytes": 4394,
+      "gzip_bytes": 1975
+    },
+    {
+      "path": "fonts/pixelifysans.woff",
+      "raw_bytes": 30168,
+      "gzip_bytes": 30147
+    },
+    {
+      "path": "icon-192.png",
+      "raw_bytes": 550,
+      "gzip_bytes": 272
+    },
+    {
+      "path": "icon-512.png",
+      "raw_bytes": 2259,
+      "gzip_bytes": 607
+    },
+    {
+      "path": "icon.svg",
+      "raw_bytes": 261,
+      "gzip_bytes": 204
+    },
+    {
+      "path": "index.html",
+      "raw_bytes": 444,
+      "gzip_bytes": 300
+    },
+    {
+      "path": "manifest.webmanifest",
+      "raw_bytes": 362,
+      "gzip_bytes": 226
+    },
+    {
+      "path": "sw.js",
+      "raw_bytes": 3924,
+      "gzip_bytes": 1989
+    }
+  ],
+  "web_js": {
+    "raw_bytes": 309154,
+    "gzip_bytes": 98262
+  },
+  "worker": {
+    "raw_bytes": 497776,
+    "gzip_bytes": 99629
+  },
+  "request_limits_per_minute": {
+    "read": 600,
+    "write": 120,
+    "sync": 60,
+    "enroll": 10,
+    "export": 4
+  },
+  "daily_request_limit": 10000,
+  "profiles": [
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100",
+      "samples": 5,
+      "wall_ms": [
+        59.234,
+        59.038,
+        58.286,
+        72.784,
+        143.024
+      ],
+      "median_wall_ms": 59.234,
+      "max_wall_ms": 143.024,
+      "response_bytes": 43120,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "samples": 5,
+      "wall_ms": [
+        53.32,
+        64.942,
+        60.163,
+        62.557,
+        78.785
+      ],
+      "median_wall_ms": 62.557,
+      "max_wall_ms": 78.785,
+      "response_bytes": 560,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND title LIKE ? ESCAPE '\\') ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "samples": 5,
+      "wall_ms": [
+        46.321,
+        47.827,
+        49.164,
+        60.831,
+        59.136
+      ],
+      "median_wall_ms": 49.164,
+      "max_wall_ms": 60.831,
+      "response_bytes": 3571,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND ((json_extract(due_json,'$.precision')='datetime' AND due_at_utc>=? AND due_at_utc<?) OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date')>=? AND json_extract(due_json,'$.local_date')<=?))) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/history?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        120.227,
+        56.005,
+        49.52,
+        48.806,
+        50.298
+      ],
+      "median_wall_ms": 50.298,
+      "max_wall_ms": 120.227,
+      "response_bytes": 15502,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SCAN task_events"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/history?limit=50&cursor=WyJoaXN0b3J5LXYxIiw4MF0",
+      "samples": 5,
+      "wall_ms": [
+        44.993,
+        59.508,
+        51.208,
+        126.282,
+        81.146
+      ],
+      "median_wall_ms": 59.508,
+      "max_wall_ms": 126.282,
+      "response_bytes": 15502,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events WHERE id<? ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SEARCH task_events USING INTEGER PRIMARY KEY (rowid<?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/tasks/resource-00000?view=read",
+      "samples": 5,
+      "wall_ms": [
+        109.099,
+        95.099,
+        312.198,
+        314.346,
+        522.398
+      ],
+      "median_wall_ms": 312.198,
+      "max_wall_ms": 522.398,
+      "response_bytes": 1053,
+      "prepared_statements_per_request": 6,
+      "queries": [
+        {
+          "sql": "SELECT * FROM tasks WHERE id=? AND deleted_at IS NULL",
+          "plan": [
+            "SEARCH tasks USING INDEX sqlite_autoindex_tasks_1 (id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT id,task_id,event_type,before_json,after_json,created_at FROM task_events WHERE task_id=? ORDER BY id DESC LIMIT 31",
+          "plan": [
+            "SEARCH task_events USING INDEX task_events_task_cursor (task_id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT DISTINCT s.id,s.display_name FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id JOIN sources s ON s.id=si.source_id WHERE te.task_id=? AND si.removed_at IS NULL AND s.purged_at IS NULL AND si.generation=s.generation ORDER BY s.id",
+          "plan": [
+            "SEARCH te USING COVERING INDEX sqlite_autoindex_task_evidence_1 (task_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR DISTINCT",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        },
+        {
+          "sql": "SELECT value_json FROM settings WHERE id=1",
+          "plan": [
+            "SEARCH settings USING INTEGER PRIMARY KEY (rowid=?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/candidates?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        65.66,
+        74.05,
+        85.279,
+        130.007,
+        68.784
+      ],
+      "median_wall_ms": 74.05,
+      "max_wall_ms": 130.007,
+      "response_bytes": 132,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT c.*,s.display_name source_label,\n            (SELECT json_group_array(si.id) FROM candidate_evidence ce JOIN source_items si ON si.id=ce.source_item_id JOIN sources es ON es.id=si.source_id WHERE ce.candidate_id=c.id AND si.removed_at IS NULL AND es.purged_at IS NULL AND es.generation=si.generation) evidence_json\n            FROM candidates c JOIN sources s ON s.id=c.source_id WHERE c.review_status IN ('pending','needs_clarification') AND s.purged_at IS NULL AND s.generation=c.generation AND c.id>? ORDER BY c.id LIMIT ?",
+          "plan": [
+            "SEARCH c USING INDEX candidates_review_cursor (review_status=? AND id>?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "CORRELATED SCALAR SUBQUERY 1",
+            "SEARCH ce USING COVERING INDEX sqlite_autoindex_candidate_evidence_1 (candidate_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH es USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 100,
+      "path": "/export?format=csv",
+      "samples": 1,
+      "wall_ms": [
+        200.01
+      ],
+      "median_wall_ms": 200.01,
+      "max_wall_ms": 200.01,
+      "response_bytes": 95073,
+      "prepared_statements_per_request": 24,
+      "queries": [
+        {
+          "sql": "SELECT * FROM \"contexts\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN contexts USING INDEX sqlite_autoindex_contexts_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"tasks\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN tasks USING INDEX sqlite_autoindex_tasks_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_events\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN task_events"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"sources\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN sources USING INDEX sqlite_autoindex_sources_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_items\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN source_items USING INDEX sqlite_autoindex_source_items_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidates\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN candidates USING INDEX sqlite_autoindex_candidates_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidate_evidence\" ORDER BY \"candidate_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN candidate_evidence USING COVERING INDEX sqlite_autoindex_candidate_evidence_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"review_actions\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN review_actions USING INDEX sqlite_autoindex_review_actions_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_tombstones\" ORDER BY \"source_id\",\"generation\"",
+          "plan": [
+            "SCAN source_tombstones USING INDEX sqlite_autoindex_source_tombstones_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"settings\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN settings"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_evidence\" ORDER BY \"task_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN task_evidence USING INDEX sqlite_autoindex_task_evidence_1"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100",
+      "samples": 5,
+      "wall_ms": [
+        60.616,
+        59.919,
+        60.565,
+        58.115,
+        54.688
+      ],
+      "median_wall_ms": 59.919,
+      "max_wall_ms": 60.616,
+      "response_bytes": 43383,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100&title_only=1&q=needle",
+      "samples": 5,
+      "wall_ms": [
+        44.928,
+        40.905,
+        51.249,
+        56.689,
+        46.88
+      ],
+      "median_wall_ms": 46.88,
+      "max_wall_ms": 56.689,
+      "response_bytes": 989,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND title LIKE ? ESCAPE '\\') ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks?limit=100&date_from=2035-12-01&date_to=2035-12-31&timezone=Asia%2FMakassar",
+      "samples": 5,
+      "wall_ms": [
+        56.636,
+        78.344,
+        59.037,
+        59.888,
+        54.525
+      ],
+      "median_wall_ms": 59.037,
+      "max_wall_ms": 78.344,
+      "response_bytes": 43237,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM (SELECT *,CASE WHEN status IN ('done','archived') THEN 1 ELSE 0 END sort_group,COALESCE(substr(due_at_utc,1,10),json_extract(due_json,'$.local_date'),'9999') sort_date FROM tasks WHERE deleted_at IS NULL AND ((json_extract(due_json,'$.precision')='datetime' AND due_at_utc>=? AND due_at_utc<?) OR (json_extract(due_json,'$.precision')='date_only' AND json_extract(due_json,'$.local_date')>=? AND json_extract(due_json,'$.local_date')<=?))) ORDER BY sort_group,sort_date,id LIMIT ?",
+          "plan": [
+            "SCAN tasks USING INDEX tasks_local_date",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/history?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        43.204,
+        50.123,
+        43.573,
+        44.715,
+        41.296
+      ],
+      "median_wall_ms": 43.573,
+      "max_wall_ms": 50.123,
+      "response_bytes": 15702,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SCAN task_events"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/history?limit=50&cursor=WyJoaXN0b3J5LXYxIiwxMTgwXQ",
+      "samples": 5,
+      "wall_ms": [
+        48.832,
+        37.777,
+        40.943,
+        45.358,
+        47.227
+      ],
+      "median_wall_ms": 45.358,
+      "max_wall_ms": 48.832,
+      "response_bytes": 15705,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT * FROM task_events WHERE id<? ORDER BY id DESC LIMIT ?",
+          "plan": [
+            "SEARCH task_events USING INTEGER PRIMARY KEY (rowid<?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/tasks/resource-00000?view=read",
+      "samples": 5,
+      "wall_ms": [
+        63.297,
+        62.572,
+        84.927,
+        60.813,
+        57.519
+      ],
+      "median_wall_ms": 62.572,
+      "max_wall_ms": 84.927,
+      "response_bytes": 1053,
+      "prepared_statements_per_request": 6,
+      "queries": [
+        {
+          "sql": "SELECT * FROM tasks WHERE id=? AND deleted_at IS NULL",
+          "plan": [
+            "SEARCH tasks USING INDEX sqlite_autoindex_tasks_1 (id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT id,task_id,event_type,before_json,after_json,created_at FROM task_events WHERE task_id=? ORDER BY id DESC LIMIT 31",
+          "plan": [
+            "SEARCH task_events USING INDEX task_events_task_cursor (task_id=?)"
+          ]
+        },
+        {
+          "sql": "SELECT DISTINCT s.id,s.display_name FROM task_evidence te JOIN source_items si ON si.id=te.source_item_id JOIN sources s ON s.id=si.source_id WHERE te.task_id=? AND si.removed_at IS NULL AND s.purged_at IS NULL AND si.generation=s.generation ORDER BY s.id",
+          "plan": [
+            "SEARCH te USING COVERING INDEX sqlite_autoindex_task_evidence_1 (task_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR DISTINCT",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        },
+        {
+          "sql": "SELECT value_json FROM settings WHERE id=1",
+          "plan": [
+            "SEARCH settings USING INTEGER PRIMARY KEY (rowid=?)"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/candidates?limit=50",
+      "samples": 5,
+      "wall_ms": [
+        42.566,
+        43.585,
+        47.376,
+        47.008,
+        46.477
+      ],
+      "median_wall_ms": 46.477,
+      "max_wall_ms": 47.376,
+      "response_bytes": 132,
+      "prepared_statements_per_request": 3,
+      "queries": [
+        {
+          "sql": "SELECT c.*,s.display_name source_label,\n            (SELECT json_group_array(si.id) FROM candidate_evidence ce JOIN source_items si ON si.id=ce.source_item_id JOIN sources es ON es.id=si.source_id WHERE ce.candidate_id=c.id AND si.removed_at IS NULL AND es.purged_at IS NULL AND es.generation=si.generation) evidence_json\n            FROM candidates c JOIN sources s ON s.id=c.source_id WHERE c.review_status IN ('pending','needs_clarification') AND s.purged_at IS NULL AND s.generation=c.generation AND c.id>? ORDER BY c.id LIMIT ?",
+          "plan": [
+            "SEARCH c USING INDEX candidates_review_cursor (review_status=? AND id>?)",
+            "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "CORRELATED SCALAR SUBQUERY 1",
+            "SEARCH ce USING COVERING INDEX sqlite_autoindex_candidate_evidence_1 (candidate_id=?)",
+            "SEARCH si USING INDEX sqlite_autoindex_source_items_1 (id=?)",
+            "SEARCH es USING INDEX sqlite_autoindex_sources_1 (id=?)",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ]
+        }
+      ]
+    },
+    {
+      "tasks": 1200,
+      "path": "/export?format=csv",
+      "samples": 1,
+      "wall_ms": [
+        289.121
+      ],
+      "median_wall_ms": 289.121,
+      "max_wall_ms": 289.121,
+      "response_bytes": 1124168,
+      "prepared_statements_per_request": 24,
+      "queries": [
+        {
+          "sql": "SELECT * FROM \"contexts\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN contexts USING INDEX sqlite_autoindex_contexts_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"tasks\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN tasks USING INDEX sqlite_autoindex_tasks_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_events\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN task_events"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"sources\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN sources USING INDEX sqlite_autoindex_sources_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_items\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN source_items USING INDEX sqlite_autoindex_source_items_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidates\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN candidates USING INDEX sqlite_autoindex_candidates_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"candidate_evidence\" ORDER BY \"candidate_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN candidate_evidence USING COVERING INDEX sqlite_autoindex_candidate_evidence_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"review_actions\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN review_actions USING INDEX sqlite_autoindex_review_actions_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"source_tombstones\" ORDER BY \"source_id\",\"generation\"",
+          "plan": [
+            "SCAN source_tombstones USING INDEX sqlite_autoindex_source_tombstones_1"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"settings\" ORDER BY \"id\"",
+          "plan": [
+            "SCAN settings"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM \"task_evidence\" ORDER BY \"task_id\",\"source_item_id\"",
+          "plan": [
+            "SCAN task_evidence USING INDEX sqlite_autoindex_task_evidence_1"
+          ]
+        }
+      ]
+    }
+  ],
+  "measurement_process_rss_bytes": 420970496,
+  "includes_workerd_process": false,
+  "worker_cpu_ms": null,
+  "production_d1_rows_read": null,
+  "production_d1_rows_written": null,
+  "mobile_startup_ms": null,
+  "android_callback_ms": null,
+  "linux_parser_peak_rss_bytes": null
+}

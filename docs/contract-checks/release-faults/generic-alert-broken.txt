@@ -1,0 +1,36 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/unit/push-worker.test.ts -t push renders a fixed
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ❯ tests/unit/push-worker.test.ts (2 tests | 1 failed | 1 skipped) 11ms
+   × push renders a fixed generic alert without reading payload data 10ms
+     → expected [Function] to not throw an error but 'Error: must not read payload' was thrown
+   ↓ notification click cannot navigate to an injected external URL
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/push-worker.test.ts > push renders a fixed generic alert without reading payload data
+AssertionError: expected [Function] to not throw an error but 'Error: must not read payload' was thrown
+
+- Expected: 
+undefined
+
++ Received: 
+"Error: must not read payload"
+
+ ❯ tests/unit/push-worker.test.ts:50:9
+     48|       },
+     49|     }),
+     50|   ).not.toThrow();
+       |         ^
+     51|   await done;
+     52|   expect(w.shown).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  13:18:27
+   Duration  445ms (transform 80ms, setup 0ms, collect 56ms, tests 11ms, environment 0ms, prepare 101ms)
+

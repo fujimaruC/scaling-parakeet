@@ -1471,3 +1471,126 @@ returns. Notification capture remains unobserved; the positive path still needs
 one owner-controlled self-chat message.
 
 No milestone is complete. No deployment, provisioning or account action occurred.
+
+
+## 22. CSV, injection corpus, acceptance traceability and resources — 2026-11-09
+
+Fresh main clone HEAD: `af1879bfb561774e6eca20a6f9d4c7cffa0ae83b` from
+`git rev-parse HEAD`; NEXT-PROMPT.md exists. No older checkout. Branch
+`build/export-boundaries`. Read AGENTS/STATUS/§17–21/API/work packages/test
+strategy/security/release gaps in order, then affected code and additional
+precedence documents. W42/F23/T30; W30/W31/F12–F14/T18–T20; W00/W42/F25/T33.
+
+### Decisions and existing defects
+
+1. `/export` ignored format, as reported. JSON and CSV now share the unchanged
+   eleven-table allowlist with Python backup. One rectangular UTF-8 CSV preserves
+   per-table row counts and stable qualified columns; formula prefixes are
+   neutralised before RFC4180 quoting. A ZIP of per-table CSVs was rejected as
+   unnecessary machinery. CSV is presentation, not lossless restore; JSON remains
+   the encrypted-restore input. No new migration, data table or dependency.
+2. The corpus demonstrated a real boundary gap: contact-only redaction leaked
+   known secret-shaped source values to provider JSON. Six synthetic assertions
+   failed before the fix. Local pattern redaction now runs before contact/date
+   handling. This is a heuristic and can miss unfamiliar patterns or over-redact;
+   owner preview and provider/source consent remain. SYSTEM/schema/approval were
+   not weakened. The adapter does not advertise or execute tools.
+3. T18/T19/T20/T30/T33 now map to exact assertions and missing observations.
+   Added two-source conflicting claims, reject/clarify/edit behavior and all11
+   nonempty-table disposable restore parity where prior coverage was thin.
+4. Measure instead of inventing CPU/row budgets: actual production files and
+   gzip9, captured handler SQL/EXPLAIN, local warmed wall samples, ending Node
+   controller RSS and enforced request classes. Task pages still scan/sort;
+   cursor history seeks by rowid. Proposed thresholds are review proposals, not
+   billing/account quotas. See [RESOURCE-BUDGETS](RESOURCE-BUDGETS.md) and its JSON.
+
+### Actual command output
+
+Complete logs, development failures and every broken/restored proof:
+[contract-checks](contract-checks/README.md).
+
+```text
+npm ci
+added 170 packages in 17s
+
+npm run check
+ Test Files  9 passed (9)
+      Tests  58 passed (58)
+--dry-run: exiting now.
+
+npm run test:e2e
+16 passed (1.0m)
+
+npm run test:pwa
+1 passed (11.1s)
+
+.venv/bin/python -m unittest discover -s collectors/local/tests -v
+Ran 80 tests in 7.008s
+OK
+
+.venv/bin/python scripts/check_contract_mutations.py --output-dir /tmp/aos2-contract-final
+PASS: 14 intended failures; 14 restored passes; 0 survivors; working sources untouched.
+
+.venv/bin/python scripts/check_release_mutations.py --output-dir /tmp/aos2-release-final
+PASS: 16 intended failures; 16 restored passes; 0 survivors; working sources untouched.
+
+cd apps/android-companion
+env ANDROID_HOME=/tmp/aos2-sdk ./gradlew assembleDebug lint testDebugUnitTest --no-daemon -Dorg.gradle.java.home=/tmp/aos2-jdk17
+BUILD SUCCESSFUL in 6m 23s
+53 actionable tasks: 53 executed
+0 errors, 2 warnings
+```
+
+All commands above exit0. The final strengthened missing-target error-code
+assertion was also run explicitly in the focused three-case review suite after
+the full Node suite. Python discovery was rerun after corpus assertions were
+strengthened; the retained80-case output is the latest. Planning validation,
+placeholder scan and `git diff --check` also ran; exact outcomes ship beside logs.
+
+Counts: prior52 Vitest plus3 CSV and3 review tests =58. Prior70 Python plus9
+injection methods and1 nonempty-table restore =80. Browser15 plus1 CSV download
+=16; production-PWA1 is separate. JVM remains8 native policy +6 queue privacy,
+not Android runtime tests. New fault script declares14 cases (42 files), inherited
+release script16 (48 files). They stage private copies and do not mutate working
+sources. A passing suite is not physical-device evidence.
+
+Seven source fixtures cover ignore-instructions, absent evidence, shell/tool,
+JSON breakout, contradictory dates, fake schema and a generated synthetic token.
+Adversarial output variants test strict schema rejection, UUID subset and forced
+review. HTTP provider calls are mocked. One bounded attempt/45s timeout and
+input/output size limits are asserted; no model retry loop or tool executor is
+introduced. Projection review is not canonical approval. Real local Worker sync
+never changes tasks until an authenticated explicit review; two different source
+claims remain preserved after the owner selects/rejects with versions/reminders.
+
+Resource measurements are reproducible with:
+`node --import tsx scripts/measure_resources.ts /absolute/outside/repo/resources.json`
+after `npm run build`. Fourteen public assets and16 profiles are recorded. Warmed
+wall time includes Miniflare/Node/D1/serialization, not production CPU or JWT cost.
+Ending controller RSS excludes workerd/browser and is not peak/parser/phone RSS.
+All unknown CPU/account/device/parser timing fields remain null/unmeasured.
+
+### Environment and exclusions
+
+Node24.22.1/npm11.9.0/Python3.12.14; Gradle8.11.1/Kotlin2.1.21/AGP8.9.2;
+OpenJDK17.0.20, SDK28/35, build-tools35.0.0. Existing requirements.lock installed
+in a fresh venv, Playwright's pinned Chromium installed with
+`npx playwright install chromium --only-shell`. No dependency/lockfile changed.
+
+The initial runtime had Java17 but no javac. Downloaded matching Ubuntu
+openjdk-17-jdk-headless17.0.20 package from the configured Ubuntu snapshot,
+extracted with dpkg-deb and overlaid its tools onto a private copy of the matching
+runtime at `/tmp/aos2-jdk17`; `javac -version` reported17.0.20. Downloaded official
+Google commandline-tools11076708 into `/tmp/aos2-sdk/command`, then sdkmanager
+`--sdk_root=/tmp/aos2-sdk 'platforms;android-28' 'platforms;android-35'
+'build-tools;35.0.0'`. Accepted SDK licenses locally. Gradle used the explicit JDK
+property and normal workspace proxy. All native source/signing/capture settings
+are unchanged; full verifyApi28 ran. Lint still has only the two inherited
+Transport warnings, not suppressed. No owner signing key or debug APK is shipped.
+
+**Unverified:** actual account/provider/model behavior, physical push, deployment,
+production D1 restore/CPU/rows/quota, native UI/TalkBack, positive capture/private
+network/interruption matrix and pilot. Inherited owner observations §17–21 are
+not relabeled as this builder's device test. No device or account was contacted;
+no capture selector, permission grant, signing configuration, approval or privacy
+rule was weakened. No milestone complete; no push/deploy/provisioning.

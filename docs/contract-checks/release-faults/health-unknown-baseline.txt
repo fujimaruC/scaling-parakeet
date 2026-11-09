@@ -1,0 +1,11 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t health never invents
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 1427ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  13:15:27
+   Duration  7.20s (transform 2.32s, setup 0ms, collect 4.37s, tests 1.43s, environment 0ms, prepare 515ms)
+

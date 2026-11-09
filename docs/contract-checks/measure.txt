@@ -1,0 +1,4 @@
+COMMAND: node --import tsx scripts/measure_resources.ts /tmp/aos2-resource-final.json
+MEASURED: 14 public assets; 16 local route profiles. CPU/account/device fields remain null.
+
+EXIT: 0

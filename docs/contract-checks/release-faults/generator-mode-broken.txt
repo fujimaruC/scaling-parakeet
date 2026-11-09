@@ -1,0 +1,36 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/unit/vapid-generator.test.ts -t VAPID generator writes
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ❯ tests/unit/vapid-generator.test.ts (2 tests | 1 failed | 1 skipped) 105ms
+   × VAPID generator writes only an exclusive private owner-local file and never prints key bytes 104ms
+     → expected 420 to be 384 // Object.is equality
+   ↓ VAPID generator rejects relative and repository paths before creating secrets
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/vapid-generator.test.ts > VAPID generator writes only an exclusive private owner-local file and never prints key bytes
+AssertionError: expected 420 to be 384 // Object.is equality
+
+- Expected
++ Received
+
+- 384
++ 420
+
+ ❯ tests/unit/vapid-generator.test.ts:26:43
+     24|     const bytes = readFileSync(target, 'utf8');
+     25|     expect(JSON.parse(bytes).crv).toBe('P-256');
+     26|     expect(statSync(target).mode & 0o777).toBe(0o600);
+       |                                           ^
+     27|     expect(r.stdout).not.toContain(JSON.parse(bytes).d);
+     28|     expect(run().status).not.toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  13:18:30
+   Duration  436ms (transform 52ms, setup 0ms, collect 46ms, tests 105ms, environment 0ms, prepare 81ms)
+

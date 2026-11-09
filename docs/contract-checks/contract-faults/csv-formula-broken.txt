@@ -1,0 +1,59 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/export-contract.test.ts -t CSV escapes
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ❯ tests/integration/export-contract.test.ts (3 tests | 1 failed | 2 skipped) 1055ms
+   × CSV escapes RFC 4180 cells and neutralises every dangerous prefix before quoting 69ms
+     → expected [ '=cmd', '+SUM(1,2)', '-1', …(8) ] to deeply equal [ '\'=cmd', '\'+SUM(1,2)', …(9) ]
+   ↓ CSV and JSON export exactly the same eleven tables with per-table parity and stable columns
+   ↓ export formats remain owner-only, budgeted and invalid formats fail closed
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/export-contract.test.ts > CSV escapes RFC 4180 cells and neutralises every dangerous prefix before quoting
+AssertionError: expected [ '=cmd', '+SUM(1,2)', '-1', …(8) ] to deeply equal [ '\'=cmd', '\'+SUM(1,2)', …(9) ]
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  [
+-   "'=cmd",
+-   "'+SUM(1,2)",
+-   "'-1",
+-   "'@SUM(A1)",
+-   "'	formula",
+-   "'
+formula",
++   "=cmd",
++   "+SUM(1,2)",
++   "-1",
++   "@SUM(A1)",
++   "	formula",
++   "
+formula",
+    "comma,field",
+    "quote\"field",
+    "line
+  field",
+    "carriage
+return",
+
+ ❯ tests/integration/export-contract.test.ts:68:21
+     66|   const parsed = parseCSV(cases.map(csvCell).join(',') + '\r\n');
+     67|   expect(parsed).toHaveLength(1);
+     68|   expect(parsed[0]).toEqual(
+       |                     ^
+     69|     cases.map((s) => (/^[=+\-@\t\r]/.test(s) ? "'" + s : s)),
+     70|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  13:12:16
+   Duration  2.22s (transform 237ms, setup 0ms, collect 866ms, tests 1.05s, environment 0ms, prepare 103ms)
+
+
+EXIT: 1

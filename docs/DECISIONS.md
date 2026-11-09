@@ -298,3 +298,28 @@ signing or verifyApi28 change. PWA remains until native owner acceptance. Actual
 push/device/account/privacy-sink and production migration observations are
 unverified. No milestone complete; no deployment or provisioning authorized here.
 Full behavior, limits, alternatives and rollback notes: [RELEASE-GAPS](RELEASE-GAPS.md).
+
+## ADR-026 — Same canonical snapshot for JSON, safe CSV and disposable restore
+
+2026-11-09, base af1879b; W42/F23, with W30/W31 boundary evidence and W00/F25
+measurements. This completes the already-promised CSV option; it is not a new
+raw-data export. Move the unchanged eleven names into a shared JSON allowlist
+used by Worker JSON/CSV and Linux backup. A one-file union-column CSV was chosen
+over a ZIP of per-table CSVs: one rectangular header, one row per canonical row,
+no library/dependency, and direct per-table parity checks. Formula neutralisation
+happens before RFC4180 quoting. CSV is intentionally a spreadsheet view; JSON
+retains exact null/empty values and is the encrypted restore input.
+
+The adversarial corpus exposed contact-only redaction leaving known secret-shaped
+source values in the provider JSON. Redact those local patterns before contact/
+date handling. Refusing every selected batch was rejected because safe minimized
+obligations can still be proposed after preview. This is a tested heuristic, not
+universal secret detection. The SYSTEM prompt, strict schema and mandatory owner
+approval were not weakened. Schema/subset/auth/version checks, not prompt prose,
+are the actual rejection controls. Provider/model behavior remains unverified.
+
+Query measurements revealed bounded results with whole-index task scans/sorting.
+Document measured query shape and proposed review thresholds rather than adding
+speculative indexing or claiming local wall time is Worker CPU/billing. All real
+account/device/positive capture/provider/restore gates remain open. No signing,
+capture selector, deployment or paid provisioning change.

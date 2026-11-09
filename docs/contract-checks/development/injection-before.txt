@@ -1,0 +1,72 @@
+test_absent_revoked_and_changed_consent_make_zero_provider_calls (test_injection.InjectionBoundaryTests.test_absent_revoked_and_changed_consent_make_zero_provider_calls) ... ok
+test_conflicting_deadlines_stay_two_review_proposals (test_injection.InjectionBoundaryTests.test_conflicting_deadlines_stay_two_review_proposals) ... ok
+test_evidence_subset_and_invalid_json_fail_before_projection (test_injection.InjectionBoundaryTests.test_evidence_subset_and_invalid_json_fail_before_projection) ... ok
+test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review (test_injection.InjectionBoundaryTests.test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review) ... ok
+test_projection_review_is_not_canonical_approval_and_failed_runs_are_sanitised (test_injection.InjectionBoundaryTests.test_projection_review_is_not_canonical_approval_and_failed_runs_are_sanitised) ... ok
+test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) ... ok
+test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) ... 
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=0) ... FAIL
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=1) ... FAIL
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=2) ... FAIL
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=3) ... FAIL
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=4) ... FAIL
+  test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=5) ... FAIL
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=3)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=4)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+======================================================================
+FAIL: test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) (kind=5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/bbff8dae2870/academic-os-contracts/collectors/local/tests/test_injection.py", line 42, in test_secret_shaped_source_values_never_reach_provider_json
+    messages=self.messages('Synthetic credential: '+value);self.call(messages,self.output(messages));self.assertTrue(value not in json.dumps(self.requests[-1]),'SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY');self.assertIn('[secret]',json.dumps(self.requests[-1]))
+                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : SECRET_SHAPED_SOURCE_REACHED_PROVIDER_BODY
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.230s
+
+FAILED (failures=6)

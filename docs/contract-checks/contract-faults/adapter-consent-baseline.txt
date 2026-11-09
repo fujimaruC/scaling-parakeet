@@ -1,0 +1,9 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_injection.py -k test_adapter_itself_checks_consent -v
+test_adapter_itself_checks_consent_before_any_provider_request (test_injection.InjectionBoundaryTests.test_adapter_itself_checks_consent_before_any_provider_request) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+OK
+
+EXIT: 0

@@ -1,0 +1,39 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/.venv/bin/python -m unittest discover -s collectors/local/tests -p test_restore_contract.py -k test_all_eleven_tables_restore -v
+test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials) ... FAIL
+
+======================================================================
+FAIL: test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials (test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/aos-contract-faults-ce2np5j5/collectors/local/tests/test_restore_contract.py", line 10, in test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials
+    self.assertEqual(ALLOWED,expected)
+AssertionError: Lists differ: ['con[124 chars]bstones', 'settings', 'task_evidence', 'collector_credentials'] != ['con[124 chars]bstones', 'settings', 'task_evidence']
+
+First list contains 1 additional elements.
+First extra element 11:
+'collector_credentials'
+
+  ['contexts',
+   'tasks',
+   'task_events',
+   'sources',
+   'source_items',
+   'candidates',
+   'candidate_evidence',
+   'review_actions',
+   'source_tombstones',
+   'settings',
+-  'task_evidence',
+?                 ^
+
++  'task_evidence']
+?                 ^
+
+-  'collector_credentials']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+
+EXIT: 1

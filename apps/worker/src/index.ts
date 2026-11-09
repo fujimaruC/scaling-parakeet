@@ -1,3 +1,4 @@
+import { readCanonical, canonicalCSV } from './export';
 import { listHistory } from './history';
 import { account, operationalHealth, BudgetError } from './operations';
 import { dispatchPush, pushConfig, subscribe, type PushEnv } from './push';
@@ -1944,29 +1945,18 @@ export function createApp(authorize: typeof owner = owner) {
           return result({ cloud_purged: true, local_wipe_pending: true });
         }
         if (p === '/export' && method === 'GET') {
-          const tables = [
-            'contexts',
-            'tasks',
-            'task_events',
-            'sources',
-            'source_items',
-            'candidates',
-            'candidate_evidence',
-            'review_actions',
-            'source_tombstones',
-            'settings',
-            'task_evidence',
-          ];
-          const rows = await db.batch(
-            tables.map((t) => db.prepare('SELECT * FROM ' + t)),
+          const format = url.searchParams.get('format') ?? 'json';
+          if (!['json', 'csv'].includes(format))
+            throw new Http(422, 'INVALID_EXPORT_FORMAT');
+          const { snapshot, columns } = await readCanonical(db, now());
+          if (format === 'json') return result(snapshot);
+          const headers = result({}).headers;
+          headers.set('Content-Type', 'text/csv; charset=utf-8');
+          headers.set(
+            'Content-Disposition',
+            'attachment; filename="academic-os-export.csv"',
           );
-          return result({
-            schema_version: '2.0',
-            exported_at: now(),
-            tables: Object.fromEntries(
-              tables.map((t, i) => [t, rows[i].results]),
-            ),
-          });
+          return new Response(canonicalCSV(snapshot, columns), { headers });
         }
         throw new Http(404, 'NOT_FOUND');
       } catch (e) {

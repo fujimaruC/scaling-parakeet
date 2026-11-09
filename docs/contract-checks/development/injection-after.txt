@@ -1,0 +1,12 @@
+test_absent_revoked_and_changed_consent_make_zero_provider_calls (test_injection.InjectionBoundaryTests.test_absent_revoked_and_changed_consent_make_zero_provider_calls) ... ok
+test_conflicting_deadlines_stay_two_review_proposals (test_injection.InjectionBoundaryTests.test_conflicting_deadlines_stay_two_review_proposals) ... ok
+test_evidence_subset_and_invalid_json_fail_before_projection (test_injection.InjectionBoundaryTests.test_evidence_subset_and_invalid_json_fail_before_projection) ... ok
+test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review (test_injection.InjectionBoundaryTests.test_hostile_corpus_stays_user_data_and_every_valid_output_needs_review) ... ok
+test_projection_review_is_not_canonical_approval_and_failed_runs_are_sanitised (test_injection.InjectionBoundaryTests.test_projection_review_is_not_canonical_approval_and_failed_runs_are_sanitised) ... ok
+test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval (test_injection.InjectionBoundaryTests.test_schema_rejects_no_evidence_fake_schema_tools_and_autoapproval) ... ok
+test_secret_shaped_source_values_never_reach_provider_json (test_injection.InjectionBoundaryTests.test_secret_shaped_source_values_never_reach_provider_json) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.226s
+
+OK

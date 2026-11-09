@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t persistent accounting
+
+ RUN  v3.2.7 /tmp/aos-release-faults-umycul4l
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 3976ms
+   ✓ persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation  2906ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  13:14:49
+   Duration  5.13s (transform 262ms, setup 0ms, collect 857ms, tests 3.98s, environment 0ms, prepare 87ms)
+

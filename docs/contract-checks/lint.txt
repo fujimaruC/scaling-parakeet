@@ -1,0 +1,19 @@
+/workspace/scratch/bbff8dae2870/academic-os-contracts/apps/android-companion/app/src/main/java/id/academicos/companion/Transport.kt:21: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+ fun clearPending(){prefs.edit().remove("batch").commit()}
+                                                 ~~~~~~~~
+
+   Explanation for issues of type "ApplySharedPref":
+   Consider using apply() instead of commit on shared preferences. Whereas
+   commit blocks and writes its data to persistent storage immediately, apply
+   will handle it in the background.
+
+/workspace/scratch/bbff8dae2870/academic-os-contracts/apps/android-companion/app/src/main/java/id/academicos/companion/Transport.kt:27: Warning: Implementing a custom X509TrustManager is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation. [CustomX509TrustManager]
+  val manager=object:X509TrustManager{
+              ~~~~~~
+
+   Explanation for issues of type "CustomX509TrustManager":
+   This check looks for custom X509TrustManager implementations.
+
+   https://goo.gle/CustomX509TrustManager
+
+0 errors, 2 warnings

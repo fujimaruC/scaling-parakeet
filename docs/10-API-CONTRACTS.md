@@ -185,3 +185,26 @@ application usage. Request budget refusal returns429
 `BUDGET_ACCOUNTING_UNAVAILABLE`. Neither is canonical mutation success. Clients
 retain their immutable uncertain online write journal and retry explicitly later.
 Limits, caveats and setup: [RELEASE-GAPS](RELEASE-GAPS.md).
+
+## CSV serialization of the existing canonical export
+
+`GET /export` still defaults to JSON; `?format=json` has the same canonical JSON
+data shape. `?format=csv` completes the already-promised format option. Any other
+format is422 `INVALID_EXPORT_FORMAT`. The same owner authentication/native route
+allowlist and export request budget apply before either format reads data.
+
+Both formats read the exact shared eleven-table allowlist in
+`packages/contracts/canonical-tables.json`, also consumed by Linux backup/restore.
+Rows for all tables are read in one D1 batch. CSV does not add raw evidence,
+credentials, delivery state, operational counters or push endpoints.
+
+CSV is one UTF-8 `text/csv; charset=utf-8` attachment, with RFC4180 quoted cells,
+doubled quotes and CRLF record separators. Header order is `schema_version`,
+`exported_at`, `table`, then `<table>.<column>` fields in allowlist/schema column
+order. One data row represents one canonical table row; columns belonging to
+other tables are empty. Primary-key row order is deterministic. Empty tables add
+columns but no data rows. JSON-valued DB columns remain literal JSON strings.
+Values starting with `=`, `+`, `-`, `@`, TAB or CR receive a leading apostrophe
+before quoting. Null becomes an empty cell. Those transformations make CSV a
+spreadsheet presentation, not a lossless backup. Use JSON for encrypted restore.
+The PWA exposes an explicit format selector and preserves the CSV response bytes.

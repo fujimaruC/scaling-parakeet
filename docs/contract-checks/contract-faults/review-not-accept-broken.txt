@@ -1,0 +1,36 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t reject and clarify only audit
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ❯ tests/integration/review-boundary.test.ts (3 tests | 1 failed | 2 skipped) 1680ms
+   ↓ two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation
+   ↓ AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review
+   × reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task 673ms
+     → expected 'accepted' to be 'rejected' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/review-boundary.test.ts > reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task
+AssertionError: expected 'accepted' to be 'rejected' // Object.is equality
+
+Expected: "rejected"
+Received: "accepted"
+
+ ❯ tests/integration/review-boundary.test.ts:294:33
+    292|       .bind(p.candidate)
+    293|       .first<any>();
+    294|     expect(saved.review_status).toBe(
+       |                                 ^
+    295|       action === 'reject'
+    296|         ? 'rejected'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  13:13:52
+   Duration  2.97s (transform 297ms, setup 0ms, collect 982ms, tests 1.68s, environment 0ms, prepare 83ms)
+
+
+EXIT: 1

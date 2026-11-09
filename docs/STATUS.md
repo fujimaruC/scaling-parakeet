@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-09 · Asia/Makassar. Release-gap builder slice, base c4497da: browser push adapter, durable application budgets/health, bounded history and native source freshness. Local checks do not prove phone/account/push behavior. PWA remains; no milestone is complete.**
+**2026-11-09 · Asia/Makassar. CSV/adversarial-contract/traceability/resource builder slice, fresh-clone base af1879b. Synthetic/local evidence only; production, device and provider gates remain open. No milestone is complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -613,3 +613,51 @@ installed: the phone left USB first. No new device claim is made. Positive
 notification capture, private-network transport, account enrollment, real push
 delivery, provider, production migration/restore and the owner pilot remain
 unverified. No milestone is complete.
+
+
+## CSV, adversarial boundaries and resource evidence — base af1879b, 2026-11-09
+
+Fresh main at af1879bfb561774e6eca20a6f9d4c7cffa0ae83b; branch
+build/export-boundaries. NEXT-PROMPT exists; no older checkout. W42/F23/T30,
+then W30/W31/F12–F14/T18–T20, then W00/W42/F25/T33. No dependency, migration,
+Android source, signing configuration, capture-selector, approval or Origin change.
+
+Complete the advertised export format through one canonical snapshot and the
+unchanged11-table allowlist, now shared by Worker and Linux backup. One rectangular
+CSV uses table/qualified-column headers, quoted UTF-8/CRLF cells and apostrophe
+neutralisation before quoting. JSON remains the lossless backup/restore format;
+PWA lets the owner choose explicitly. Invalid formats fail rather than becoming
+JSON. Same authentication/budget before reads; no wider table export.
+
+A seven-case hostile-source corpus and adversarial model-output cases exercise
+real consent, JSON/schema, evidence subset, no-tools and proposal-only boundaries.
+A verified gap was found: contact redaction left common secret-shaped source
+values in provider JSON. Local known-pattern redaction now precedes contact/date
+handling. This is a heuristic, not universal secret detection; preview/explicit
+provider consent remain necessary. SYSTEM/schema/approval were not weakened.
+Two-source formal/group disagreement stays pending until an explicit owner choice;
+stale target versions fail, competing claims persist and reminder revisions change
+only after review. Reject/clarify audit without canonical creation is now asserted.
+
+T18/T19/T20/T30/T33 now map to exact assertions and remaining gaps in
+[11-TEST-STRATEGY](11-TEST-STRATEGY.md). All11 canonical tables have nonempty local
+restore fixtures with independent counts/hashes and no restored credentials,
+push state or old dispatch. Production D1 restore remains unverified.
+
+[RESOURCE-BUDGETS](RESOURCE-BUDGETS.md) and its retained JSON record actual production
+bytes/gzip, local query plans/wall samples, controller RSS and current request
+classes. Task list/search/calendar still scan/sort despite bounded result pages;
+history cursor uses rowid lookup. These are documented limits, not a new scaling
+claim. Worker CPU, production row costs, mobile/phone timings and parser peak RSS
+remain unmeasured. Proposed ceilings need owner/account review; they do not cap
+billing or authorize spending. No automatic limit increase or index rewrite.
+
+Exact commands/results and setup are appended in VERIFICATION-LOG §22 and
+contract-checks. No owner device/account/provider/push/deployment result is
+claimed. Positive capture is still unobserved in the inherited record; keep the
+actual §17–21 observations and their limits. No milestone is complete.
+
+Local outcomes: npm ci/check exit0 (58 Vitest), browser16 pass, production-PWA1
+pass, Python80 pass, new fault proofs14/14 and inherited release proofs16/16 with
+0 survivors; Gradle assemble/lint/API28/JVM exit0 (14 JVM,0 lint errors/2 inherited
+warnings). These are synthetic/local checks only. Exact output and limitations: §22.

@@ -1,0 +1,36 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/export-contract.test.ts -t CSV and JSON export
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ❯ tests/integration/export-contract.test.ts (3 tests | 1 failed | 2 skipped) 1701ms
+   ↓ CSV escapes RFC 4180 cells and neutralises every dangerous prefix before quoting
+   × CSV and JSON export exactly the same eleven tables with per-table parity and stable columns 634ms
+     → expected 'application/json' to be 'text/csv; charset=utf-8' // Object.is equality
+   ↓ export formats remain owner-only, budgeted and invalid formats fail closed
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/export-contract.test.ts > CSV and JSON export exactly the same eleven tables with per-table parity and stable columns
+AssertionError: expected 'application/json' to be 'text/csv; charset=utf-8' // Object.is equality
+
+Expected: "text/csv; charset=utf-8"
+Received: "application/json"
+
+ ❯ tests/integration/export-contract.test.ts:141:48
+    139|   const response = await call('?format=csv');
+    140|   expect(response.status).toBe(200);
+    141|   expect(response.headers.get('Content-Type')).toBe('text/csv; charset…
+       |                                                ^
+    142|   expect(response.headers.get('Cache-Control')).toBe('no-store');
+    143|   const raw = await response.text();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  13:13:17
+   Duration  3.84s (transform 301ms, setup 0ms, collect 1.80s, tests 1.70s, environment 0ms, prepare 108ms)
+
+
+EXIT: 1

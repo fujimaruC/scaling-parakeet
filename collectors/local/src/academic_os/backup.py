@@ -2,7 +2,8 @@
 import argparse,json,os,sqlite3,hashlib
 from pathlib import Path
 from cryptography.fernet import Fernet
-ALLOWED=['contexts','tasks','task_events','sources','source_items','candidates','candidate_evidence','review_actions','source_tombstones','settings','task_evidence']
+# Shared exact eleven-table allowlist, also consumed by Worker JSON/CSV.
+ALLOWED=json.loads((Path(__file__).resolve().parents[4]/'packages/contracts/canonical-tables.json').read_text())
 def encrypt(export,output,key_path):
     value=json.loads(Path(export).read_text())
     if value.get('schema_version')!='2.0' or set(value['tables'])!=set(ALLOWED):raise ValueError('Unsupported canonical export')

@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /workspace/scratch/bbff8dae2870/academic-os-contracts
+
+ ✓ tests/integration/review-boundary.test.ts (3 tests) 4860ms
+   ✓ two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation  1727ms
+   ✓ AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review  355ms
+   ✓ reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task  1536ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  13:16:49
+   Duration  6.53s (transform 308ms, setup 0ms, collect 1.27s, tests 4.86s, environment 0ms, prepare 117ms)
+

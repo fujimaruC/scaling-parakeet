@@ -1,0 +1,39 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t AI-shaped proposals
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ❯ tests/integration/review-boundary.test.ts (3 tests | 1 failed | 2 skipped) 1505ms
+   ↓ two sources retain disagreeing deadline claims until the owner explicitly chooses one, with versioned reminder recomputation
+   × AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review 428ms
+     → expected 1 to be +0 // Object.is equality
+   ↓ reject and clarify only audit a proposal; accept with edits alone creates the corrected canonical task
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/review-boundary.test.ts > AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ tests/integration/review-boundary.test.ts:242:5
+    240|   expect(
+    241|     (await db.prepare('SELECT count(*) n FROM tasks').first<any>()).n,
+    242|   ).toBe(originalCount);
+       |     ^
+    243|   const noOwner = await app.fetch(
+    244|     new Request(origin + '/api/v1/candidates/' + p.candidate + '/revie…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  13:14:04
+   Duration  2.71s (transform 274ms, setup 0ms, collect 882ms, tests 1.51s, environment 0ms, prepare 92ms)
+
+
+EXIT: 1

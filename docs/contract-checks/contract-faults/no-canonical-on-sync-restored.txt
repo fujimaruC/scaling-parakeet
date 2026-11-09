@@ -1,0 +1,14 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-contracts/node_modules/.bin/vitest run tests/integration/review-boundary.test.ts -t AI-shaped proposals
+
+ RUN  v3.2.7 /tmp/aos-contract-faults-ce2np5j5
+
+ ✓ tests/integration/review-boundary.test.ts (3 tests | 2 skipped) 1532ms
+   ✓ AI-shaped proposals with review flags and issues cannot perform a canonical write without an explicit owner review  522ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 2 skipped (3)
+   Start at  13:14:07
+   Duration  2.82s (transform 342ms, setup 0ms, collect 818ms, tests 1.53s, environment 0ms, prepare 261ms)
+
+
+EXIT: 0
