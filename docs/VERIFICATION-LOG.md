@@ -1174,3 +1174,98 @@ Mapping any of those 8 would have persisted another person's message text, so it
 was not done. The positive path therefore still requires one owner-controlled
 WhatsApp self-chat message. The receiver, tunnel and pairing were left running so
 that a single message completes the gate without repeating the setup.
+
+## 19. Capture selector fix, listener crash, and reboot persistence — 2026-11-09
+
+Branch `fix/capture-conversation-title` off `6ea3b61`. Scope: the two selector
+defects recorded in §18, the install crash they exposed, and the reboot gap found
+while auditing what the owner must re-enter.
+
+### Selector: normalised conversation identity
+
+`CaptureService.capture` required `EXTRA_TITLE == expected` exactly. Live titles
+carry `(N messages)` and `: preview`, so a verified mapping could not match the
+next notification. New platform-free `ledger/CaptureMatch.kt`:
+
+- identity is `EXTRA_CONVERSATION_TITLE` when present and non-blank, else
+  `EXTRA_TITLE`;
+- the mutating `\(\d+ messages?\)` counter is stripped from either side;
+- the `": "` preview suffix is deliberately **not** truncated. Truncating would
+  let a chat genuinely named `Ana: Maria` collapse onto a verified `Ana` and
+  capture a different conversation. A title whose preview mutates therefore
+  fails to match, which is the fail-closed direction;
+- both sides run through the same function, and `describeActive()` renders the
+  same value, so what the owner verifies is exactly what is compared;
+- blank expected values and any group-key mismatch still reject.
+
+Regression: three cases in `NativePolicyTest` (wired into Gradle already, no
+build-config change), 8 native-policy cases total. Mutation proof: restoring the
+pre-fix comparison makes `testNativePolicy` exit 1 at
+`capture selector needs exact identity and exact group`; the source is restored in
+a `trap` and verified byte-identical afterwards.
+
+### Crash found on the first install of the fixed build
+
+The first fixed build (matcher only, no guard) was installed in place and
+`device_evidence.py` reported `fatal_exception_observed: true`:
+
+```text
+FATAL EXCEPTION: main   (Process: id.academicos.companion, PID: 31670)
+java.lang.SecurityException: Disallowed call from unknown notification listener
+  at NotificationListenerService.getActiveNotifications
+  at id.academicos.companion.CaptureService.onListenerConnected(CaptureService.kt:21)
+```
+
+After an in-place update the system re-binds the listener before re-authorising
+it, so `activeNotifications` throws and took the process down. The app restarted
+as a new PID; `capture.xml`, `private-pairing.xml` and `health.xml` all survived,
+so no configuration was lost. This is the first in-place update exercised on this
+phone, which is why it had not been seen before; it is not caused by the selector
+change.
+
+Fix: `safeActive()` wraps the call, returns an empty array on `SecurityException`
+and records `health.listener=listener_denied`. New notifications still arrive via
+`onNotificationPosted`, so capture continues; only the replay of already-active
+notifications is skipped in that window.
+
+### Reboot persistence gap
+
+`SyncJob.schedule` did not call `setPersisted(true)` and the manifest had no
+`RECEIVE_BOOT_COMPLETED`, so after a reboot the periodic transfer job was gone
+until the owner opened the Capture screen once. Capture would still queue but
+nothing would sync. Both are now added.
+
+### Capture screen no longer looks unpaired
+
+`CaptureActivity.render()` built blank endpoint/pin/token fields on every open and
+showed no evidence of an existing pairing, which made the setup look per-launch.
+It now prints the `paired` string when `Transport.configured()` is true. Fields
+stay blank because a re-pair needs a fresh one-use token; a failed re-pair does
+not overwrite the stored config, which is replaced only on a successful commit.
+
+### Verification
+
+```text
+./gradlew assembleDebug lint testDebugUnitTest --no-daemon   (JDK 17.0.21+9, SDK 35)
+BUILD SUCCESSFUL in 6m 16s
+Native policy cases: 8; no Android runtime, device or account used.
+Queue privacy policy: 6 tests passed (JVM only; Android Keystore/SQLite/device unverified)
+
+# Mutation proof: pre-fix comparison restored, then reverted by trap
+Execution failed for task ':app:testNativePolicy'  (non-zero exit, 1m 45s)
+PASS native-policy: conversation identity strips the mutating message counter
+Exception in thread "main" java.lang.IllegalStateException: Check failed.
+# ^ the selector case, not a compile error
+```
+
+An independent 15-case harness compiled the matcher outside Gradle and confirmed
+both sides normalise (a previously saved raw title still matches a clean observed
+one) and that `Ana: Maria` never matches a verified `Ana`. APK `a3bd5b12…`,
+versionCode 2, cert `f4569691…`, identical to the installed debug identity.
+
+**Not run:** the guarded build has not been installed. The phone left USB
+(`adb devices` empty, no OPPO on the bus) before the install step, so the
+crash-count check that would confirm the guard on hardware is still outstanding.
+The crash above is the only crash recorded for this package (cumulative count 1
+before the guarded build). Notification access remains granted, pairing and the
+synthetic mapping are intact, and capture/transport remain `not_run`.

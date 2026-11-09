@@ -94,7 +94,7 @@ Source purge uses generation tombstones and revokes sync credentials. Linux chec
 
 ## Queue/API-28 follow-up
 
-Install SDK platforms 28 and 35 plus build-tools 35.0.0. `verifyApi28` checks all Kotlin against Android 9 without host JDK APIs. `testDebugUnitTest` runs five plain-JVM policy tests through its `testQueuePrivacy` prerequisite; these are not Android runtime tests or a JUnit class. No dependency was added.
+Install SDK platforms 28 and 35 plus build-tools 35.0.0. `verifyApi28` checks all Kotlin against Android 9 without host JDK APIs. `testDebugUnitTest` runs six queue-privacy and eight native-policy plain-JVM cases through its `testQueuePrivacy`/`testNativePolicy` prerequisites; these are not Android runtime tests or a JUnit class. No dependency was added.
 
 ```bash
 cd apps/android-companion

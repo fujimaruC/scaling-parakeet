@@ -198,11 +198,11 @@
     <string name="owner_reset">Reset pemilik tercatat. Antrean kosong tidak membuktikan pengumpulan lengkap.</string>
     <string name="capture_limitations">Cakupan parsial. Notifikasi yang hilang tidak dapat dipulihkan di sini. Transfer menunggu Linux terjangkau.</string>
     <string name="notification_settings">Buka pengaturan akses notifikasi</string>
-    <string name="test_mapping">Uji percakapan sintetis milik pemilik. Cocokkan judul DAN group key. Biarkan nonaktif sampai terverifikasi.</string>
+    <string name="test_mapping">Uji percakapan sintetis milik pemilik. Cocokkan nama percakapan DAN group key. Biarkan nonaktif sampai terverifikasi.</string>
     <string name="inspect_metadata">Periksa metadata WhatsApp aktif</string>
     <string name="listener_disconnected">Listener tidak terhubung; metadata belum diperiksa.</string>
     <string name="metadata_unavailable">Metadata tidak tersedia</string>
-    <string name="verified_title">Judul notifikasi yang diverifikasi</string>
+    <string name="verified_title">Nama percakapan terverifikasi</string>
     <string name="verified_group">Group key notifikasi yang diverifikasi</string>
     <string name="enable_mapping">Aktifkan percakapan uji terpilih</string>
     <string name="save_mapping">Simpan pemetaan terpilih</string>

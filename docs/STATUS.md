@@ -482,9 +482,12 @@ widening the filter:
    one `groupKey` and none was a group conversation, so "title AND group key"
    degenerates to title-only — not the owner-tested conjunction the code claims.
 
-No fix is applied: both changes touch a privacy-relevant selector and need an
-explicit decision. A candidate fix (prefer `conversationTitle`, normalise the
-fallback, keep exact equality on both parts) would not widen accepted scope.
+Applied on branch `fix/capture-conversation-title` after the owner's decision.
+`CaptureMatch` prefers `EXTRA_CONVERSATION_TITLE`, strips only the mutating
+`(N messages)` counter, and requires exact equality on identity and group key.
+It deliberately does **not** truncate at `": "`, so a chat named `Ana: Maria`
+cannot collapse onto a verified `Ana`. A title whose preview text mutates fails
+to match, which is the fail-closed direction. See [VERIFICATION-LOG §19](VERIFICATION-LOG.md#19-capture-selector-fix-listener-crash-and-reboot-persistence--2026-11-09).
 
 The positive capture test was not executed. The owner chose the existing
 self-chat, but no self-chat notification was present: 0 of 8 titles matched a
@@ -493,3 +496,44 @@ blocks without `conversationTitle` had `title == MessagingStyle.user`. Mapping a
 of the 8 would have persisted another person's message text, so it was not done.
 One owner-controlled WhatsApp self-chat message still completes the gate; the
 receiver, tunnel and pairing were left running for it.
+
+## Capture selector fix, listener crash and reboot persistence — 2026-11-09
+
+Branch `fix/capture-conversation-title`. All three changes came from real-device
+observation:
+
+1. **Selector** — `capture()` required an exact `EXTRA_TITLE` match, but live
+   WhatsApp titles carry `(N messages)` and `: preview`, so a verified mapping
+   never matched. New platform-free `CaptureMatch` takes
+   `EXTRA_CONVERSATION_TITLE` when present, else `EXTRA_TITLE`, strips only the
+   mutating `(N messages)` counter, and requires exact equality on identity and
+   group key. It deliberately does **not** truncate at `": "`: a chat named
+   `Ana: Maria` would otherwise collapse onto a verified `Ana`. Mutation-preview
+   titles therefore fail to match, which is the fail-closed direction.
+   `describeActive()` renders the same value the filter compares.
+2. **Install crash** — the first fixed build crashed once on install. After an
+   in-place update the system re-binds the listener before re-authorising it, so
+   `activeNotifications` threw `SecurityException` and killed the process. Now
+   guarded by `safeActive()`, which records `listener_denied` and returns an
+   empty list; new notifications still arrive via `onNotificationPosted`. Config
+   survived the crash intact.
+3. **Reboot gap** — `SyncJob` was not persisted, so periodic transfer stopped
+   after a reboot until the Capture screen was opened. Added
+   `RECEIVE_BOOT_COMPLETED` and `setPersisted(true)`.
+
+The Capture screen also now shows the existing pairing instead of blank fields
+that made one-time setup look per-launch.
+
+Verification: `assembleDebug lint testDebugUnitTest` BUILD SUCCESSFUL in 6m16s on
+JDK 17.0.21+9 / SDK 35; 8 native-policy cases and 6 queue-privacy cases pass,
+including three new selector cases. Mutation proof restores the pre-fix
+comparison and the run fails at `capture selector needs exact identity and exact
+group` with an assertion, not a compile error; sources are restored afterwards.
+APK `a3bd5b12…` is signed with the installed debug identity, so the next update is
+in place.
+
+**Not run:** the guarded APK has not been installed. The phone left USB before
+that step, so the crash-count confirmation on hardware is outstanding. The
+earlier crash remains the only one recorded for this package. Notification access
+stays granted, pairing and the synthetic mapping are intact, and capture and
+transport remain `not_run`. M0 and every release gate remain incomplete.

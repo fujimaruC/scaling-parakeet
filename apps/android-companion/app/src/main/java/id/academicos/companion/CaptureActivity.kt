@@ -36,6 +36,8 @@ class CaptureActivity:Activity(){
         button("save_mapping"){
             try{if(Queue(this).use{it.count()}>0&&(title.text.toString()!=settings.getString("title","")||group.text.toString()!=settings.getString("group",""))){line(ui.t("mapping_blocked"));return@button};settings.edit().putString("title",title.text.toString()).putString("group",group.text.toString()).putBoolean("enabled",enabled.isChecked&&title.text.isNotBlank()&&group.text.isNotBlank()).apply();render()}catch(_:Exception){line(ui.t("queue_repair_help"))}
         }
+        val paired=Transport(this).configured()
+        if(paired)line(ui.t("paired"))
         line(ui.t("pair_notice"));val endpoint=ui.field(content,"private_endpoint");val pin=ui.field(content,"certificate_pin");val token=ui.field(content,"pair_grant",secret=true)
         button("pair"){val address=endpoint.text.toString();val fingerprint=pin.text.toString();val invitation=token.text.toString();token.setText("");Thread{try{Transport(this).pair(address,fingerprint,invitation);SyncJob.schedule(this);runOnUiThread{line(ui.t("paired"))}}catch(_:Exception){runOnUiThread{if(!isDestroyed)line(ui.t("pair_failed"))}}}.start()}
         button("sync_queue"){Thread{try{Transport(this).sync();runOnUiThread{if(!isDestroyed)render()}}catch(_:Exception){runOnUiThread{if(!isDestroyed)line(ui.t("sync_pending"))}}}.start()}

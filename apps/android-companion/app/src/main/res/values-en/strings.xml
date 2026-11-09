@@ -198,11 +198,11 @@
     <string name="owner_reset">Owner reset recorded. An empty queue does not prove complete collection.</string>
     <string name="capture_limitations">Partial coverage. Missing notifications cannot be recovered here. Transfer waits until Linux is reachable.</string>
     <string name="notification_settings">Open notification access settings</string>
-    <string name="test_mapping">Test an owner-controlled synthetic conversation. Match title AND group key. Leave disabled until verified.</string>
+    <string name="test_mapping">Test an owner-controlled synthetic conversation. Match conversation name AND group key. Leave disabled until verified.</string>
     <string name="inspect_metadata">Inspect active WhatsApp metadata</string>
     <string name="listener_disconnected">Listener not connected; metadata not inspected.</string>
     <string name="metadata_unavailable">Metadata unavailable</string>
-    <string name="verified_title">Verified notification title</string>
+    <string name="verified_title">Verified conversation name</string>
     <string name="verified_group">Verified notification group key</string>
     <string name="enable_mapping">Enable selected test conversation</string>
     <string name="save_mapping">Save selected mapping</string>
