@@ -25,7 +25,7 @@ One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected Wha
 | Surface | Responsibility |
 |---|---|
 | Responsive React PWA | Today, tasks, proposals, calendar, search, history, settings; Indonesian/English and light/dark |
-| Kotlin Android companion | Selected WhatsApp notification capture, local queue, device pairing and health; no native task manager |
+| Kotlin Android app | Native tasks, review, calendar, settings and editor; selected WhatsApp notification capture, encrypted queue, pairing and health |
 | Python Linux collector + local browser UI | Export import, phone receipt, normalized evidence, privacy preview, 9Router extraction, sync |
 | Cloudflare Worker + D1 | Private structured proposals/tasks, owner decisions, cloud reminders and device-independent reads |
 

@@ -1,0 +1,11 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t push is opt in
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 1045ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  09:19:28
+   Duration  1.79s (transform 159ms, setup 0ms, collect 550ms, tests 1.05s, environment 0ms, prepare 57ms)
+

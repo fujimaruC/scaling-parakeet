@@ -1,3 +1,6 @@
+import { listHistory } from './history';
+import { account, operationalHealth, BudgetError } from './operations';
+import { dispatchPush, pushConfig, subscribe, type PushEnv } from './push';
 import {
   authenticateDevice,
   enrollDevice,
@@ -18,7 +21,7 @@ import {
   unknownDue,
   type Due,
 } from '../../../packages/contracts/src/index';
-export interface Env extends AuthEnv {
+export interface Env extends AuthEnv, PushEnv {
   DB: D1Database;
   ASSETS?: Fetcher;
 }
@@ -251,7 +254,7 @@ export async function tick(db: D1Database, at = now()) {
     ]);
   }
 
-  // Inbox is the durable delivery channel. One atomic transaction; external push is deliberately unconfigured.
+  // Inbox is the durable channel. Push dispatch is independent and cannot create inbox rows.
   const cutoff = new Date(Date.parse(at) - 6 * 3600000).toISOString();
   await db
     .prepare(
@@ -346,6 +349,7 @@ async function collectorAuth(
   } catch {
     throw new Http(409, 'REPLAY_DETECTED');
   }
+  await account(env.DB, 'sync');
   return { cred, keyId, digest };
 }
 async function sync(req: Request, env: Env) {
@@ -731,16 +735,24 @@ export function createApp(authorize: typeof owner = owner) {
         let deviceId: string | null = null;
         if (devicePath) {
           if (req.headers.has('Origin')) throw new Http(403, 'INVALID_ORIGIN');
-          if (path === '/api/device/v1/enroll' && req.method === 'POST')
+          if (path === '/api/device/v1/enroll' && req.method === 'POST') {
+            await account(db, 'enroll');
             return result(
               await enrollDevice(req, env, (await body(req, 4096)).value),
             );
+          }
           const client = await authenticateDevice(
             req,
             env,
             path === '/api/device/v1/enrollment',
           );
           deviceId = client.id;
+          if (
+            ['/api/device/v1/enrollment', '/api/device/v1/session'].includes(
+              path,
+            )
+          )
+            await account(db, req.method === 'GET' ? 'read' : 'write');
           if (path === '/api/device/v1/enrollment' && req.method === 'GET')
             return result({
               client_id: client.id,
@@ -774,6 +786,66 @@ export function createApp(authorize: typeof owner = owner) {
           devicePath ? '/api/device/v1'.length : '/api/v1'.length,
         );
         const method = req.method;
+        await account(
+          db,
+          p === '/export'
+            ? 'export'
+            : ['GET', 'HEAD'].includes(method)
+              ? 'read'
+              : 'write',
+        );
+        if (!devicePath && p === '/push/config' && method === 'GET') {
+          try {
+            const c = await pushConfig(env);
+            return result({
+              state: c ? 'configured_unverified' : 'not_configured',
+              public_key: c?.publicKey ?? null,
+            });
+          } catch {
+            return result({ state: 'configuration_invalid', public_key: null });
+          }
+        }
+        if (!devicePath && p === '/push/subscriptions' && method === 'GET')
+          return result(
+            (
+              await db
+                .prepare(
+                  'SELECT id,created_at,revoked_at FROM push_subscriptions WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT 4',
+                )
+                .all()
+            ).results,
+          );
+        if (!devicePath && p === '/push/subscriptions' && method === 'POST') {
+          const v = (await body(req, 4096)).value;
+          if (Object.keys(v ?? {}).join(',') !== 'endpoint')
+            throw new Http(422, 'INVALID_PUSH_SUBSCRIPTION');
+          try {
+            return result(await subscribe(env, v.endpoint));
+          } catch (e) {
+            const code = e instanceof Error ? e.message : '';
+            throw new Http(
+              code === 'INVALID_PUSH_SUBSCRIPTION' ? 422 : 409,
+              [
+                'INVALID_PUSH_SUBSCRIPTION',
+                'PUSH_NOT_CONFIGURED',
+                'PUSH_CONFIGURATION_INVALID',
+                'PUSH_SUBSCRIPTION_UNAVAILABLE',
+              ].includes(code)
+                ? code
+                : 'PUSH_CONFIGURATION_INVALID',
+            );
+          }
+        }
+        const pushDelete = /^\/push\/subscriptions\/([a-f0-9]{64})$/.exec(p);
+        if (!devicePath && pushDelete && method === 'DELETE') {
+          await db
+            .prepare(
+              'UPDATE push_subscriptions SET revoked_at=coalesce(revoked_at,?) WHERE id=?',
+            )
+            .bind(now(), pushDelete[1])
+            .run();
+          return result({ revoked: true });
+        }
         if (!devicePath && p.startsWith('/owner-devices')) {
           const value = method === 'POST' ? (await body(req)).value : undefined;
           const out = await administerClients(
@@ -791,12 +863,20 @@ export function createApp(authorize: typeof owner = owner) {
             subject: env.OWNER_SUB,
             ...(deviceId ? { client_id: deviceId } : {}),
           });
-        if (p === '/health' && method === 'GET')
+        if (p === '/health' && method === 'GET') {
+          let push = 'not_configured';
+          try {
+            if (await pushConfig(env)) push = 'configured_unverified';
+          } catch {
+            push = 'configuration_invalid';
+          }
           return result({
             cloud: 'online',
-            push: 'not_configured',
+            push,
             collector: 'last_reported_only',
+            operations: await operationalHealth(db),
           });
+        }
         if (p === '/contexts' && method === 'GET')
           return result(
             (
@@ -1365,14 +1445,19 @@ export function createApp(authorize: typeof owner = owner) {
                 .all()
             ).results,
           );
-        if (p === '/history' && method === 'GET')
-          return result(
-            (
-              await db
-                .prepare('SELECT * FROM task_events ORDER BY id DESC LIMIT 100')
-                .all()
-            ).results,
-          );
+        if (p === '/history' && method === 'GET') {
+          try {
+            const v = await listHistory(db, url);
+            return result(v.items, 200, { next_cursor: v.cursor });
+          } catch (e) {
+            if (
+              e instanceof Error &&
+              ['INVALID_CURSOR', 'INVALID_FILTER'].includes(e.message)
+            )
+              throw new Http(422, e.message);
+            throw e;
+          }
+        }
         if (p === '/briefing' && method === 'GET') {
           const saved = await db
             .prepare('SELECT value_json FROM settings WHERE id=1')
@@ -1885,6 +1970,11 @@ export function createApp(authorize: typeof owner = owner) {
         }
         throw new Http(404, 'NOT_FOUND');
       } catch (e) {
+        if (e instanceof BudgetError)
+          return result(
+            { error: { code: e.code } },
+            e.code === 'REQUEST_BUDGET_EXCEEDED' ? 429 : 503,
+          );
         if (e instanceof DeviceAuthError)
           return result({ error: { code: e.code } }, e.status);
         if (e instanceof Http)
@@ -1906,6 +1996,29 @@ const app = createApp();
 export default {
   ...app,
   async scheduled(_event: ScheduledController, env: Env) {
-    await tick(env.DB);
+    const at = now();
+    await env.DB.prepare(
+      "INSERT INTO operational_reports(component,started_at,state) VALUES('scheduler',?,'running') ON CONFLICT(component) DO UPDATE SET started_at=excluded.started_at,state='running'",
+    )
+      .bind(at)
+      .run();
+    try {
+      await tick(env.DB, at);
+      await dispatchPush(env, at);
+      await env.DB.prepare(
+        "UPDATE operational_reports SET reported_at=?,state='completed' WHERE component='scheduler' AND started_at=?",
+      )
+        .bind(now(), at)
+        .run();
+    } catch {
+      await env.DB.prepare(
+        "UPDATE operational_reports SET reported_at=?,state='failed' WHERE component='scheduler' AND started_at=?",
+      )
+        .bind(now(), at)
+        .run();
+    }
+    await env.DB.prepare('DELETE FROM operational_usage WHERE bucket<?')
+      .bind(new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
+      .run();
   },
 };

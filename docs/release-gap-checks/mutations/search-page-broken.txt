@@ -1,0 +1,147 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t a year ledger
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ❯ tests/integration/release-gaps.test.ts (12 tests | 1 failed | 11 skipped) 9701ms
+   ↓ push subscription lifecycle sends an empty body with verifiable VAPID and never changes the durable inbox
+   ↓ expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe
+   ↓ ambiguous push failures remain unknown and are not replayed; inbox count and contents survive failure
+   ↓ push is opt in, rejects arbitrary outbound URLs, missing/mismatched keys and has a four-install cap
+   ↓ browser push lifecycle remains authenticated and same-origin; device namespace cannot use it
+   ↓ persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation
+   ↓ health never invents reports, labels stale/future clocks separately, and exposes durable counts instead of billing
+   × a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions 8689ms
+     → expected [ 'task-0000', 'task-0012', …(98) ] to deeply equal [ 'task-1199' ]
+   ↓ global history reaches old events with opaque descending cursors, even when new rows arrive between pages
+   ↓ task cursors are bound to filters and reject reuse that would silently omit matches
+   ↓ health daily count remains visible beyond bounded detail and the global daily cap refuses
+   ↓ cron health reports actual local completion or failure and never declares a misconfigured push healthy
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/release-gaps.test.ts > a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions
+AssertionError: expected [ 'task-0000', 'task-0012', …(98) ] to deeply equal [ 'task-1199' ]
+
+- Expected
++ Received
+
+  [
+-   "task-1199",
++   "task-0000",
++   "task-0012",
++   "task-0024",
++   "task-0036",
++   "task-0048",
++   "task-0060",
++   "task-0072",
++   "task-0084",
++   "task-0096",
++   "task-0108",
++   "task-0120",
++   "task-0132",
++   "task-0144",
++   "task-0156",
++   "task-0168",
++   "task-0180",
++   "task-0192",
++   "task-0204",
++   "task-0216",
++   "task-0228",
++   "task-0240",
++   "task-0252",
++   "task-0264",
++   "task-0276",
++   "task-0288",
++   "task-0300",
++   "task-0312",
++   "task-0324",
++   "task-0336",
++   "task-0348",
++   "task-0360",
++   "task-0372",
++   "task-0384",
++   "task-0396",
++   "task-0408",
++   "task-0420",
++   "task-0432",
++   "task-0444",
++   "task-0456",
++   "task-0468",
++   "task-0480",
++   "task-0492",
++   "task-0504",
++   "task-0516",
++   "task-0528",
++   "task-0540",
++   "task-0552",
++   "task-0564",
++   "task-0576",
++   "task-0588",
++   "task-0600",
++   "task-0612",
++   "task-0624",
++   "task-0636",
++   "task-0648",
++   "task-0660",
++   "task-0672",
++   "task-0684",
++   "task-0696",
++   "task-0708",
++   "task-0720",
++   "task-0732",
++   "task-0744",
++   "task-0756",
++   "task-0768",
++   "task-0780",
++   "task-0792",
++   "task-0804",
++   "task-0816",
++   "task-0828",
++   "task-0840",
++   "task-0852",
++   "task-0864",
++   "task-0876",
++   "task-0888",
++   "task-0900",
++   "task-0912",
++   "task-0924",
++   "task-0936",
++   "task-0948",
++   "task-0960",
++   "task-0972",
++   "task-0984",
++   "task-0996",
++   "task-1008",
++   "task-1020",
++   "task-1032",
++   "task-1044",
++   "task-1056",
++   "task-1068",
++   "task-1080",
++   "task-1092",
++   "task-1104",
++   "task-1116",
++   "task-1128",
++   "task-1140",
++   "task-1152",
++   "task-1164",
++   "task-1176",
++   "task-1188",
+  ]
+
+ ❯ tests/integration/release-gaps.test.ts:326:5
+    324|       (t) => t.id,
+    325|     ),
+    326|   ).toEqual(['task-1199']);
+       |     ^
+    327|   expect(
+    328|     (await listTasks(db, url('q=100%25_done&title_only=1'))).items,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  09:20:31
+   Duration  10.48s (transform 161ms, setup 0ms, collect 567ms, tests 9.70s, environment 0ms, prepare 63ms)
+

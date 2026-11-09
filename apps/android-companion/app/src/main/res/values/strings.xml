@@ -222,4 +222,10 @@
 <string name="auth_uncertain">Sesi berakhir saat hasil kirim belum dikonfirmasi. Setelah masuk lagi, periksa data terbaru sebelum membuat pengganti.</string>
 <string name="ack_uncertain">Saya telah memeriksa data terbaru</string>
 <string name="expiry_warning">Kredensial segera atau sudah kedaluwarsa. Daftarkan ulang lewat peramban tepercaya. Perkiraan jam ponsel.</string>
+<string name="source_health">Kesehatan sumber</string>
+<string name="last_reported">Laporan terakhir</string>
+<string name="coverage_unknown">Kesegaran adalah laporan terakhir, bukan bukti tangkapan lengkap.</string>
+<string name="never_reported">Belum pernah dilaporkan</string>
+<string name="reported_stale">Laporan sudah lama</string>
+<string name="healthy">Laporan terkini</string>
 </resources>

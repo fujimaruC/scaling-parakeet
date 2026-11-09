@@ -1,3 +1,4 @@
+import { sha256 } from './auth';
 import { calendarRange } from './calendar-range';
 export function encodeCursor(parts: unknown[]) {
   return btoa(JSON.stringify(parts))
@@ -64,6 +65,11 @@ export async function listTasks(db: D1Database, url: URL) {
     where.push('status=?');
     bindings.push(status);
   }
+  const filterScope = new URLSearchParams(url.search);
+  filterScope.delete('cursor');
+  filterScope.delete('limit');
+  filterScope.sort();
+  const scope = await sha256(filterScope.toString());
   let tail = '';
   const token = url.searchParams.get('cursor');
   if (token) {
@@ -76,14 +82,16 @@ export async function listTasks(db: D1Database, url: URL) {
     }
     if (
       !Array.isArray(c) ||
-      c.length !== 3 ||
-      ![0, 1].includes(c[0]) ||
-      typeof c[1] !== 'string' ||
-      typeof c[2] !== 'string'
+      c.length !== 5 ||
+      c[0] !== 'tasks-v2' ||
+      c[1] !== scope ||
+      ![0, 1].includes(c[2]) ||
+      typeof c[3] !== 'string' ||
+      typeof c[4] !== 'string'
     )
       throw Error('INVALID_CURSOR');
     tail = ' WHERE (sort_group,sort_date,id)>(?,?,?)';
-    bindings.push(...c);
+    bindings.push(...c.slice(2));
   }
   const rows = await db
     .prepare(
@@ -107,7 +115,13 @@ export async function listTasks(db: D1Database, url: URL) {
     })),
     cursor:
       rows.results.length > limit && last
-        ? encodeCursor([last.sort_group, last.sort_date, last.id])
+        ? encodeCursor([
+            'tasks-v2',
+            scope,
+            last.sort_group,
+            last.sort_date,
+            last.id,
+          ])
         : null,
   };
 }

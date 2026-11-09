@@ -28,3 +28,16 @@ self.addEventListener('fetch',event=>{
  if(!Object.prototype.hasOwnProperty.call(EXPECTED,url.pathname)||url.search)return;
  event.respondWith((async()=>{const cache=await caches.open(CACHE);const saved=await cache.match(url.pathname);if(saved)return saved;const response=await verified(url.pathname);await cache.put(url.pathname,response.clone());return response;})());
 });
+// Push carries zero application bytes. Never parse provider-supplied text or URLs.
+self.addEventListener('push',event=>event.waitUntil(self.registration.showNotification('Academic OS',{
+ body:'Open Academic OS / Buka Academic OS',tag:'academic-os-inbox',renotify:false,data:{path:'/inbox'}
+})));
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();event.waitUntil((async()=>{
+  const target=new URL('/inbox',self.location.origin).href;
+  for(const client of await self.clients.matchAll({type:'window',includeUncontrolled:true})){
+   if(new URL(client.url).origin===self.location.origin){await client.navigate(target);await client.focus();return;}
+  }
+  await self.clients.openWindow(target);
+ })());
+});

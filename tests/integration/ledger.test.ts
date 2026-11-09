@@ -1,3 +1,4 @@
+import { afterEach } from 'vitest';
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { Miniflare } from 'miniflare';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -950,4 +951,9 @@ it('read detail scopes and paginates task history and exposes scheduler policy w
     env,
   );
   expect(denied.status).toBe(401);
+});
+
+// Each scenario models its own request window; budget behavior is tested separately.
+afterEach(async () => {
+  await db.prepare('DELETE FROM operational_usage').run();
 });

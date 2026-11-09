@@ -87,9 +87,9 @@ class MainActivity:Activity() {
             "review"->{fetch("/briefing");fetch(candidatePath());if(navigation.optString("target_query").isNotEmpty())fetch(targetPath())}
             "calendar"->fetch(calendarPath())
             "settings"->{fetch("/settings"){if(it.data is JSONObject)preferences=it.data as JSONObject};fetch("/contexts"){if(it.data is JSONArray)contexts=it.data as JSONArray}}
-            "sources"->fetch("/sources")
-            "source"->fetch(sourcePath())
-            "history"->fetch("/history")
+            "sources"->{fetch("/sources");fetch("/health")}
+            "source"->{fetch(sourcePath());fetch("/health")}
+            "history"->fetch("/history?limit=50")
             "reminders"->{fetch("/reminders");fetch("/settings"){if(it.data is JSONObject)preferences=it.data as JSONObject}}
         }
     }

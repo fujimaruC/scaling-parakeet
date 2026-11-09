@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t push subscription lifecycle
+
+ RUN  v3.2.7 /tmp/aos-release-faults-k3pbqjqh
+
+ ✓ tests/integration/release-gaps.test.ts (10 tests | 9 skipped) 1101ms
+   ✓ push subscription lifecycle sends an empty body with verifiable VAPID and never changes the durable inbox  317ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 9 skipped (10)
+   Start at  09:06:08
+   Duration  2.16s (transform 228ms, setup 0ms, collect 811ms, tests 1.10s, environment 0ms, prepare 82ms)
+

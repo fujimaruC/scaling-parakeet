@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-08 · Asia/Makassar. Native Android implementation handoff, base 6bbfa26. All eight surfaces are implemented; phone/account behavior and release parity are unverified. The PWA remains. No milestone is complete.**
+**2026-11-09 · Asia/Makassar. Release-gap builder slice, base c4497da: browser push adapter, durable application budgets/health, bounded history and native source freshness. Local checks do not prove phone/account/push behavior. PWA remains; no milestone is complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -59,13 +59,13 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 ## Remaining implementation and release gates
 
-1. The owner's latest recorded smoke (VERIFICATION-LOG §12) was the earlier build d748479 on OPPO CPH2015/API 28: install/launch/reopen true and no app fatal exception observed in that window. It is not evidence for the new native task APK. Run the one-minute DEVICE-SMOKE on this APK first, then the full actual-device lifecycle/metadata/filter/queue/restart/retention/interrupted-ack matrix. Notification access remains last recorded false; **no listener event or capture has ever occurred**. Native HTTPS/private pin rejection, pairing, power loss and platform background behavior are still unverified.
+1. Latest real owner observations are VERIFICATION-LOG §17–19: in-place native install/launch/reopen and a complete clean crash window; notification access granted, listener connected/recovered, local TLS pairing over USB loopback, negative filter replay with queue zero. Those are historical owner observations, not checks performed by this builder. No positive capture has ever occurred. Complete positive capture, full lifecycle/metadata/filter/queue/restart/retention/interrupted-ack matrix, actual private networking and power/background tests. Do not widen the selector or automate permission grants from this brief. Preserve the existing signing identity.
 2. Configure the owner's private network/receiver locally. No VPN/vendor/account choice or real peer pairing is claimed. Native task UI, localized resources, launcher icon and themes are implemented; signed update continuity, visual acceptance, real 200% layout, TalkBack and release packaging still require owner observations. Do not uninstall a signature-mismatched APK and lose a queue; rebuild with the existing local signing identity.
 3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. Durable outbound jobs currently retry from UI; automatic Linux retry scheduling remains pending. Multi-source production credential management needs a dedicated operational interface.
-4. Complete Web Push subscription lifecycle and physical delivery evidence. Quiet hours defer/coalesce new inbox deliveries without changing deadlines; daylight-saving transitions are covered. Current durable notifications are in-app. Verify scheduler quotas, policy rebuild timing and catch-up on production D1.
+4. Browser push subscription/revocation, empty-body VAPID dispatch and generic service-worker notification are implemented locally with synthetic tests. Real keys, browser/provider support, physical delivery, permission behavior, scheduler quotas and production D1 catch-up remain unverified. Durable inbox is independent and authoritative; provider acceptance is not device delivery. See RELEASE-GAPS.
 5. Native Today, Tasks, detail, Review, Calendar, Settings, full editor and quick/date/proposal panels now use the real shared Worker handlers. Completion/add/edit/delete, explicit review/Undo, immutable online-request recovery, encrypted observations/drafts, source status and export are implemented. Local API/policy/compiler/browser results are in NATIVE-CHECKS and VERIFICATION-LOG §13. Native behavior, large-ledger performance, accessibility and owner acceptance remain unverified. Keep the PWA until native parity and owner acceptance; a passing browser suite is not a native UI test.
 6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust, multi-source/manual-retain and backup tombstones remain unverified release gates. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
-7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, request budgets, Worker CPU and D1 limits in the actual account. All production bindings remain placeholders; private APIs deny access when unconfigured.
+7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, application request budgets, Worker CPU and D1 limits in the actual account. Durable request accounting and last-reported health exist locally; they are not billing/CPU/account-quota enforcement. All production bindings remain placeholders; private APIs deny access when unconfigured.
 8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
@@ -547,3 +547,50 @@ pairing `config` remains, and the listener is `connected` after rebind.
 **Not run:** the positive capture test — no notification has ever been captured
 and it needs one owner-controlled WhatsApp self-chat message. Capture and
 transport remain `not_run`. M0 and every release gate remain incomplete.
+
+
+## Release gaps implementation — base c4497da, 2026-11-09
+
+Branch build/release-gaps; W40 then W41/W42, F15/F16/F19/F21/F25, preserving
+F01/F13/F24/F30. Read NEXT-PROMPT Part2 and required contracts before coding.
+No redesign, new dependency, capture change, auth/Origin exception, signing-key
+change, push/deploy/provisioning or account/device action.
+
+Migration0008 adds revocable browser push endpoints, unique external attempt
+journals and durable application counts/cron reports. Empty-body VAPID wake-ups
+open a fixed generic same-origin inbox notification; existing jose/WebCrypto
+suffice. Rich payloads were rejected because no task content is needed at the
+provider. Unknown sends are not retried or called success; inbox contents/counts
+are independent. Unconfigured/invalid keys keep the inbox usable. Details and
+owner setup/remaining observations: [RELEASE-GAPS](RELEASE-GAPS.md).
+
+Inspection contradicted the brief's claim that PWA Tasks and Calendar filter only
+client-side: both already call the server. Retained those paths. Filter-bound
+opaque task cursors now reject reuse across filters; a secondary client filter
+no longer reinterprets remote results. Month-page failures retain loaded rows.
+Global history is paged through both namespaces and both clients. Native search,
+scoped detail history and export already existed; added only global history
+paging and source last-report health. Actual native usability remains unverified.
+
+Application budgets use atomic D1 counts across restarts, with fixed 429/503 codes.
+They do not measure or cap billing, CPU, D1 rows or unauthenticated traffic.
+Missing/stale/future/failed reports stay distinct from recent successful reports.
+Counts and reports are excluded from canonical backup/restore with credentials
+and push endpoints. Do not silently replace these with isolate counters or a
+fake healthy default. Existing task/AI idempotency and explicit approval stay.
+
+Actual acceptance output and environment are recorded in [RELEASE-GAPS-CHECKS](RELEASE-GAPS-CHECKS.md)
+and VERIFICATION-LOG §20, with full logs and broken/restored fault runs. All data
+is synthetic. No milestone or release gate is complete. Positive capture,
+private-network transport, account enrollment/Access, actual push, provider,
+production migration/restore/quota, real accessibility and owner pilot remain
+unverified. Native changes must be rebuilt with the owner's existing signing
+identity and run on the actual phone after review; never uninstall/clear to fix
+a mismatch. No APK signed with this workspace's debug identity is delivered.
+
+Local acceptance outcome for this slice: npm ci/check exit0 (52 Vitest), Python70
+pass, production PWA1 pass, Gradle assemble/lint/API28/JVM exit0 (14 JVM; lint0
+errors/2 unchanged Transport warnings),16 intended fault failures/restored passes.
+Latest full browser run:14 passed/1 design-kit 200% layout failure; isolated retry1
+passed, earlier full run15 passed. This flake remains unresolved, not a green
+latest suite. No device/account/push result is claimed. Full actual output: §20.

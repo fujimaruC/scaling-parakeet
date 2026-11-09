@@ -1,3 +1,4 @@
+import { afterEach } from 'vitest';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 import { Miniflare } from 'miniflare';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -490,4 +491,9 @@ test('snooze lost-response retry replays its receipt after the requested time pa
   } finally {
     clock.mockRestore();
   }
+});
+
+// Each scenario models its own request window; budget behavior is tested separately.
+afterEach(async () => {
+  await env.DB.prepare('DELETE FROM operational_usage').run();
 });

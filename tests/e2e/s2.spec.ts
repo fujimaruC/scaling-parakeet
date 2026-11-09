@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test } from './window';
+import { expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { createHash, createHmac } from 'node:crypto';
 import fixture from '../fixtures/s2-ledger.json' with { type: 'json' };

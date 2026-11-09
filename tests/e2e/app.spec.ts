@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test } from './window';
+import { expect } from '@playwright/test';
 test('organization context, task persistence, completion and offline snapshot', async ({
   page,
   context,

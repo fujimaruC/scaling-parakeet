@@ -1296,3 +1296,120 @@ and `health.xml` reports `listener=connected` after the rebind.
 **Still not run:** the positive capture test. No notification has ever been
 captured; it needs one owner-controlled WhatsApp self-chat message. Capture and
 transport remain `not_run` in the tool's own record.
+
+
+## 20. Release-gap builder — base c4497da, 2026-11-09
+
+Fresh GitHub main clone, `c4497da4fee10674245fd6f01e5ab2d925847961` verified by
+`git log --oneline -1 -- NEXT-PROMPT.md`. Branch `build/release-gaps`. Read Part2
+and all required files in order, including §17–19 and the provenance warning.
+W40/W41/W42; F15/F16/F19/F21/F25; T21/T22/T26/T28/T29/T32/T33. No milestone complete.
+
+Implemented migration0008: opt-in browser push lifecycle/empty-body VAPID/generic
+same-origin inbox wake-up; durable application budgets/cron health; filter-bound
+task cursors; global history pagination for both clients; native source freshness.
+No dependency or lockfile/build-guard change, no redesign or capture changes.
+Existing search/calendar, native search/detail paging/export were found already
+implemented and preserved. See ADR-025 and [RELEASE-GAPS](RELEASE-GAPS.md) for
+choices, limits, owner setup and rollback. The mechanism is code, not proof of a
+provider's actual empty-body behavior or a phone notification.
+
+### Actual outputs
+
+Full retained output and every broken/restored assertion are indexed in
+[release-gap-checks](release-gap-checks/README.md). These are local/synthetic runs:
+
+```text
+npm ci
+added 170 packages in 15s
+
+npm run check
+ Test Files  7 passed (7)
+      Tests  52 passed (52)
+--dry-run: exiting now.
+EXIT: 0
+
+npm run test:e2e   # earlier complete run
+  15 passed (54.9s)
+
+npm run test:e2e   # latest complete run
+  1 failed
+  14 passed (50.2s)
+EXIT: 1
+
+npx playwright test tests/e2e/foundation.spec.ts -g 'fonts stay local'
+  1 passed (9.2s)
+
+npm run test:pwa
+  1 passed (10.3s)
+
+.venv/bin/python -m unittest discover -s collectors/local/tests -v
+Ran 70 tests in 1.538s
+OK
+
+.venv/bin/python scripts/check_release_mutations.py --output-dir /tmp/aos-release-mutations-final-tree
+PASS: 16 intended failures; 16 restored passes; 0 survivors; working sources untouched.
+
+cd apps/android-companion
+env ANDROID_HOME=/tmp/aos-android-sdk ./gradlew assembleDebug lint testDebugUnitTest --no-daemon -Dorg.gradle.java.home=/tmp/aos-jdk17
+BUILD SUCCESSFUL in 5m 22s
+53 actionable tasks: 53 executed
+EXIT: 0
+
+# Android lint report
+0 errors, 2 warnings
+```
+
+**Unresolved browser flake:** the latest full suite failed the unchanged design-kit
+200% layout assertion `document.documentElement.scrollWidth <= innerWidth`.
+The isolated retry passed, and an earlier whole run passed15. Do not describe the
+latest suite as green or claim that retry fixes layout. No production CSS change
+was made for it. This remains an observation the verifier should reproduce.
+No screen-reader/phone accessibility pass is inferred from Chromium geometry.
+
+The 52 Vitest cases comprise prior36 plus12 integration,2 push-worker event-model
+and2 local-key-file guard cases. The Python and JVM totals are unchanged:70
+Python,8 native-policy and6 queue-privacy JVM. The16 fault definitions and48
+baseline/broken/restored logs reproduce the claimed proof count. The optional
+stale-response browser experiment removed a redundant guard and still passed;
+that guard and unsound fault runner were removed and **not** counted as a killed
+fault. A regression remains for the existing refresh isolation. No test or fault
+count includes this discarded experiment.
+
+New integration loads span1,200 tasks across a year, plus exact owner-calendar
+boundary cases and230 older history events. Wildcard escaping, filter cursor
+binding, persistent concurrent rate saturation, daily totals beyond bounded
+health detail, failed cron reporting, VAPID signatures, opt-in/revoke/expiry and
+unknown sends are checked synthetically. Empty-body delivery failures leave the
+inbox count/content unchanged. No external push request was made.
+
+Initial development failures exposed limits too low for coordinated UI refreshes,
+shared test windows, a duplicate History heading, and unnecessary debounce on
+already-observed root rows. Those were corrected without weakening production
+auth/approval. E2E window reset lives only in the non-deployed loopback harness;
+real limits have dedicated refusal/no-mutation tests. An initial mutation fixture
+missed JSON schemas; it was a setup error, never counted as an intended failure.
+
+Node24.22.1/npm11.9.0, Python3.12.14; OpenJDK17.0.20, Gradle8.11.1, AGP8.9.2,
+Kotlin2.1.21, SDK platforms28/35 and build-tools35.0.0. Environment setup and exact
+acceptance commands: [RELEASE-GAPS-CHECKS](RELEASE-GAPS-CHECKS.md). Initial apt
+setgroups/permission errors were worked around by extracting the matching JDK
+package into a private runtime copy. Official sdkmanager installed required SDK
+components. No owner signing identity was available or changed. Build provenance
+for the dirty local debug APK is not asserted; no workspace-signed APK is shipped.
+
+Planning/placeholder scans and diff whitespace checks also ran; exact output is
+retained in the log directory. These are documentation/limited-format checks,
+not security or application runtime certification.
+
+### Still unverified / owner-only
+
+Positive notification capture has never happened. Keep §17–19's actual owner
+install/listener/USB-loopback/negative-filter evidence, without extending it to
+this builder's APK or claiming private-network transport. Full capture matrix,
+network recovery, account enrollment/activation/revocation/Access, production
+migration0008/restore/quota, real browser push, provider, native layout/TalkBack/
+200% and the pilot remain unverified. No adb/device/account/provider test, push,
+deployment or provisioning ran here. Inbox acceptance is not physical delivery;
+fresh source sync is not current permission or complete coverage. Both ingestion
+methods and explicit AI approval remain mandatory. No milestone is complete.

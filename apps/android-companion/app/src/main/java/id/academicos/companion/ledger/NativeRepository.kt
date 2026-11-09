@@ -70,7 +70,7 @@ class NativeRepository private constructor(context:Context) {
     }
     fun acknowledgeAuthLoss(done:()->Unit){executor.execute{app.getSharedPreferences("owner-ui",0).edit().putBoolean("uncertain_after_auth_loss",false).apply();unconfirmedAfterAuthLoss=false;main.post(done)}}
     private fun observed(path:String,env:JSONObject,cached:Boolean):Observation {
-        val data=env.opt("data");val items=data as? JSONArray;val cursor=env.optJSONObject("meta")?.nullable("next_cursor");val obj=data as? JSONObject;val more=cursor!=null||obj?.nullable("next_history_cursor")!=null||(path in listOf("/history","/reminders")&&(items?.length()?:0)>=100)||(obj?.optJSONArray("actions")?.length()?:0)<(obj?.optInt("actions_total",0)?:0)
+        val data=env.opt("data");val items=data as? JSONArray;val cursor=env.optJSONObject("meta")?.nullable("next_cursor");val obj=data as? JSONObject;val more=cursor!=null||obj?.nullable("next_history_cursor")!=null||(path=="/reminders"&&(items?.length()?:0)>=100)||(obj?.optJSONArray("actions")?.length()?:0)<(obj?.optInt("actions_total",0)?:0)
         return Observation(env,NativePolicy.state(true,false,false,items!=null&&items.length()==0,more),cached,env.optJSONObject("meta")?.optString("server_time"))
     }
     private fun get(path:String):Observation {

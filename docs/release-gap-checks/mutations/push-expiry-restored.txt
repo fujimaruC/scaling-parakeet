@@ -1,0 +1,12 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t expired endpoints
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ✓ tests/integration/release-gaps.test.ts (12 tests | 11 skipped) 1065ms
+   ✓ expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe  331ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  09:19:14
+   Duration  1.93s (transform 176ms, setup 0ms, collect 622ms, tests 1.07s, environment 0ms, prepare 67ms)
+

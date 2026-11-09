@@ -1,3 +1,6 @@
+import OperationalStatus from './features/OperationalStatus';
+import { PushSettings, disableLocalPush } from './features/PushSettings';
+import History from './features/History';
 import DeviceActions from './components/DeviceActions';
 import ReminderSettings from './components/ReminderSettings';
 import TaskEditor from './components/TaskEditor';
@@ -170,7 +173,7 @@ async function api(
     throw Object.assign(new Error('AUTH_REQUIRED'), { status: 401 });
   if (!j.meta || !Object.prototype.hasOwnProperty.call(j, 'data'))
     throw Object.assign(new Error('INVALID_API_RESPONSE'), { status: 502 });
-  return /^\/(tasks|candidates)\?/.test(path)
+  return /^\/(tasks|candidates|history)\?/.test(path)
     ? { items: j.data, next_cursor: j.meta?.next_cursor ?? null }
     : j.data;
 }
@@ -643,8 +646,8 @@ function App() {
     let live = true;
     setRowAvailable(false);
     setRows([]);
-    if (['history', 'inbox'].includes(page) && signed) {
-      const path = page === 'history' ? '/history' : '/reminders';
+    if (page === 'inbox' && signed) {
+      const path = '/reminders';
       const subject = ownerRef.current,
         epoch = sessionEpoch.current;
       const get = async () => {
@@ -979,7 +982,15 @@ function App() {
                   )}
                 </section>
               )}
-              {['history', 'inbox'].includes(page) && (
+              {page === 'history' && (
+                <History
+                  api={readApi}
+                  locale={locale}
+                  offline={offline}
+                  revision={updated}
+                />
+              )}
+              {page === 'inbox' && (
                 <section>
                   {!rowAvailable ? (
                     <p>{words[locale].unavailable}</p>
@@ -1045,6 +1056,12 @@ function App() {
               )}
               {page === 'settings' && (
                 <section className="settings">
+                  <OperationalStatus api={sessionApi} locale={locale} />
+                  <PushSettings
+                    api={sessionApi}
+                    locale={locale}
+                    disabled={writes.blocked}
+                  />
                   <Preferences
                     {...{ locale, setLocale, theme, setTheme, prefs }}
                     disabled={writes.blocked}
@@ -1120,7 +1137,10 @@ function App() {
                     {s.export}
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      try {
+                        await disableLocalPush(sessionApi);
+                      } catch {}
                       clearReadSession();
                       try {
                         localStorage.setItem(

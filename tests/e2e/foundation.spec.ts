@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test } from './window';
+import { expect } from '@playwright/test';
 test('foundation: fonts stay local, theme follows system and override, reduced motion and 200% text', async ({
   page,
 }) => {

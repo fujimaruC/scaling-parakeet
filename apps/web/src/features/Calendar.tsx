@@ -144,7 +144,13 @@ export default function Calendar({
       {failed && (
         <p role="alert">
           {w.unavailable}{' '}
-          {en ? 'This month was not observed.' : 'Bulan ini belum diamati.'}
+          {view?.key === path
+            ? en
+              ? 'Could not load more. Previously loaded tasks remain visible.'
+              : 'Gagal memuat lanjut. Tugas sebelumnya tetap terlihat.'
+            : en
+              ? 'This month was not observed.'
+              : 'Bulan ini belum diamati.'}
         </p>
       )}
       {view?.cached && (
@@ -163,6 +169,7 @@ export default function Calendar({
             onClick={async () => {
               const key = path;
               setBusy(true);
+              setFailed(false);
               try {
                 const v = await api(
                   path + '&cursor=' + encodeURIComponent(cursor),
@@ -178,6 +185,8 @@ export default function Calendar({
                           ),
                         ],
                         cursor: v.next_cursor,
+                        observed: old.observed,
+                        cached: old.cached,
                       }
                     : old,
                 );
@@ -210,7 +219,7 @@ export default function Calendar({
               (t) => taskDay(t, zone) === day && t.status !== 'archived',
             ),
             active = tasks.filter((t) => t.status !== 'done'),
-            available = !!view && !failed;
+            available = view?.key === path && !failed;
           return (
             <button
               className="month-day"

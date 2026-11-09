@@ -1,0 +1,217 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/scratch/bbff8dae2870/academic-os-next-build
+
+ ❯ tests/integration/ledger.test.ts (19 tests | 5 failed) 6057ms
+   ✓ persistent ledger > production auth fails closed and forged headers do not authenticate 7ms
+   ✓ persistent ledger > rejects cross-origin writes 1ms
+   ✓ persistent ledger > stores an organizational duty without a course and preserves unknown dates  312ms
+   ✓ persistent ledger > prevents lost edits and audits only a successful CAS 219ms
+   ✓ persistent ledger > processes reminders without collector or AI and cancels old deadline revisions  433ms
+   ✓ date and projection boundaries > rejects impossible dates and invented times 4ms
+   ✓ date and projection boundaries > rejects raw fields and unsupported evidence 3ms
+   ✓ signed ingestion remains proposal-only and explicit approval is idempotent  728ms
+   ✓ a losing deadline edit cannot schedule its reminders  327ms
+   ✓ title-only edits preserve reminder revision and do not re-alert 211ms
+   ✓ snooze retries are idempotent and completed tasks cannot snooze  360ms
+   ✓ deadline-change approval requires explicit current target and preserves history  493ms
+   ✓ source purge scrubs sole-source tasks, preserves manual edits, and accepts a scoped local wipe acknowledgment  1067ms
+   ✓ task pagination has no duplicates and applies context/status filters  554ms
+   × configurable reminder rules rebuild future intents without changing deadline precision 60ms
+     → {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"d007792a-ab1b-4206-a2f2-be63f12bfdc6","server_time":"2026-11-09T01:56:30.869Z"}}: expected 429 to be less than 300
+   × quiet hours defer and coalesce reminders without changing deadlines, including daylight-saving boundaries 51ms
+     → {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"9f864e8a-a74e-4711-b545-d1bf1596cd92","server_time":"2026-11-09T01:56:30.925Z"}}: expected 429 to be less than 300
+   × device actions require explicit attestations and expiry/retirement never confirm 28ms
+     → {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"840abdd6-486d-486a-98f3-38d0bba8d6ca","server_time":"2026-11-09T01:56:30.954Z"}}: expected 429 to be less than 300
+   × durable Linux receipt is queued until phone explicitly reports cleanup 20ms
+     → {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"c7241bb3-8e52-4d70-ad98-1607ababf9f1","server_time":"2026-11-09T01:56:30.974Z"}}: expected 429 to be less than 300
+   × read detail scopes and paginates task history and exposes scheduler policy without writing 20ms
+     → {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"9e0830ae-6a51-4156-a135-b3835f37d9bc","server_time":"2026-11-09T01:56:30.993Z"}}: expected 429 to be less than 300
+ ❯ tests/integration/native-owner.test.ts (11 tests | 6 failed) 3058ms
+   ✓ missing or forged native authority fails closed, including production administration 8ms
+   ✓ pending has no task authority; activation compares a hash and starts a bounded lifetime  357ms
+   ✓ enrollment recovers an identical lost response but never replaces a consumed grant  533ms
+   ✓ native rejects every Origin and mixed credential; browser same-origin guard remains 190ms
+   ✓ device scope never includes device administration, collectors or source ingestion 294ms
+   × revoked expired wrong-owner and unconfigured-owner credentials cannot read 554ms
+     → expected 429 to be less than 300
+   × canonical context source task and CAS writes replay immutable idempotency keys 64ms
+     → expected 429 to be less than 300
+   × reminder-policy retries replay their receipt before revising settings again 63ms
+     → expected 429 to be less than 300
+   × proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables 52ms
+     → expected 429 to be less than 300
+   × self revocation affects only the current install and the administration page stays protected 49ms
+     → expected 429 to be less than 300
+   × snooze lost-response retry replays its receipt after the requested time passes 50ms
+     → expected 429 to be less than 300
+ ✓ tests/s2.test.ts (4 tests) 163ms
+ ✓ tests/foundation.test.ts (2 tests) 13ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/ledger.test.ts > configurable reminder rules rebuild future intents without changing deadline precision
+AssertionError: {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"d007792a-ab1b-4206-a2f2-be63f12bfdc6","server_time":"2026-11-09T01:56:30.869Z"}}: expected 429 to be less than 300
+ ❯ data tests/integration/ledger.test.ts:37:39
+     35| async function data(r: Response) {
+     36|   const b = (await r.json()) as any;
+     37|   expect(r.status, JSON.stringify(b)).toBeLessThan(300);
+       |                                       ^
+     38|   return b.data;
+     39| }
+ ❯ tests/integration/ledger.test.ts:649:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  tests/integration/ledger.test.ts > quiet hours defer and coalesce reminders without changing deadlines, including daylight-saving boundaries
+AssertionError: {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"9f864e8a-a74e-4711-b545-d1bf1596cd92","server_time":"2026-11-09T01:56:30.925Z"}}: expected 429 to be less than 300
+ ❯ data tests/integration/ledger.test.ts:37:39
+     35| async function data(r: Response) {
+     36|   const b = (await r.json()) as any;
+     37|   expect(r.status, JSON.stringify(b)).toBeLessThan(300);
+       |                                       ^
+     38|   return b.data;
+     39| }
+ ❯ tests/integration/ledger.test.ts:736:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  tests/integration/ledger.test.ts > device actions require explicit attestations and expiry/retirement never confirm
+AssertionError: {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"840abdd6-486d-486a-98f3-38d0bba8d6ca","server_time":"2026-11-09T01:56:30.954Z"}}: expected 429 to be less than 300
+ ❯ data tests/integration/ledger.test.ts:37:39
+     35| async function data(r: Response) {
+     36|   const b = (await r.json()) as any;
+     37|   expect(r.status, JSON.stringify(b)).toBeLessThan(300);
+       |                                       ^
+     38|   return b.data;
+     39| }
+ ❯ tests/integration/ledger.test.ts:798:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  tests/integration/ledger.test.ts > durable Linux receipt is queued until phone explicitly reports cleanup
+AssertionError: {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"c7241bb3-8e52-4d70-ad98-1607ababf9f1","server_time":"2026-11-09T01:56:30.974Z"}}: expected 429 to be less than 300
+ ❯ data tests/integration/ledger.test.ts:37:39
+     35| async function data(r: Response) {
+     36|   const b = (await r.json()) as any;
+     37|   expect(r.status, JSON.stringify(b)).toBeLessThan(300);
+       |                                       ^
+     38|   return b.data;
+     39| }
+ ❯ tests/integration/ledger.test.ts:857:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  tests/integration/ledger.test.ts > read detail scopes and paginates task history and exposes scheduler policy without writing
+AssertionError: {"error":{"code":"REQUEST_BUDGET_EXCEEDED"},"meta":{"request_id":"9e0830ae-6a51-4156-a135-b3835f37d9bc","server_time":"2026-11-09T01:56:30.993Z"}}: expected 429 to be less than 300
+ ❯ data tests/integration/ledger.test.ts:37:39
+     35| async function data(r: Response) {
+     36|   const b = (await r.json()) as any;
+     37|   expect(r.status, JSON.stringify(b)).toBeLessThan(300);
+       |                                       ^
+     38|   return b.data;
+     39| }
+ ❯ tests/integration/ledger.test.ts:887:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > revoked expired wrong-owner and unconfigured-owner credentials cannot read
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:267:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > canonical context source task and CAS writes replay immutable idempotency keys
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:286:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > reminder-policy retries replay their receipt before revising settings again
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:353:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > proposal acceptance is explicit, compensating Undo is versioned, exports exclude auth tables
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:370:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > self revocation affects only the current install and the administration page stays protected
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:435:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  tests/integration/native-owner.test.ts > snooze lost-response retry replays its receipt after the requested time passes
+AssertionError: expected 429 to be less than 300
+ ❯ data tests/integration/native-owner.test.ts:53:27
+     51| }
+     52| async function data(response: Response) {
+     53|   expect(response.status).toBeLessThan(300);
+       |                           ^
+     54|   return ((await response.json()) as any).data;
+     55| }
+ ❯ pending tests/integration/native-owner.test.ts:70:24
+ ❯ enrolled tests/integration/native-owner.test.ts:74:13
+ ❯ tests/integration/native-owner.test.ts:453:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  11 failed | 25 passed (36)
+   Start at  08:56:23
+   Duration  11.63s (transform 348ms, setup 0ms, collect 1.37s, tests 9.29s, environment 1ms, prepare 239ms)
+

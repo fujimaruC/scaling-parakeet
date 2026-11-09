@@ -1,0 +1,29 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/unit/vapid-generator.test.ts -t VAPID generator rejects
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ❯ tests/unit/vapid-generator.test.ts (2 tests | 1 failed | 1 skipped) 136ms
+   ↓ VAPID generator writes only an exclusive private owner-local file and never prints key bytes
+   × VAPID generator rejects relative and repository paths before creating secrets 134ms
+     → expected +0 not to be +0 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/vapid-generator.test.ts > VAPID generator rejects relative and repository paths before creating secrets
+AssertionError: expected +0 not to be +0 // Object.is equality
+ ❯ tests/unit/vapid-generator.test.ts:44:26
+     42|       { encoding: 'utf8' },
+     43|     );
+     44|     expect(r.status).not.toBe(0);
+       |                          ^
+     45|     expect(existsSync(target)).toBe(false);
+     46|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  09:22:00
+   Duration  359ms (transform 35ms, setup 0ms, collect 31ms, tests 136ms, environment 0ms, prepare 55ms)
+

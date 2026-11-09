@@ -299,6 +299,7 @@ export default function Ledger({
     : canMore;
   const undated = useRef<HTMLElement>(null);
   const selected = source.filter((t) => {
+    if (remote) return true;
     const c = contextInfo(t, contexts, locale);
     return (
       (filter === 'all' || c.type === filter) &&

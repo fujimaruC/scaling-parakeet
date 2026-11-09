@@ -1,0 +1,43 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/integration/release-gaps.test.ts -t health never invents
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ❯ tests/integration/release-gaps.test.ts (12 tests | 1 failed | 11 skipped) 941ms
+   ↓ push subscription lifecycle sends an empty body with verifiable VAPID and never changes the durable inbox
+   ↓ expired endpoints are pruned, revoked endpoints never send or resurrect on a delayed subscribe
+   ↓ ambiguous push failures remain unknown and are not replayed; inbox count and contents survive failure
+   ↓ push is opt in, rejects arbitrary outbound URLs, missing/mismatched keys and has a four-install cap
+   ↓ browser push lifecycle remains authenticated and same-origin; device namespace cannot use it
+   ↓ persistent accounting enforces atomic minute limits across new handlers and a fixed refusal without mutation
+   × health never invents reports, labels stale/future clocks separately, and exposes durable counts instead of billing 42ms
+     → expected 'healthy' to be 'never_reported' // Object.is equality
+   ↓ a year ledger searches beyond the first 100, escapes wildcard queries and pages calendar without collapsing precisions
+   ↓ global history reaches old events with opaque descending cursors, even when new rows arrive between pages
+   ↓ task cursors are bound to filters and reject reuse that would silently omit matches
+   ↓ health daily count remains visible beyond bounded detail and the global daily cap refuses
+   ↓ cron health reports actual local completion or failure and never declares a misconfigured push healthy
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/release-gaps.test.ts > health never invents reports, labels stale/future clocks separately, and exposes durable counts instead of billing
+AssertionError: expected 'healthy' to be 'never_reported' // Object.is equality
+
+Expected: "never_reported"
+Received: "healthy"
+
+ ❯ tests/integration/release-gaps.test.ts:279:38
+    277| });
+    278| it('health never invents reports, labels stale/future clocks separatel…
+    279|   expect(reportState(null, at, 100)).toBe('never_reported');
+       |                                      ^
+    280|   expect(reportState('2030-05-14T00:00:00Z', at, 100)).toBe('reported_…
+    281|   expect(reportState(at, at, 100)).toBe('healthy');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  09:19:44
+   Duration  1.71s (transform 164ms, setup 0ms, collect 555ms, tests 941ms, environment 0ms, prepare 63ms)
+

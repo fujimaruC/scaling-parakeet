@@ -2,6 +2,13 @@ package id.academicos.companion.ledger
 import android.content.Context
 import id.academicos.companion.R
 object Copy { private val ids=mapOf(
+"source_health" to R.string.source_health,
+"last_reported" to R.string.last_reported,
+"coverage_unknown" to R.string.coverage_unknown,
+"never_reported" to R.string.never_reported,
+"reported_stale" to R.string.reported_stale,
+"healthy" to R.string.healthy,
+
 "auth_uncertain" to R.string.auth_uncertain,
 "ack_uncertain" to R.string.ack_uncertain,
 "expiry_warning" to R.string.expiry_warning,

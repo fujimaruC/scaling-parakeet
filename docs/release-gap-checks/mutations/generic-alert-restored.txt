@@ -1,0 +1,11 @@
+COMMAND: /workspace/scratch/bbff8dae2870/academic-os-next-build/node_modules/.bin/vitest run tests/unit/push-worker.test.ts -t push renders a fixed
+
+ RUN  v3.2.7 /tmp/aos-release-faults-n7cozj_q
+
+ ✓ tests/unit/push-worker.test.ts (2 tests | 1 skipped) 5ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 1 skipped (2)
+   Start at  09:21:57
+   Duration  255ms (transform 55ms, setup 0ms, collect 52ms, tests 5ms, environment 0ms, prepare 62ms)
+

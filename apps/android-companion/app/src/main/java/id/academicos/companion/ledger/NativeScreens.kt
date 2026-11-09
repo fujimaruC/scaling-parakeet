@@ -206,14 +206,22 @@ class NativeScreens(private val a:MainActivity) {
         action("logout"){a.logout()};note(u.t("capture_notice"));action("open_capture"){a.openCapture()}
     }
     private fun sources(){title("sources");val path="/sources";status(path);a.items(path).forEach{s->rows.add(Row{val box=u.box();box.addView(u.text(s.getString("display_name"),20f,true));box.addView(u.message(s.getString("kind")+" · "+s.getString("id")+" · "+s.getInt("generation")));box.addView(u.message(s.nullable("last_sync_at")?:u.t("unavailable")));box.addView(u.button(u.t("acknowledgments")){a.navigate("source",s.getString("id"))});if(s.isNull("purged_at"))box.addView(u.button(u.t("purge"),fresh(path)){a.forms.purge(s)});box})};action("add_source",a.writable){a.forms.createSource()};note(u.t("backup_linux"))}
-    private fun source(){title("acknowledgments");val path=a.sourcePath();val o=status(path);val value=o.data as? JSONObject?:return
+    private fun sourceHealth(id:String){
+        val health=status("/health").data as? JSONObject
+        val sources=health?.optJSONObject("operations")?.optJSONArray("sources")?.objects()
+        val source=sources?.find{it.optString("id")==id}
+        note(u.t("source_health")+": "+u.t(source?.optString("state")?:"unavailable"))
+        source?.nullable("reported_at")?.let{note(u.t("last_reported")+": "+it)}
+        note(u.t("coverage_unknown"))
+    }
+    private fun source(){sourceHealth(a.navigation.optString("id"));title("acknowledgments");val path=a.sourcePath();val o=status(path);val value=o.data as? JSONObject?:return
         note(u.t("inventory_partial"));if(value.optBoolean("cloud_purged"))note(u.t(if(value.optBoolean("local_wipe_pending"))"linux_pending" else "linux_ack"))
         val actions=value.optJSONArray("actions")?:JSONArray();if(actions.length()==0)note(u.t("not_acknowledged"))
         actions.objects().forEach{action->rows.add(Row{val box=u.box();box.addView(u.text(action.optString("kind")+" · "+action.getString("id"),16f,true));val progress=action.optString("progress");val status=action.optString("status");box.addView(u.message(u.t(progress)+" · "+u.t(if(status=="retired_unconfirmed")"retired" else if(status=="expired")"expired" else if(status=="confirmed")"applied" else if(progress=="delivered")"delivered" else "not_acknowledged")));if(!action.isNull("applied_at"))box.addView(u.message(action.getString("applied_at")))else box.addView(u.button(u.t("retire"),fresh(path)){a.confirm(u.t("retire"),u.t("inventory_partial")){a.perform(WriteOperation.create("/device-actions/"+a.encode(action.getString("id"))+"/retire","POST",JSONObject(),"retire"))}});box})}
         if(actions.length()<value.optInt("actions_total")){note(u.t("partial"));action("more",fresh(path)){val more=path+"?actions_offset="+actions.length();a.repo.read(more){next->if(a.isDestroyed||a.page!="source"||a.sourcePath()!=path)return@read;val data=next.data as? JSONObject;if(data!=null&&!next.cached){val merged=JSONArray(actions.toString());data.getJSONArray("actions").objects().forEach{merged.put(it)};data.put("actions",merged);next.envelope?.put("data",data);a.observations[path]=next;next.envelope?.let{a.repo.remember(path,it)}}else a.showNotice(u.t("unavailable"));a.render()}}}
     }
     private fun history(){
-        title("history");val path="/history";status(path);note(u.t("recent_only"))
+        title("history");val path="/history?limit=50";status(path)
         a.items(path).forEach { event -> rows.add(Row {
             val box=u.box();box.addView(u.text(u.t(event.optString("event_type","updated")),18f,true));box.addView(u.message(event.getString("created_at")));box.addView(u.message(event.getString("task_id")))
             for(key in listOf("before_json","after_json")){
@@ -222,7 +230,7 @@ class NativeScreens(private val a:MainActivity) {
                     catch(_:Exception){box.addView(u.message(u.t("unavailable")))}
                 }
             };box
-        })}
+        })};more(path)
     }
     private fun reminders(){title("reminders");val path="/reminders";status(path);note(u.t("recent_only"));note(u.t("push_note"));a.items(path).forEach{entry->rows.add(Row{val box=u.box();box.addView(u.text(entry.getString("created_at")));box.addView(u.button(u.t("detail")){a.navigate("detail",entry.getString("task_id"))});box.addView(u.button(u.t("read"),fresh(path)){a.perform(WriteOperation.create("/reminders/"+a.encode(entry.getString("id"))+"/read","PATCH",JSONObject(),"read"))});box.addView(u.button(u.t("snooze"),fresh(path)){a.perform(WriteOperation.create("/reminders/"+a.encode(entry.getString("id"))+"/snooze","POST",JSONObject().put("until",Instant.now().plusSeconds(3600).toString()),"snooze"))});box})};action("save_rules",fresh("/settings")){a.forms.reminderRules()}}
 }

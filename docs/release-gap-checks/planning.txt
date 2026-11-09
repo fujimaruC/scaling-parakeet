@@ -1,0 +1,2 @@
+PASS: 3 schemas; 5 valid fixtures/date variants; 21 rejection cases; 128 local links; 30 features; 34 test IDs.
+This validates planning artifacts only. No application/device/account tests ran.

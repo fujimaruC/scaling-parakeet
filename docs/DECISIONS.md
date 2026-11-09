@@ -264,3 +264,37 @@ request recovery uses immutable same-key retries and a transactional receipt plu
 form/journal invalidation; reconnect only reads. The PWA remains until real native
 parity and owner acceptance. Account path isolation and phone acceptance are
 unverified gates, not waived by this implementation.
+
+## ADR-025 — Generic push wake-ups, bounded queries and durable application budgets
+
+2026-11-09, base c4497da, W40/W41/W42 and F15/F16/F19/F21/F25.
+
+Use empty-body VAPID Web Push to wake a generic same-origin inbox notification.
+Existing jose/WebCrypto suffice. Rich encrypted payloads were rejected because
+this feature needs no task data at a push provider. Inbox creation remains the
+scheduler transaction; external sending can neither duplicate nor remove it.
+Persist one unknown attempt before sending; automatic replay after an ambiguous
+send was rejected because physical receipt cannot be inferred. Provider acceptance
+is explicitly not phone delivery. Key rotation/revocation needs explicit browser
+resubscription. Unknown provider hosts are unsupported, not an SSRF escape hatch.
+
+Inspection found server-backed search/calendar already implemented. Preserve
+those paths instead of rebuilding them. Bind task cursors to filters, page global
+history with immutable descending IDs, retain partial disclosures and prior pages
+on failure. Cursors are opaque continuation tokens, not access credentials or
+snapshot isolation. Old task cursors require refresh after upgrade.
+
+Persist application request counters in D1 rather than isolate memory, with fixed
+per-class minute and shared daily limits. This is request accounting, not billing,
+CPU or account quota integration. It adds database work; real account limits and
+cost observations remain gates. Health reports observations with timestamps;
+missing, stale, failed and future-clock reports cannot become healthy by default.
+Source sync freshness never proves current listener permission or full capture.
+
+Migration0008 stores only push endpoint authority, dispatch state and sanitized
+operational counts/reports; all are excluded from canonical export/restore.
+No dependency, capture-selector, approval, authentication namespace, Origin-guard,
+signing or verifyApi28 change. PWA remains until native owner acceptance. Actual
+push/device/account/privacy-sink and production migration observations are
+unverified. No milestone complete; no deployment or provisioning authorized here.
+Full behavior, limits, alternatives and rollback notes: [RELEASE-GAPS](RELEASE-GAPS.md).

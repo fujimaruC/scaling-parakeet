@@ -1,0 +1,139 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test:e2e
+> playwright test
+
+[2m[WebServer] [22m(node:128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22mnpm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[2m[WebServer] [22m(node:141) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:141) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:141) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 12 tests using 1 worker
+
+(node:195) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:195) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/e2e/app.spec.ts:2:1 › organization context, task persistence, completion and offline snapshot (6.5s)
+  ✓   2 tests/e2e/app.spec.ts:131:1 › 360px navigation and both themes fit the viewport (648ms)
+  ✓   3 tests/e2e/app.spec.ts:160:1 › save reminder rules twice with quiet hours (2.6s)
+  ✘   4 tests/e2e/app.spec.ts:194:1 › edit task, keep date-only precision and navigate month calendar (30.0s)
+(node:328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 tests/e2e/app.spec.ts:274:1 › correct a proposal before approval (5.6s)
+(node:409) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:409) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 tests/e2e/foundation.spec.ts:2:1 › foundation: fonts stay local, theme follows system and override, reduced motion and 200% text (1.0s)
+  ✘   7 tests/e2e/foundation.spec.ts:68:1 › foundation: four tabs and secondary workflows remain reachable at 360px (5.3s)
+(node:505) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:505) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   8 tests/e2e/s2.spec.ts:143:1 › S2 read-only routes, distinct dates, real policy, live clock and modal history (0ms)
+  -   9 tests/e2e/s2.spec.ts:320:1 › S2 360px, doubled text, target sizes, foreground contrast and deep-link availability
+  -  10 tests/e2e/s2.spec.ts:399:1 › S2 keeps partial disclosure until existing bounded pages actually reach unknown tasks
+  -  11 tests/e2e/s2.spec.ts:445:1 › S2 authorization denial clears the read session instead of retaining cached owner data
+  -  12 tests/e2e/s2.spec.ts:507:1 › S2 history paging failure preserves known detail and retries a bounded page
+
+
+  1) tests/e2e/app.spec.ts:194:1 › edit task, keep date-only precision and navigate month calendar ─
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('article', { name: 'Calendar responsibility', exact: true }).locator('.s2-task-body')[22m
+
+
+      174 |     .getByRole('article', { name: 'Calendar responsibility', exact: true })
+      175 |     .locator('.s2-task-body')
+    > 176 |     .click();
+          |      ^
+      177 |   await page.getByRole('button', { name: 'Edit task', exact: true }).click();
+      178 |   const dialog = page.getByRole('dialog');
+      179 |   await dialog.getByLabel('Task title').fill('Revised responsibility');
+        at /workspace/scratch/bbff8dae2870/academic-os-next-build/tests/e2e/app.spec.ts:176:6
+
+    Error Context: test-results/app-edit-task-keep-date-on-150bb-and-navigate-month-calendar/error-context.md
+
+  2) tests/e2e/app.spec.ts:274:1 › correct a proposal before approval ──────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveCount[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  locator('article.review-card')
+    Expected: [32m1[39m
+    Received: [31m0[39m
+    Timeout:  5000ms
+
+    Call log:
+    [2m  - Expect "toHaveCount" with timeout 5000ms[22m
+    [2m  - waiting for locator('article.review-card')[22m
+    [2m    9 × locator resolved to 0 elements[22m
+    [2m      - unexpected value "0"[22m
+
+
+      205 |   // S4 renders one card at a time; the action row is a sibling of the card,
+      206 |   // so the button is page-level rather than nested inside the article.
+    > 207 |   await expect(page.locator('article.review-card')).toHaveCount(1);
+          |                                                     ^
+      208 |   await page.getByRole('button', { name: 'Edit & review' }).click();
+      209 |   const dialog = page.getByRole('dialog');
+      210 |   await dialog.getByLabel('Task title').fill('Owner corrected synthetic duty');
+        at /workspace/scratch/bbff8dae2870/academic-os-next-build/tests/e2e/app.spec.ts:207:53
+
+    Error Context: test-results/app-correct-a-proposal-before-approval/error-context.md
+
+  3) tests/e2e/foundation.spec.ts:68:1 › foundation: four tabs and secondary workflows remain reachable at 360px 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: 'Add task', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Add task', exact: true })[22m
+
+
+      80 |   await expect(
+      81 |     page.getByRole('button', { name: 'Add task', exact: true }),
+    > 82 |   ).toBeVisible();
+         |     ^
+      83 |   for (const destination of ['sources', 'history', 'inbox', 'settings']) {
+      84 |     await expect(
+      85 |       page.locator(`.mobile-pages option[value="${destination}"]`),
+        at /workspace/scratch/bbff8dae2870/academic-os-next-build/tests/e2e/foundation.spec.ts:82:5
+
+    Error Context: test-results/foundation-foundation-four-b0b34-s-remain-reachable-at-360px/error-context.md
+
+  4) tests/e2e/s2.spec.ts:143:1 › S2 read-only routes, distinct dates, real policy, live clock and modal history 
+
+    TypeError: Cannot read properties of undefined (reading 'find')
+
+       9 |   const existing = (await (await request.get('/api/v1/contexts')).json()).data;
+      10 |   for (const type of ['academic', 'organization', 'personal']) {
+    > 11 |     const found = existing.find(
+         |                            ^
+      12 |       (c: any) => c.display_name === 'Synthetic ' + type,
+      13 |     );
+      14 |     if (found) {
+        at /workspace/scratch/bbff8dae2870/academic-os-next-build/tests/e2e/s2.spec.ts:11:28
+
+  4 failed
+    tests/e2e/app.spec.ts:194:1 › edit task, keep date-only precision and navigate month calendar ──
+    tests/e2e/app.spec.ts:274:1 › correct a proposal before approval ───────────────────────────────
+    tests/e2e/foundation.spec.ts:68:1 › foundation: four tabs and secondary workflows remain reachable at 360px 
+    tests/e2e/s2.spec.ts:143:1 › S2 read-only routes, distinct dates, real policy, live clock and modal history 
+  4 did not run
+  4 passed (1.0m)

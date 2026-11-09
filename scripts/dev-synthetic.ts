@@ -64,6 +64,18 @@ const vite = await createViteServer({
   server: { middlewareMode: true, hmr: false },
 });
 const server = createServer(async (req, res) => {
+  // Synthetic harness only: separate scenarios get separate accounting windows.
+  // This file is never bundled/deployed; the production authenticator and limits have no bypass.
+  if (
+    process.env.SYNTHETIC_FIXTURES === '1' &&
+    req.url === '/__synthetic/request-window' &&
+    req.method === 'POST'
+  ) {
+    await DB.prepare('DELETE FROM operational_usage').run();
+    res.writeHead(204).end();
+    return;
+  }
+
   if (
     !req.url?.startsWith('/api/') &&
     req.url?.split('?')[0] !== '/owner-devices'

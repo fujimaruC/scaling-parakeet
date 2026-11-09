@@ -161,3 +161,27 @@ The token and grant tables contain random-secret hashes only and are excluded
 from canonical export/backup allowlists. No raw content or message hash is added
 to these protocols. Production Access path isolation, aliases, quotas and actual
 D1 migration application remain account gates. See NATIVE-OWNER-RUN.
+
+## Push, history and operations extension — migration 0008
+
+Browser owner namespace only: `GET /push/config` returns public application-server
+key and configured/unconfigured/invalid status. `GET /push/subscriptions` returns
+active opaque IDs and dates, never endpoints. `POST /push/subscriptions` accepts
+only `{endpoint}` and is naturally idempotent for an active endpoint; a revoked
+endpoint cannot be restored by retry. `DELETE /push/subscriptions/:id` is an
+idempotent revocation. All browser write Origin checks remain. Native credentials
+cannot use these browser push routes. No push payload contains application data.
+
+Both owner namespaces: `GET /history?limit=1..100&cursor=...` keeps the existing
+array envelope and adds `meta.next_cursor`. No-query defaults to100, with cursor
+metadata instead of an implied full history. Task cursors now bind to the filter
+query; changing filters requires a new first page. Legacy task tokens return422
+`INVALID_CURSOR`. Pagination is keyset continuation, not a consistent multi-page
+snapshot across edits.
+
+Authenticated `/health` adds last-reported scheduler/source states and bounded
+application usage. Request budget refusal returns429
+`REQUEST_BUDGET_EXCEEDED`; unavailable durable accounting returns503
+`BUDGET_ACCOUNTING_UNAVAILABLE`. Neither is canonical mutation success. Clients
+retain their immutable uncertain online write journal and retry explicitly later.
+Limits, caveats and setup: [RELEASE-GAPS](RELEASE-GAPS.md).
