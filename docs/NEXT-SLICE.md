@@ -15,10 +15,11 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ## Part 1 — Where the project stands (2026-11-09)
 
-`main` is at `f36c410`. The four commits since `6ea3b61` closed the capture
-selector, an install-time crash, and a reboot gap in the sync job.
+`main` was at `f36c410` when these measurements were taken. The four commits
+since `6ea3b61` closed the capture selector, an install-time crash, and a reboot
+gap in the sync job.
 
-**Measured on this machine at `f36c410`:**
+**Measured on this machine at `f36c410` (the commit these numbers describe):**
 
 | Check | Result |
 |---|---|
@@ -95,8 +96,8 @@ state alone does not prove the server rejects a pending bearer.
 ### 4. Cloud build of the next cloud-agent zip
 
 When `NEXT-PROMPT.md` returns a zip: apply the patch to a fresh clone of
-`f36c410`, diff it against `source/`, then run every acceptance command in that
-prompt yourself. Do not accept `APPLY.md` counts without reproducing them.
+the base commit named in that brief, diff it against `source/`, then run every
+acceptance command in that prompt yourself. Do not accept `APPLY.md` counts without reproducing them.
 
 ---
 

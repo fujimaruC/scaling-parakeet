@@ -20,7 +20,8 @@ self-consistent. Only the phone proves it works.
 
 ## Part 1 — State of the system (for the owner, 2026-11-09)
 
-**Base:** `main` at `f36c410`, pushed to `origin`.
+**Base:** `main` at the commit that introduced this file. Confirm with
+`git log --oneline -1 -- NEXT-PROMPT.md`.
 
 | Surface | State |
 |---|---|
@@ -30,7 +31,7 @@ self-consistent. Only the phone proves it works.
 | Android companion | 8 surfaces on real Worker handlers; encrypted queue; listener capture; sealed pairing; sync job |
 | Deployment | **never deployed.** D1 id is all zeros; `OWNER_SUB`/`ACCESS_TEAM`/`ACCESS_AUD` are `UNCONFIGURED` |
 
-**Verified here on 2026-11-09** (`f36c410`):
+**Verified here on 2026-11-09:**
 
 ```text
 vitest run                4 files / 36 tests passed
@@ -68,7 +69,9 @@ one zip.
 REPOSITORY
   https://github.com/fujimaruC/scaling-parakeet
   Branch: main
-  Base commit: f36c410   (verify: git log --oneline -1)
+  Base: main at the commit that introduced this file
+  Verify: git log --oneline -1 -- NEXT-PROMPT.md
+  Do not check out an older commit; the brief only exists from this one on.
 
 You are the BUILDER. A separate verifier runs your output on the owner's real
 Android 9 phone and against the real Cloudflare account. You have neither. Do
@@ -236,7 +239,7 @@ DELIVERABLE — one zip
 
   Academic-OS-System-<short sha>.zip containing:
     source/                 full working tree
-    academic-os.patch       git am --3way compatible against f36c410
+    academic-os.patch       git am --3way compatible against that base commit
     APPLY.md                base commit, what changed, why, how to verify, and
                             what you could not verify
 
