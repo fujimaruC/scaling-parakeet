@@ -1127,3 +1127,50 @@ real message text, which the contract forbids.
 No listener event has been captured yet. `capture` and `transport` remain
 `not_run` in the tool's own record. The positive path needs one owner-controlled
 WhatsApp self-chat message; it was not fabricated and is not claimed.
+
+### Selector defects found while attempting the positive capture test
+
+Attempting the positive half of T09 exposed two defects in `CaptureService.capture`.
+Both are measured, not inferred, and neither was worked around by widening what
+the filter accepts.
+
+**1. Exact title equality cannot survive a live conversation.** The filter requires
+`title == expected`:
+
+```kotlin
+if(expected.isBlank() || expectedGroup.isBlank() || title!=expected || event.groupKey!=expectedGroup) return
+```
+
+Across 8 individual `com.whatsapp` notifications on this device, 6 titles embedded
+`(N messages)` or a `: preview` suffix, i.e. the title mutates as messages arrive.
+An owner who verifies a title through `describeActive()` and saves it will not
+match the next notification in the same conversation. `conversationTitle` is
+present for 6 of 8 and differed from `title` in **6 of 6** comparable cases.
+
+**2. The group-key half of the conjunction is inert.** All 8 notifications
+reported the identical `groupKey` (`0|com.whatsapp|g:group_key_messages`), and
+`isGroupConversation` was true for none. So "match title AND group key" currently
+degenerates to a title-only test, which is not the owner-tested conjunction the
+code comment claims.
+
+A candidate fix exists (compare `conversationTitle` when present, else a
+normalised title, still requiring exact equality on both parts) but it changes a
+privacy-relevant selector, so it is **not** applied here without an explicit
+decision. It would not widen the accepted scope.
+
+### Positive capture test — not executed, and why
+
+The owner chose to exercise the positive path against the existing self-chat
+notification. No self-chat notification was present:
+
+```text
+individual com.whatsapp notifications        8
+titles equal to a self label (you/anda/kamu)  0
+sender name == conversation name              0 of 6 comparable
+title == MessagingStyle.user                  0 of 2 without conversationTitle
+```
+
+Mapping any of those 8 would have persisted another person's message text, so it
+was not done. The positive path therefore still requires one owner-controlled
+WhatsApp self-chat message. The receiver, tunnel and pairing were left running so
+that a single message completes the gate without repeating the setup.

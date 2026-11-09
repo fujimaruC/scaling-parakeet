@@ -466,3 +466,30 @@ would persist real message text.
 
 Exact record: [VERIFICATION-LOG §18](VERIFICATION-LOG.md#18-live-listener-pairing-and-filter-check-on-the-cph2015--2026-11-09).
 M0 and all release gates remain incomplete.
+
+### Selector defects found while attempting the positive capture test
+
+Two measured defects in `CaptureService.capture`, neither worked around by
+widening the filter:
+
+1. **Exact title equality cannot survive a live conversation.** The filter
+   requires `title == expected`, but 6 of 8 individual WhatsApp notifications on
+   this device embedded `(N messages)` or a `: preview` suffix — the title mutates
+   per message. `conversationTitle` was present for 6 of 8 and differed from
+   `title` in 6 of 6 comparable cases. A verified title will not match the next
+   notification in the same conversation.
+2. **The group-key half of the conjunction is inert.** All 8 notifications shared
+   one `groupKey` and none was a group conversation, so "title AND group key"
+   degenerates to title-only — not the owner-tested conjunction the code claims.
+
+No fix is applied: both changes touch a privacy-relevant selector and need an
+explicit decision. A candidate fix (prefer `conversationTitle`, normalise the
+fallback, keep exact equality on both parts) would not widen accepted scope.
+
+The positive capture test was not executed. The owner chose the existing
+self-chat, but no self-chat notification was present: 0 of 8 titles matched a
+self label, 0 of 6 comparable blocks had sender == conversation name, and 0 of 2
+blocks without `conversationTitle` had `title == MessagingStyle.user`. Mapping any
+of the 8 would have persisted another person's message text, so it was not done.
+One owner-controlled WhatsApp self-chat message still completes the gate; the
+receiver, tunnel and pairing were left running for it.
