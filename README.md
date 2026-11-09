@@ -18,7 +18,7 @@ One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected Wha
 6. [Build brief for ChatGPT Web](NEXT-PROMPT.md) — paste Part 2 into a cloud agent · [continuation notes](FIRST-AGENT-SESSION.md)
 7. [Background checks](docs/AUTOMATION.md) — how delivery is watched while away
 8. [Verification log](docs/VERIFICATION-LOG.md) — what was actually run, and what was not
-9. [Verification handoff](docs/NEXT-SLICE.md) — what to test next on the phone
+9. [Verification handoff](docs/NEXT-SLICE.md) — what to test next when the phone returns
 
 ## Product structure
 
