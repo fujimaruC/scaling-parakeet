@@ -1844,3 +1844,83 @@ PASS: no common private-key/provider-token formats found in project files; confi
 git diff --check
 # no output, exit0
 ```
+
+## 25. Independent verification of `fd426aa` on the owner machine — 2026-11-09
+
+Received `Academic-OS-System-fd426aa.zip` (declared base `b79092b`, commit
+`fd426aa`, tree `49804957ccd30455708d1f6536a818e8a28bfbc0`). Applied with
+`git am --3way` on branch `review-round4` from `b79092b`; the resulting tree hash
+matched the declared one exactly.
+
+Every figure below was produced here, not copied from the archive's `APPLY.md`.
+
+```text
+npm ci --ignore-scripts                    exit 0
+npm run check                              exit 0, 9 files / 58 tests passed
+.venv/bin/python -m unittest discover      98 tests OK
+npm run test:pwa                           exit 0, 1 passed (1.6m)
+./gradlew assembleDebug lint testDebugUnitTest
+                                           BUILD SUCCESSFUL in 12m 36s
+                                           native policy 8, queue privacy 6
+node --import tsx scripts/measure_resources.ts
+                                           MEASURED: 14 bundles; 24 profiles
+                                           task sizes 100 / 1200 / 10000
+                                           CPU, D1 rows, mobile fields null
+scripts/check_gate_claims.py               PASS 2 gate claims
+scripts/check_contract_mutations.py        PASS 14 intended / 14 restored / 0 survivors
+scripts/check_release_mutations.py         PASS 16 intended / 16 restored / 0 survivors
+scripts/check_round4_mutations.py          PASS 18 intended / 18 restored / 0 survivors
+npx playwright test                        15 passed, 1 failed (see below)
+```
+
+Android source is byte-identical to `b79092b`, so the APK was not rebuilt or
+reinstalled. No dependency, lockfile, migration or signing change.
+
+### The gate-claims guard actually bites
+
+Removing the required sentence from STATUS gate 6 makes the script exit **1**:
+
+```text
+GATE_CLAIM_DRIFT backup-tombstones-sqlite
+```
+
+Restoring the sentence makes it pass again. This is a real guard, not a check
+that always succeeds — which is what the round-3 brief asked for.
+
+### The receipt defect is genuinely fixed, and genuinely asserted
+
+`test_sync_only_confirms_a_matching_durable_batch_receipt` feeds three responses
+that are not the matching batch receipt — a wrong `batch_id`, an empty `data`,
+and a login page — and requires `SYNC_FAILED` each time with the job left
+`unknown` / `sync_pending`. A matching receipt with `replayed: true` then yields
+`synced`. The round-4 fault `sync-receipt` anchors exactly that comparison.
+
+### Retry loop: no lock recursion, and unknown outcomes stay unknown
+
+`tick()` holds the process lock and calls `_extract_job` / `_send_job`, which are
+deliberately **not** decorated with `@serialized`; only the public `run`, `queue`
+and `send` are. A first reading suggested a self-deadlock; reading the decorators
+showed there is none. `disposition()` maps only 429 and pre-connection failures to
+`retry`, keeps 5xx/timeout/interrupted as `unknown`, and `begin()` refuses to
+replay an unknown sync unless the owner explicitly retries.
+
+### One e2e failure, and why it is not a package defect
+
+```text
+✘ S2 keeps partial disclosure until existing bounded pages actually reach unknown tasks  (31.0s)
+```
+
+The test seeds 101 tasks through 101 sequential POSTs inside Playwright's default
+30s budget. Run alone it passes in **19.6s**. It failed while Gradle and three
+mutation runners were competing for four cores on this machine. The package does
+not touch `tests/e2e/s2.spec.ts`, `apps/web` or `apps/worker`, so this is the same
+harness-margin class as the 1200-row Vitest timeout fixed in §23 — induced here by
+my own parallel load, not by the delivered code.
+
+It is recorded rather than patched: a 10.4s margin on an unloaded machine is
+adequate, and silently loosening a test the package did not change would hide the
+next real regression.
+
+Not verified: any real provider call, physical push delivery, private networking,
+positive notification capture, production D1 restore/CPU/row costs, native UI or
+accessibility acceptance, and the pilot. No milestone is complete.

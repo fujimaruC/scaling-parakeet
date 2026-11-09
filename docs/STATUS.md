@@ -737,3 +737,33 @@ with matching restored passes and0 survivors. Gradle assembleDebug/lint/JVM/API2
 exits0 in4m40s;8 native-policy plus6 queue-privacy JVM cases; lint0 errors/2 inherited
 Transport warnings. Real device/account/provider and installed-service behavior
 remain unverified. No milestone is complete. Full output: VERIFICATION-LOG §24.
+
+## Independent verification of the round-4 package — 2026-11-09
+
+`Academic-OS-System-fd426aa.zip` applied to `b79092b` reproduces its declared tree
+`49804957…` exactly. Verified here: 58 Vitest, 98 Python, 1 production PWA,
+Gradle `assembleDebug lint testDebugUnitTest` green in 12m36s (8 native-policy +
+6 queue-privacy), `check_gate_claims.py` passing, and the 100 / 1200 / 10000-task
+measurement producing 14 bundles and 24 profiles with CPU, D1-row and mobile
+fields honestly null.
+
+Android source is byte-identical to `b79092b`, so the APK was not reinstalled.
+
+Two things worth recording. First, the gate-claims guard is real: deleting the
+required STATUS sentence makes it exit 1 with `GATE_CLAIM_DRIFT`, and restoring
+the sentence makes it pass. Second, the retry loop has no lock recursion — `tick`
+holds the process lock and calls undecorated `_extract_job`/`_send_job`, while only
+the public `run`/`queue`/`send` take `@serialized`; `disposition()` retries only
+429 and pre-connection failures and leaves 5xx/timeouts unknown.
+
+One e2e test failed at 31.0s and passes in 19.6s when run alone. It seeds 101
+tasks through 101 sequential POSTs inside Playwright's 30s default, and it failed
+while Gradle and three mutation runners competed for four cores. The package does
+not touch that spec or `apps/web`/`apps/worker`, so this is harness margin under
+my own load, not a delivered defect. Recorded rather than patched: loosening a
+test the package did not change would hide the next real regression. Exact
+record: [VERIFICATION-LOG §25](VERIFICATION-LOG.md#25-independent-verification-of-fd426aa-on-the-owner-machine--2026-11-09).
+
+Not verified: any real provider call, physical push delivery, private networking,
+positive notification capture, production D1 restore/CPU/row costs, native UI and
+accessibility acceptance, the pilot. No milestone is complete.
