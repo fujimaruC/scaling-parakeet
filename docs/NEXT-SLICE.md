@@ -20,22 +20,25 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ## Part 1 — Where the project stands (2026-11-09)
 
-Current as of `4059f60`. The canonical-export package landed as `9196619`
-(CSV export, injection corpus, acceptance traceability, resource budgets) and
-one verification fix as `bad1bb4` (the durable-budget test's concurrency bound).
+Current as of `3b84d17`. The round-4 package landed as `9841fec` (10k-task
+measurement, bounded job retries, multi-source operations, gate-claims guard) and
+its independent verification as `3b84d17`.
 
-**Measured on this machine at `4059f60`:**
+**Measured on this machine at `3b84d17`:**
 
 | Check | Result |
 |---|---|
 | `vitest run` | 9 files, 58 tests passed |
-| Python discovery | 80 tests OK |
-| `playwright test` | 16 passed |
+| Python discovery | 98 tests OK |
+| `playwright test` | 16 passed (one at 19.6s of a 30s default when run alone) |
 | `npm run test:pwa` | 1 passed — offline reload, logout wipe |
-| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 5m44s; 8 native-policy, 6 queue-privacy; lint 0 errors |
+| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 12m36s; 8 native-policy, 6 queue-privacy; lint 0 errors |
 | `check_contract_mutations.py` | 14 intended failures / 14 restored / 0 survivors |
 | `check_release_mutations.py` | 16 intended failures / 16 restored / 0 survivors |
-| planning / placeholders | PASS — 150 links, 30 features, 34 test IDs |
+| `check_round4_mutations.py` | 18 intended failures / 18 restored / 0 survivors |
+| `check_gate_claims.py` | PASS — 2 gate claims, fails closed on drift |
+| `measure_resources.ts` | 14 bundles, 24 profiles, 100/1200/10000 tasks |
+| planning / placeholders | PASS — 153 links, 30 features, 34 test IDs |
 
 Earlier figures at `f36c410` were 36 Vitest / 12 Playwright / 70 Python / 114
 links; they are superseded by the table above.
