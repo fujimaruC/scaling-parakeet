@@ -1,74 +1,59 @@
-# Next session — handoff prompt for the cloud agent
+# ChatGPT Web — build prompt for the remaining Academic OS scope
 
-**How to use this file**
+**How to use**
 
-1. Push `main` (this file included). The cloud agent fetches the repo from GitHub.
-2. Copy everything inside the block in **Part 2** and paste it into ChatGPT Web.
-3. The agent works in its own workspace and zips the result back.
-4. We test the zip here — including on the actual phone, which the cloud agent cannot reach.
+1. This file is committed on `main`. The agent fetches the repo itself.
+2. Paste **Part 2** into ChatGPT Web (the whole fenced block).
+3. The agent works in its own clone and returns one zip.
+4. That zip comes back here, where it is **verified on the real phone**. The
+   cloud agent cannot reach the device, the Cloudflare account or 9Router, so it
+   must not claim anything about them.
 
-`FIRST-AGENT-SESSION.md` is for an agent that has the repo *and* the device. This file is for the agent that has neither.
+**Division of labour, and why it is written down.** This repository is built by
+cloud agents and verified locally. Every device defect found so far — the API-28
+`AutoCloseable` launch crash, the `-T 1` marker window, the chatty false
+negative, the `onListenerConnected` `SecurityException`, the exact-title
+selector — passed every automated check first. A cloud agent can prove code is
+self-consistent. Only the phone proves it works.
 
 ---
 
-## Part 1 — Progress snapshot (for the human)
+## Part 1 — State of the system (for the owner, 2026-11-09)
 
-**As of 2026-11-06 · branch `main` · commit `6d8a2f3`**
+**Base:** `main` at `f36c410`, pushed to `origin`.
 
-### Verified here, this machine
-
-| Check | Result |
+| Surface | State |
 |---|---|
-| `npm run check` | PASS — 16 D1 integration tests, format, tsc, PWA build, Worker dry-run |
-| `npm run test:e2e` | 5 passed |
-| `npm run test:pwa` | 1 passed — compiled service worker offline reload, snapshot cleared on logout |
-| Python unit tests | 19 passed |
-| `scripts/validate_planning.py` | PASS — 3 schemas, 21 rejection cases, 58 links |
-| `scripts/check_placeholders.py` | PASS |
-| Gradle `assembleDebug` + `lint` + `testDebugUnitTest` | PASS — 0 lint errors, 6 pre-existing warnings |
+| PWA (React/TS) | Today, tasks, detail, calendar, review, settings, history, inbox, offline snapshot, ID/EN, light/dark |
+| Worker + D1 | 7 migrations; tasks, contexts, events, review effects, reminder intents, inbox, device credentials, purge/receipt |
+| Python collector | Encrypted local evidence, export import, pairing, pinned TLS receiver, consent/extraction/projection, restore |
+| Android companion | 8 surfaces on real Worker handlers; encrypted queue; listener capture; sealed pairing; sync job |
+| Deployment | **never deployed.** D1 id is all zeros; `OWNER_SUB`/`ACCESS_TEAM`/`ACCESS_AUD` are `UNCONFIGURED` |
 
-### Verified on the actual phone
+**Verified here on 2026-11-09** (`f36c410`):
 
-| Fact | Value |
-|---|---|
-| Device | OPPO CPH2015, Android 9 / API 28 |
-| `isLowRamDevice()` | `false` — low-RAM listener restriction does not apply |
-| Debug APK | installed, launched, `MainActivity` resumed, 0 fatal exceptions |
-| Notification access | **not granted** (owner must tap it) |
-| WhatsApp / Chrome | 2.26.42.74 / 138.0.7204.179 |
+```text
+vitest run                4 files / 36 tests passed
+python unittest           70 tests OK
+playwright e2e            11 passed, 1 failed; the failure passed alone on retry (flaky)
+playwright production     1 passed (offline reload + logout wipe)
+gradle assembleDebug lint testDebugUnitTest   BUILD SUCCESSFUL 6m16s
+  native policy 8 cases, queue privacy 6 cases, lint 0 errors
+planning validation       PASS (114 links, 30 features, 34 test IDs)
+placeholder scan          PASS
+```
 
-### The lesson that matters most
+**Verified on the CPH2015 (Android 9 / API 28):** install in place from the
+previous build with no data loss, launch, reopen, clean crash window
+(`crash_coverage_complete: true`, `fatal: false`), listener `connected` and
+recovering after a forced disconnect, pairing to a local TLS receiver over
+`adb reverse` with HMAC-verified requests, and the negative filter case (28 real
+notifications replayed through a non-matching synthetic mapping left the queue
+at 0).
 
-All 41 automated tests passed while the app **crashed on launch** on the phone. `Queue` extends `SQLiteOpenHelper`, which does not implement `AutoCloseable` on API 28, so every `Queue(...).use { }` threw `ClassCastException`. Fixed in `6d8a2f3`.
-
-Compile, lint, TypeScript, Python, Vitest and Playwright were all blind to it. Every future handoff must assume the same blindness.
-
-### Open findings
-
-1. **Contract violation — unkeyed fingerprint.** `Queue.add` stores a plain SHA-256 of the payload. `docs/02-DATA-MODEL.md` requires a keyed hash with a locally managed secret. Local-only column, never synced, but it is a stable content identifier at rest.
-2. **API-28 compatibility is unaudited.** One API-28-only crash has already shipped past every check. There is no guard against a second.
-3. **No device smoke checklist.** The crash would have been caught by a 60-second run that nobody had written down.
-4. **Listener grant not performed.** No capture case has ever been exercised on hardware.
-5. **Cloudflare Access, real 9Router route, Web Push delivery, D1 restore** — all still unverified.
-
-### Recommended order
-
-| Slice | Scope | Who can do it |
-|---|---|---|
-| **1 (this prompt)** | Remove the stable on-disk content identifier, prevent a second API-28 crash class, 60-second device smoke check | Cloud agent |
-| 2 | Web Push subscription lifecycle + purge-status polling | Cloud agent |
-| 3 | Server search/calendar pagination, localization, icon, release packaging | Cloud agent |
-| 4 | Listener capture matrix, transport on device, seven-day pilot | **Us, with the phone** |
-
-Slice 1 goes first because it closes a security contract violation and prevents the bug class that already cost us a session.
-
-### How the prompt is written
-
-Part 2 states the **outcome** and the **hard limits**, then hands the mechanism to the agent. It asks for the chosen approach and the rejected alternative in a line or two, and explicitly says a better idea than anything implied is welcome.
-
-The reason: rules that dictate a mechanism produce compliance, not engineering. The agent should know what it is protecting — an unkeyed hash of a message is a durable, correlatable identifier — and then be trusted to pick the design.
-
-The only things stated as absolute are the privacy boundary, the owner-approval rule, the single-owner constraint, and the ban on claiming tests it cannot run. Those are not design choices.
+**Not verified, by anyone:** any captured notification, real network transport,
+laptop-off queueing, enrollment/activation/revocation against a real account,
+Cloudflare Access, 9Router, Web Push delivery, D1 restore in production, ITK.
 
 ---
 
@@ -76,169 +61,187 @@ The only things stated as absolute are the privacy boundary, the owner-approval 
 
 ```text
 You are the implementation agent for a private, single-owner academic and
-organizational memory system. One user, no teams, no registration, no public
-data endpoints. You work in a fresh clone, run the checks yourself, and
-return a zip.
+organizational memory system. One user. No teams, no registration, no public
+data endpoints. You work in a fresh clone, run the checks yourself, and return
+one zip.
 
 REPOSITORY
-https://github.com/fujimaruC/scaling-parakeet
-Branch: main   (if main has moved past 6d8a2f3, check out 6d8a2f3 as your base)
-Base commit: 6d8a2f3
-Verify with: git log --oneline -1
+  https://github.com/fujimaruC/scaling-parakeet
+  Branch: main
+  Base commit: f36c410   (verify: git log --oneline -1)
 
-READ BEFORE WRITING CODE, in this order:
-  AGENTS.md
-  docs/STATUS.md
-  docs/18-DEVELOPMENT.md
-  docs/02-DATA-MODEL.md
-  docs/14-ANDROID-COMPANION.md   (section "Recorded M0 device evidence")
-  docs/07-SECURITY-PRIVACY.md
+You are the BUILDER. A separate verifier runs your output on the owner's real
+Android 9 phone and against the real Cloudflare account. You have neither. Do
+not claim a device, account, network, push or provider result.
 
-WHAT IS TRUE
+READ BEFORE WRITING CODE, in this order
+  AGENTS.md                          rules, precedence, completion gates
+  docs/STATUS.md                     what is true, what is not
+  docs/VERIFICATION-LOG.md           sections 17-19 are the latest device work
+  docs/16-OWNER-DECISIONS.md         read the provenance warning at the top
+  docs/DECISIONS.md                  ADRs 016-024
+  docs/17-WORK-PACKAGES.md           W00-W50 package definitions
+  docs/13-FEATURE-CATALOG.md         F01-F30, 25 are P0
+  docs/18-DEVELOPMENT.md             reproducible setup
+  docs/14-ANDROID-COMPANION.md       companion contract and device matrix
+  docs/07-SECURITY-PRIVACY.md        the boundary you must not move
 
-The repository is not a scaffold. It has a working React/TypeScript PWA, a
-TypeScript Worker with D1 migrations, a Python collector, and a Kotlin
-Android companion. 41 automated tests pass. Do not rewrite it, restructure
-it, or modernise it.
+WHAT IS ALREADY BUILT — do not rewrite it
 
-We installed the Android app on the owner's real phone and it CRASHED ON
-LAUNCH while all 41 tests passed. Cause: Queue extends SQLiteOpenHelper,
-which does not implement AutoCloseable on API 28, so every Queue(...).use{}
-threw ClassCastException. Compile, lint, TypeScript, Python, Vitest and
-Playwright were all blind to it.
+A working React/TypeScript PWA, a TypeScript Worker with 7 D1 migrations, a
+Python collector with an encrypted local evidence store, and a Kotlin Android
+companion with eight real screens. 36 Vitest, 70 Python, 12 Playwright and 14
+JVM cases pass. The APK installs, launches and reopens on the owner's phone.
 
-The device is an OPPO CPH2015, Android 9, API 28, isLowRamDevice() = false.
-Notification access is NOT granted. No capture has ever run on hardware.
+This is not a scaffold and not a prototype. Extend it.
 
-HOW TO THINK — read this twice
+HOW TO THINK
 
 Your job is to find the best solution, not to execute instructions literally.
+For each problem: work out what it actually protects, consider more than one
+approach, choose one, and say in a line or two why. If you find a better
+approach than anything implied here, take it and say so.
 
-For every problem: work out what it is actually protecting, consider more
-than one approach, choose one, and state in one or two lines why you chose
-it over the alternative. If you find a better approach than anything implied
-here, take it and say so. A spec that names a mechanism is describing what
-worked when it was written, not a ceiling on your thinking.
-
-Simplicity is a design goal, not a prohibition. Prefer the smallest design
-that fully solves the problem. Do not cripple a feature to save lines, and do
-not add machinery for a need that does not exist yet.
+Simplicity is a design goal, not a prohibition. Prefer the smallest design that
+fully solves the problem. Do not cripple a feature to save lines; do not add
+machinery for a need that does not exist.
 
 Correctness on the edge case beats elegance on the happy path. This system
-handles dates, privacy boundaries and a phone that loses power mid-write.
-Choose the option that is still right when the network drops, the clock is
-wrong, or the process dies between two statements.
+handles dates, privacy boundaries, and a phone that loses power mid-write.
 
-Constraints marked HARD below are the only rules. Everything else is a
-starting position you may improve on with justification.
+SCOPE FOR THIS SESSION — the four things that actually block release
 
-WHAT TO ACHIEVE THIS SESSION
+Work in this order. Each is a vertical slice with failure states, not a screen
+stub. Stop and report if a slice needs a decision you cannot make.
 
-1. No stable content identifier at rest on the phone.
+1. WEB PUSH — F19, the only P0 feature with no code at all.
+   There is no push code in apps/web/src or apps/worker/src; the service worker
+   has no push handler; /health reports push:"not_configured". The reminder
+   engine and durable in-app inbox already work and must keep working when push
+   is absent.
+   Reach a defensible outcome, which may legitimately be "explicitly
+   unsupported" if the platform or key story does not hold — the feature
+   catalogue allows that, but only with the reason recorded. If you implement
+   it: subscription lifecycle, VAPID keys supplied as Worker secrets (never in
+   git), per-device subscription storage with revocation, delivery from the
+   existing cron tick, expired-subscription pruning, and inbox dedupe so a push
+   never duplicates an inbox row. Push must never carry message text.
+   Test it synthetically: subscribe, deliver, expire, revoke, and prove the
+   inbox row is unchanged in count and content when push fails.
 
-   Queue.add currently stores Base64(SHA-256(payload)) in the `fingerprint`
-   column. An unkeyed hash of a message is a durable, correlatable
-   identifier: anyone with the database can confirm whether a given message
-   was captured. docs/02-DATA-MODEL.md requires a keyed hash with a locally
-   managed secret.
+2. SEARCH AND CALENDAR AT SCALE — F16, F15.
+   The Worker already supports ?q= with title_only and LIKE escaping, and
+   calendarRange() filters exact instants separately from date-only values.
+   The PWA does not use them: Ledger.tsx filters the loaded page client-side.
+   That is correct for a small ledger and wrong for a large one.
+   Move search and calendar filtering to the server for the views that can
+   exceed one page, keep the bounded-page disclosure honest, and prove that a
+   filtered result never silently implies "no matches" when only one page was
+   read. Pagination cursors must stay opaque and stable.
 
-   Reach that property. The mechanism is yours — a Keystore-held HMAC, a
-   per-install salt, a per-source derivation, or another design you can
-   defend. Consider what dedupe actually needs versus what durability you
-   are willing to leave on disk.
+3. OPERATIONAL BUDGETS AND HEALTH — F25, the other P0 with no code.
+   grep for budget/quota/rate-limit in apps/worker/src returns nothing. There is
+   a /health route that reports three strings.
+   Build the smallest honest thing: request accounting that survives a restart,
+   a documented limit per route class, a health payload that distinguishes
+   "never reported" from "reported stale" from "healthy", and a refusal path
+   that returns a fixed code rather than a 500. Do not invent a billing
+   integration and do not provision anything.
 
-   Decide what happens to rows already written with the old fingerprint.
-   They cannot be re-keyed, because the plaintext is gone. The queue is
-   currently empty, so wiping is a legitimate answer — but you own that
-   decision, so make it deliberately, state the consequence for anyone with
-   existing queued data, and document it.
+4. NATIVE PARITY GAPS that the PWA has and the companion does not.
+   Read the eight screens first. Then close only what is genuinely missing —
+   candidate areas: search entry, history paging on a large ledger, source
+   health detail, export. Do not redesign the UI; it has an accepted design
+   contract and the owner has reviewed it.
 
-   Preserve this guarantee regardless of design: if ciphertext exists and
-   the key is missing, fail loudly and require an owner wipe. Never silently
-   regenerate a key over existing ciphertext.
+If you finish those and still have budget, take the next item from
+docs/STATUS.md "Remaining implementation and release gates" — but do not start
+anything that requires a device, an account, a provider or a deployment.
 
-   Test it: identical payload gives an identical result, different payload
-   differs, the at-rest value is not derivable from the message alone, and a
-   missing key with queued rows does not regenerate.
+HARD LIMITS — not negotiable, not open to reinterpretation
 
-2. Make a second API-28 crash much harder to ship.
-
-   One API-28-only defect already passed every check we have. Read the
-   Kotlin source for the same class of problem: AutoCloseable assumptions,
-   java.time usage, Keystore builders, notification APIs, SQLite helpers,
-   missing @RequiresApi, anything available at compile time but absent at
-   runtime on 28.
-
-   Then decide how to prevent recurrence, within reason. Options include a
-   lint configuration, a test that runs against the API-28 surface, a
-   documented review step, or something better you think of. You cannot run
-   a device or an emulator, so be honest about what your guard actually
-   proves. A guard that only catches the exact bug we already fixed is worth
-   less than one that catches the class.
-
-   Record findings and verdicts in docs/14-ANDROID-COMPANION.md.
-
-3. Give the owner a check that catches "it launches" before anything else.
-
-   Write docs/DEVICE-SMOKE.md: a short ordered checklist to run in about a
-   minute after installing a debug APK, which would have caught the launch
-   crash immediately. Then the longer capture-matrix cases from docs/14.
-   Short enough that it actually gets run every time. Design the output so
-   it is sanitized — booleans, counts, build strings, never notification
-   text or screenshots of real messages.
-
-HARD LIMITS — these are not negotiable and not open to reinterpretation
-
-  No raw chat text, quotes, exports, message bodies or raw-content hashes
-  may leave Android/Linux for the cloud, logs, assets or backups.
+  No raw chat text, quotations, exports, message bodies or raw-content hashes
+  may leave Android/Linux for the cloud, logs, assets, crash reports or backups.
   Every AI-derived task needs explicit owner approval; nothing auto-accepts.
   One owner. No registration, no sharing, no public personal-data endpoint.
-  Never claim a device, account, network or push test passed. You have no
-  device and no account.
+  Never claim a device, account, network, push or provider test passed.
   Do not push to GitHub, deploy, or provision any paid service.
-  Do not add a dependency unless the standard library genuinely cannot do
-  it; if you do, justify it in one line.
-  Do not include real chat data, exports, credentials or keys anywhere.
+  Do not add a dependency unless the standard library genuinely cannot do it;
+  if you do, justify it in one line and update the lockfile.
+  Do not weaken an existing privacy, approval or fail-closed rule to make a test
+  pass. If a rule blocks you, say so and stop.
+  Do not convert an unverified field into a verified one by assertion.
+
+THINGS THAT WILL BITE YOU — learned the hard way here
+
+  A passing suite proves nothing about behaviour. Five defects in this project
+  passed every automated check and only failed on the phone: an API-28
+  AutoCloseable assumption, a logcat -T 1 window that never opened, a chatty
+  rule that reported every clean run as unverified, an onListenerConnected
+  SecurityException after an in-place update, and an exact-title selector that
+  could never match a live notification. Assume the same blindness.
+  API 28 is the runtime floor. verifyApi28 compiles all Kotlin against
+  android-28 with -no-jdk; anything newer than 28 fails the build. Keep it.
+  Dates have four precisions — exact, date-only, approximate, unknown — and the
+  UI must never collapse them. Unknown always appears under "Tanpa tanggal".
+  The notification selector matches conversation identity plus group key.
+  On this phone every WhatsApp notification shares one group key, so the group
+  half is currently inert. Do not "fix" that by widening the match.
+  The capture screen stores its mapping once; it is not re-entered per launch.
+  A queue reset clears pairing but keeps the mapping.
 
 ACCEPTANCE — run these and paste real output
 
   npm ci
-  npm run check
+  npm run check                 # lint + tsc + vitest + web/worker build
+  npm run test:e2e
+  npm run test:pwa
   .venv/bin/python scripts/validate_planning.py
   .venv/bin/python -m unittest discover -s collectors/local/tests -v
-  cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
+  cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest --no-daemon
 
-  Android needs JDK 17 and Android build-tools 35.0.0. If either is missing,
-  install it and say exactly what you did. If a check truly cannot run,
-  write BLOCKED with the exact error.
+  Android needs JDK 17, build-tools 35.0.0, platforms 28 and 35. If something is
+  missing, install it and say exactly what you did.
 
-  Prove your tests are meaningful: revert each fix locally, show the test
-  failing, restore the fix, show it passing. Paste both outputs. A test that
+  Lint is currently 0 errors. Do not make it worse.
+
+  Prove your tests bite: for each new guarantee, break the code locally, show
+  the test failing, restore it, show it passing. Paste both outputs. A test that
   passes before and after the fix is not a test.
+
+  If a check cannot run, write BLOCKED with the exact error. Do not skip it
+  quietly and do not describe it as passing.
 
 REPORTING
 
   Paste actual command output, not your summary of it.
-  Write "unverified" where something is unverified. Do not imply it works.
+  Write "unverified" where something is unverified.
   If blocked, say BLOCKED and name the missing observation.
-  When you chose one design over another, say why in a line or two. That
-  reasoning is part of the deliverable, not noise.
+  When you chose one design over another, say why in a line or two.
+  If you find an existing defect, report it — do not quietly work around it.
 
-UPDATE docs/STATUS.md
+UPDATE THESE FILES
 
-  Exact commands, real outcomes, environment versions, what remains
-  unverified, and any decision you made that a future agent should not
-  silently reverse. Do not mark M0 or any milestone complete.
+  docs/STATUS.md             exact commands, real outcomes, what remains
+                             unverified, and any decision a future agent must
+                             not silently reverse
+  docs/VERIFICATION-LOG.md   a new numbered section for this session
+  docs/DECISIONS.md          an ADR if you changed a contract
+  docs/13-FEATURE-CATALOG.md only if a feature's gate genuinely changed
+
+  Do not mark any milestone complete. M0 and every release gate stay open until
+  the device and account observations exist.
 
 DELIVERABLE — one zip
 
   Academic-OS-System-<short sha>.zip containing:
     source/                 full working tree
-    academic-os.patch       git am --3way compatible against 6d8a2f3
-    APPLY.md                base commit, what changed, why, how to verify,
-                            and what you could not verify
-    docs/STATUS.md          updated inside source/
+    academic-os.patch       git am --3way compatible against f36c410
+    APPLY.md                base commit, what changed, why, how to verify, and
+                            what you could not verify
 
-  Keep source/ and the patch consistent with each other. We apply the patch
-  and diff it against source/ as a cross-check.
+  Keep source/ and the patch consistent. The verifier applies the patch to a
+  fresh clone and diffs it against source/ as a cross-check. If APPLY.md claims
+  a count of tests or faults, the shipped scripts must reproduce that number —
+  earlier packages claimed more than their scripts contained.
 ```

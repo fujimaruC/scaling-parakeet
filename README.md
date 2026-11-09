@@ -15,10 +15,10 @@ One owner. An 8 GB Arch Linux VAIO, an Android 9 phone, Moodle, and selected Wha
 3. [Master PRD](docs/00-MASTER-PRD.md)
 4. [Implementation gates](docs/09-IMPLEMENTATION.md) and [detailed work packages](docs/17-WORK-PACKAGES.md)
 5. [Status](docs/STATUS.md) and [decisions](docs/DECISIONS.md)
-6. [Next-model handoff](FIRST-AGENT-SESSION.md) · [Cloud-agent prompt](NEXT-PROMPT.md)
+6. [Build brief for ChatGPT Web](NEXT-PROMPT.md) — paste Part 2 into a cloud agent · [continuation notes](FIRST-AGENT-SESSION.md)
 7. [Background checks](docs/AUTOMATION.md) — how delivery is watched while away
 8. [Verification log](docs/VERIFICATION-LOG.md) — what was actually run, and what was not
-9. [Next slice](docs/NEXT-SLICE.md) — the handoff prompt to continue
+9. [Verification handoff](docs/NEXT-SLICE.md) — what to test next on the phone
 
 ## Product structure
 

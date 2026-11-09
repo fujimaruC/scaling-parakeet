@@ -1,229 +1,132 @@
-# Next slice — handoff prompt
+# Next slice — verification handoff (not a build brief)
 
-**How to use:** Part 1 explains the choice, for the owner. Part 2 is the brief — paste it, or point the agent at this file.
+**Who this is for:** the local agent on the owner's machine, with the repo and
+the phone. The build work goes to a cloud agent via [NEXT-PROMPT](../NEXT-PROMPT.md).
 
-Base: the commit that introduced this file. Confirm with:
+**Base:** the commit that introduced this file. Confirm with
 `git log --oneline -1 -- docs/NEXT-SLICE.md`
 
----
-
-## Part 1 — Why this scope
-
-### What changed since the last prompt
-
-The owner supplied a design contract (`docs/design/UI-DESIGN-AGENT.md`) and a prototype, and delegated refinement. S1 of that spec is now built and verified: tokens, self-hosted fonts, bitmap icons, primitives, shell, theme persistence, `/__kit`.
-
-That spec is now authoritative for the PWA's appearance and screen structure, and it orders a stop for owner review after each slice. S1 is reviewed and accepted. S2 is next.
-
-### What S2 is
-
-Read-only Today, Tasks and Task detail against real Worker data — grouping, urgency, history timeline. No writes yet. The spec is explicit that writes land in S3.
-
-This is the right slice because it is where the app stops being a kit demo and starts being the thing you open in the morning. It is also entirely locally verifiable against synthetic fixtures, which matters: the last three slices each produced a defect that only hardware caught, and this one has no device dependency at all.
-
-### Still owed, and deliberately not dropped
-
-The earlier brief asked for Android companion identity (icon, strings, theme), an accessibility audit across both surfaces, and large-ledger pagination. **None of that is cancelled by importing the design.** ADR-021 says so explicitly. It is deferred, not deleted, and stays listed in STATUS.
-
-The Android work is best done after S2 shows the real screen language, so the companion matches the product rather than a guess.
-
-### What would change this decision
-
-If notification access is granted, run the capture matrix first. Real evidence outranks any UI work. The prompt says so.
+**Role split, stated once:** the cloud agent writes code. This agent verifies it
+on the CPH2015, against a real account when one exists, and records what was
+actually observed. Verification does not fix code opportunistically unless the
+defect blocks the verification itself; report first, then fix with a regression.
 
 ---
 
-## Part 2 — Paste into ChatGPT
+## Part 1 — Where the project stands (2026-11-09)
 
-```text
-You are the implementation agent for a private, single-owner academic and
-organizational memory system. One user, no teams, no registration, no public
-data endpoints. You work in a fresh clone, run the checks yourself, and
-return a zip.
+`main` is at `f36c410`. The four commits since `6ea3b61` closed the capture
+selector, an install-time crash, and a reboot gap in the sync job.
 
-REPOSITORY
-https://github.com/fujimaruC/scaling-parakeet
-Branch: main
-Base commit: the commit that introduced this file.
-Verify with: git log --oneline -1 -- docs/NEXT-SLICE.md
+**Measured on this machine at `f36c410`:**
 
-READ BEFORE WRITING CODE, in this order:
-  AGENTS.md
-  docs/design/UI-DESIGN-AGENT.md    <-- authoritative for UI and screens
-  docs/DECISIONS.md                 <-- ADR-021 reconciles it with 06-UI-UX
-  docs/06-UI-UX.md
-  docs/STATUS.md
-  docs/VERIFICATION-LOG.md
-  docs/18-DEVELOPMENT.md
+| Check | Result |
+|---|---|
+| `vitest run` | 4 files, 36 tests passed |
+| Python discovery | 70 tests OK |
+| `playwright test` | 12 tests; 11 passed, 1 failed and passed alone on retry — a flake, not a fix |
+| `npm run test:pwa` | 1 passed — offline reload, logout wipe |
+| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 6m16s; 8 native-policy, 6 queue-privacy; lint 0 errors |
+| planning / placeholders | PASS — 114 links, 30 features, 34 test IDs |
 
-WHAT IS TRUE
+**Measured on the phone:** install in place with no data loss, launch, reopen, a
+complete clean crash window, listener connected and self-recovering, sealed
+pairing over `adb reverse` with HMAC-verified requests, and the negative filter
+case (28 notifications replayed through a non-matching mapping → queue stayed 0).
 
-The repository is not a scaffold. A working React/TypeScript PWA, a
-TypeScript Worker with D1 migrations, a Python collector and a Kotlin
-Android companion already exist and run.
+**Never observed, by anyone:** a captured notification, real-network transport,
+laptop-off queueing, enrollment/activation/revocation on a real account,
+Cloudflare Access, 9Router, Web Push delivery, production D1 restore, ITK.
 
-Verified locally: 20 Vitest (18 D1 + 2 foundation), 33 Python, 6 JVM policy,
-7 Playwright, 1 PWA offline. Gradle build, lint and the API-28 surface check
-pass. The APK installs, launches and reopens on the owner's OPPO CPH2015
-(Android 9, API 28).
+---
 
-S1 of the design contract is complete: tokens, self-hosted Pixelify Sans and
-Inter, bitmap icons, Box/Chip/Tag/Button/UrgencyBar primitives, centred
-four-tab shell, FAB, dev-only /__kit, persisted system/light/dark. The owner
-has reviewed and accepted it.
+## Part 2 — What to verify next, in order
 
-Three defects in this project were found only by real device testing, after
-every automated check had passed. A fourth was found in the evidence tool
-itself: it reported reopen_ok=false for a working app. Draw the conclusion:
-a passing suite proves nothing about behaviour, and a plausible-but-wrong
-value is worse than an absent one.
+### 1. The positive capture path (highest value, needs one message)
 
-Notification access has never been granted. No listener event has ever been
-received. You have no device, no account and no provider.
+Everything is already configured on the phone: listener connected, pairing
+sealed, mapping enabled, receiver running locally, `adb reverse` registered.
 
-HOW TO THINK — read this twice
-
-Your job is to find the best solution, not to execute instructions
-literally. For each problem: work out what it actually protects, consider
-more than one approach, choose one, and say in a line or two why you chose
-it over the alternative. If you find a better approach than anything
-implied here, take it and say so.
-
-Simplicity is a design goal, not a prohibition. Prefer the smallest design
-that fully solves the problem. Do not cripple a feature to save lines, and
-do not add machinery for a need that does not exist yet.
-
-Correctness on the edge case beats elegance on the happy path. This system
-handles privacy boundaries, a phone that loses power mid-write, and a
-laptop switched off for days.
-
-FIX FIRST — a verified defect in the shipped evidence tool
-
-  scripts/device_evidence.py can never observe crash coverage on the owner's
-  phone. fatal_exception_observed returns null on every run, so a crash during
-  the capture matrix would be invisible.
-
-  Root cause, isolated by experiment: CrashWindow.start() passes -T 1 to
-  logcat. With that flag the live stream never sees the AOS-RUN START marker,
-  so the window never opens and every subsequent line is discarded.
-
-    adb logcat -d -b main -b crash -v brief -T 1 'AOS-RUN:I' '*:S'   -> 0
-    adb logcat -d -b main -b crash -v brief      'AOS-RUN:I' '*:S'   -> 1
-
-  Live-stream proof without -T 1: both START and END for a fresh token were
-  captured (count 2). -T is redundant because the monitor's own token already
-  scopes the window.
-
-  Fix it, and add a test that fails if the marker-scoped window can miss its
-  own markers. Detail in docs/VERIFICATION-LOG.md section 8.
-
-WHAT TO ACHIEVE THIS SESSION — S2 ONLY
-
-Implement S2 from the design contract: read-only Today, Tasks and Task
-detail against real Worker data.
-
-  - Today: header, chips, review banner when proposals are pending, due-today
-    cards, this-week rows, and the always-visible "Tanpa tanggal" row.
-  - Tasks: segmented context filter, the five groups in spec order, empty
-    groups hidden, due-ascending within a group.
-  - TaskRow: 44x44 hit area around a 24px box, real <button>, aria-label,
-    pixel "when" text, done state.
-  - Task detail: deadline card with all four date precisions rendered
-    distinctly, reminder line from real reminder_rules, history timeline
-    newest-first.
-  - Sheets and toast per §5.7, including the precision selector the
-    prototype omits.
-
-Constraints that matter here:
-
-  - Read-only. Writes, optimistic updates and undo belong to S3. Do not
-    implement them early.
-  - Date precision must stay distinct. exact timestamp, date-only,
-    approximate and unknown are four different things and the UI must never
-    collapse them. Unknown always appears under "Tanpa tanggal".
-  - Reminder text comes from data, not a hardcoded string.
-  - No sample data in production paths. Fixtures live in tests/fixtures or
-    dev seeds only.
-  - Do not add a dependency. The existing React, fetch, IndexedDB and
-    browser History are sufficient, as ADR-021 records.
-
-Accessibility is required, not polish — §7 is a contract. Every control a
-real button, 44x44 targets, visible focus ring, aria-labels on icon-only
-buttons, contrast 4.5:1 in both themes, and never colour alone. If you
-cannot verify something without a screen reader, say so rather than
-claiming it passes.
-
-HARD LIMITS — not negotiable, not open to reinterpretation
-
-  No raw chat text, quotes, exports, message bodies or raw-content hashes
-  may leave Android/Linux for the cloud, logs, assets or backups.
-  Every AI-derived task needs explicit owner approval; nothing auto-accepts.
-  One owner. No registration, no sharing, no public personal-data endpoint.
-  Never claim a device, account, network or push test passed. You have no
-  device and no account.
-  Do not push to GitHub, deploy, or provision any paid service.
-  Do not add a dependency; if you believe one is unavoidable, stop and ask
-  instead of adding it.
-  Do not include real chat data, exports, credentials or keys anywhere.
-  Do not weaken an existing privacy or approval rule to make a test pass.
-  Do not convert an unverified field into a verified one by assertion.
-
-ACCEPTANCE — run these and paste real output
-
-  npm ci
-  npm run check
-  npm run test:e2e
-  npm run test:pwa
-  .venv/bin/python scripts/validate_planning.py
-  .venv/bin/python -m unittest discover -s collectors/local/tests -v
-  cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
-
-  Android needs JDK 17, build-tools 35.0.0 and platforms 28 and 35
-  (verifyApi28 requires android-28). If something is missing, install it and
-  say exactly what you did.
-
-  Lint currently reports 0 errors and 4 warnings: MissingApplicationIcon,
-  ApplySharedPref x2, CustomX509TrustManager, SetTextI18n. Do not make it
-  worse. The Android icon work is a separate slice; do not half-do it here.
-
-  Prove your tests bite: for each new guarantee, revert the fix locally,
-  show the test failing, restore it, show it passing. Paste both outputs.
-
-REPORTING
-
-  Paste actual command output, not your summary of it.
-  Write "unverified" where something is unverified.
-  If blocked, say BLOCKED and name the missing observation.
-  When you chose one design over another, say why in a line or two.
-  If you find an existing defect, report it — do not quietly work around it.
-  Accessibility claims need evidence. "Looks fine" is not evidence.
-
-UPDATE THESE FILES
-
-  docs/VERIFICATION-LOG.md   add what you ran and its real outcome
-  docs/STATUS.md             update gate language to match reality
-  docs/06-UI-UX.md           if the screen contract changed
-
-  Do not mark any milestone complete. The capture matrix is still unrun, and
-  the Android identity, accessibility audit and large-ledger pagination from
-  the earlier brief remain outstanding and must stay listed as such.
-
-STOP AFTER S2
-
-The design contract requires owner review between slices. Finish S2, report,
-and stop. Do not begin S3.
-
-DELIVERABLE — one zip
-
-  Academic-OS-System-<short sha>.zip containing:
-    source/                 full working tree
-    academic-os.patch       git am --3way compatible against that base
-    APPLY.md                base commit, what changed, why, what you could
-                            not verify
-    docs/VERIFICATION-LOG.md updated inside source/
-
-  Keep source/ and the patch consistent. We apply the patch and diff it
-  against source/ as a cross-check. If you claim a count of tests or faults
-  in APPLY.md, make sure the shipped scripts reproduce that number — earlier
-  packages claimed more than their scripts contained.
+```bash
+~/aos-scratch/aos-receiver/new-invite.sh      # only if re-pairing is needed
 ```
+
+Send **one WhatsApp message to yourself**. Then:
+
+```bash
+cd /home/riko/Projects/learning-os
+.venv/bin/python scripts/device_evidence.py --samples 1
+# expect queue_count >= 1, observed_gap_count 0, fatal false, coverage true
+```
+
+Then map that conversation in Capture (Inspect metadata → verified name + group
+key → enable → Save), let the listener replay, and confirm:
+
+```bash
+PYTHONPATH=collectors/local/src .venv/bin/python -c "
+import pathlib
+from academic_os.core import Store
+s=Store(pathlib.Path.home()/'aos-scratch/aos-receiver/data')
+for t in ('devices','nonces','receipts','evidence'):
+    print(t, s.db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0])"
+```
+
+Evidence must be > 0 and receipts must advance. **Wipe the queue and the
+receiver data afterwards** — that message is real content, and the contract says
+raw text stays local only for as long as the test needs it.
+
+Do not map a real conversation to make this pass. The point of the test is the
+code path, and the owner's own message is the only acceptable input.
+
+### 2. Transport beyond USB loopback
+
+Current pairing proves TLS, pinning, hostname checks and HMAC signing — over
+`adb reverse` to `127.0.0.1`. It does **not** prove the private-network path.
+Verify: receiver bound to a private address (WireGuard/Tailscale or LAN), phone
+on mobile data, laptop off → queue grows, laptop on → batch commits, receipt
+applied, queue drains. Record laptop-off behaviour as observed, not assumed.
+
+### 3. Enrollment lifecycle on a real account
+
+Blocked until an account exists. When it does, run
+[docs/NATIVE-CLOUD-CHECK.md](NATIVE-CLOUD-CHECK.md) case by case. GUI pending
+state alone does not prove the server rejects a pending bearer.
+
+### 4. Cloud build of the next cloud-agent zip
+
+When `NEXT-PROMPT.md` returns a zip: apply the patch to a fresh clone of
+`f36c410`, diff it against `source/`, then run every acceptance command in that
+prompt yourself. Do not accept `APPLY.md` counts without reproducing them.
+
+---
+
+## Part 3 — Rules for this agent
+
+- Run the checks; quote real output. Never paraphrase a result.
+- A green suite is not device evidence. Five defects in this project passed
+  every automated check and only failed on the phone.
+- Record `unverified` as unverified. Do not upgrade a field by assertion.
+- Never automate a notification-access grant unless the owner explicitly asks,
+  and record it as a deviation when they do.
+- Raw message text, titles, group names and exports never go into git, chat,
+  logs or the receiver database beyond the duration of the test.
+- Preserve the owner's signing identity. Never uninstall to solve a signature
+  mismatch.
+- Update [STATUS.md](STATUS.md) and [VERIFICATION-LOG.md](VERIFICATION-LOG.md)
+  with a numbered section per session.
+- Do not mark any milestone complete.
+
+---
+
+## Part 4 — Environment
+
+```bash
+export ANDROID_HOME=/home/riko/Android/Sdk
+export PATH="$HOME/.local/opt/jdk-17.0.21+9/bin:$ANDROID_HOME/platform-tools:$PATH"
+```
+
+Node 26.12.0, npm 12.2.1, Python 3.14.8 (`.venv`), JDK 17.0.21+9, SDK 35,
+build-tools 35.0.0, Gradle 8.11.1. The phone is `W4BI7L6SHQW879SG`, OPPO
+CPH2015, Android 9 / API 28, and it drops off USB mid-session — check
+`lsusb | grep -i oppo` before diagnosing a code fault, and re-register
+`adb reverse` after every reconnect.

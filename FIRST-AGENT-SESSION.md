@@ -1,5 +1,10 @@
 # Continuation handoff — Academic OS
 
+> **Superseded for the current session.** The build brief is
+> [NEXT-PROMPT.md](NEXT-PROMPT.md) (paste Part 2 into ChatGPT Web); the
+> verification instructions are [docs/NEXT-SLICE.md](docs/NEXT-SLICE.md).
+> Base is `f36c410`. This file remains as background on scope and constraints,
+> not as the next action list.
 The owner authorizes implementation across the whole system. Preserve the working implementation; this is no longer an M0-only or planning-only repository. Shared materials must contain placeholders only. Configure actual keys exclusively on the owner's machine, outside the checkout. Do not deploy, provision paid services, push commits or contact real AI/LMS services without the corresponding authorization/configuration.
 
 ## Read first
