@@ -3,6 +3,7 @@ import importlib.util,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[3]
+import sys; sys.path.insert(0, str(ROOT/'collectors/local/tests'))
 spec=importlib.util.spec_from_file_location('aos_gate_claims',ROOT/'scripts/check_gate_claims.py')
 guard=importlib.util.module_from_spec(spec);spec.loader.exec_module(guard)
 class GateScopeTests(unittest.TestCase):

@@ -2248,3 +2248,66 @@ Final source syntax inspection output (not an application test):
 ```text
 STATIC SYNTAX ONLY: parsed 12 Python source files; no module imported or executed.
 ```
+
+## 30. Independent verification of `52815ea` on the owner machine — 2026-11-10
+
+Received `Academic-OS-System-52815ea.zip` (declared base `a0106e9`, commit
+`52815ea`, tree `7c92dd015541a8091237f6edfa0ba4f24e0e08f9`). Applied with
+`git am --3way` on branch `verify/complete-local-scopes` from `a0106e9`; the resulting
+tree hash matched the declared tree byte-for-byte.
+
+### Defect found in delivered package and fixed
+
+On first test execution, five integration test suites failed (`d1-restore`,
+`export-contract`, `export-stream`, `ledger`, and `native-owner`).
+`apps/worker/src/export.ts` in `prepareExport` queried table row counts via
+`db.prepare(selected.map(...).join(' UNION ALL '))`. When exporting all 11
+canonical tables, this formed a compound SELECT with 11 terms. In Miniflare D1
+(and D1 workerd), compound SELECT terms are bounded (SQLITE_LIMIT_COMPOUND_SELECT
+limit of 5 terms). This caused `D1_ERROR: too many terms in compound SELECT: SQLITE_ERROR`,
+throwing `EXPORT_UNAVAILABLE` (503) on full exports.
+
+Fixed by replacing the 11-term compound SELECT with a scalar subquery sum:
+`SELECT ((SELECT count(*) FROM "contexts") + (SELECT count(*) FROM "tasks") + ...) AS total`.
+This executes in a single non-compound query within batch statement limits.
+Following this fix, all 12 Vitest files (70 tests) passed.
+
+### Test suite verification results
+
+Executed on local machine:
+
+```text
+npm run check                              exit 0, 12 files / 70 tests passed
+npx playwright test                        exit 0, 21 passed (2.9m)
+npm run test:pwa                           exit 0, 1 passed (10.9s)
+.venv/bin/python -m unittest discover      exit 0, 115 tests passed (11.57s)
+scripts/validate_planning.py               PASS, 170 links, 30 features, 34 IDs
+scripts/check_placeholders.py              PASS
+scripts/check_gate_claims.py               PASS 5 gate claims match
+scripts/check_contract_mutations.py        PASS 14 intended / 14 restored / 0 survivors
+scripts/check_release_mutations.py         PASS 16 intended / 16 restored / 0 survivors
+scripts/check_round4_mutations.py          PASS 18 intended / 18 restored / 0 survivors
+scripts/check_round5_mutations.py          PASS 12 intended / 12 restored / 0 survivors
+node --import tsx scripts/measure_resources.ts
+                                           MEASURED: 14 public assets, 24 profiles
+cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
+                                           BUILD SUCCESSFUL in 3m 34s
+                                           53 tasks executed, 8 native policy, 6 queue privacy
+```
+
+### Verified features
+
+1. **Encrypted D1 restore**: `tests/integration/d1-restore.test.ts` (4 tests) proves
+   decrypting Python Fernet canonical backup into fresh Miniflare D1 across all 9
+   migrations with count/digest parity, FK integrity, tombstones, and future-only rebuilds.
+2. **Local ITK Moodle integration**: `test_itk.py` passes 8 tests covering local course
+   discovery, assignment/quiz parsing, generation enrollment, and sync envelope projection.
+3. **Synthetic 9Router lifecycle**: `test_router_pipeline.py` passes 5 tests covering
+   mock TLS server, 429 exponential backoff, 5xx unknown handling, and sync commit.
+4. **Table-selective export & 413 ceiling**: `tests/integration/export-selection.test.ts`
+   passes 4 tests verifying per-table export and clean 413 refusal on limit breach.
+5. **Traceability & gate claims**: T01–T34 mapping verified; `check_gate_claims.py`
+   enforces 5 gate claims and fails closed on drift.
+
+Android companion source is byte-identical. Hardware install of `e482a5aa` was verified in §28.
+Positive notification capture on hardware, production deployment, and account validation remain unverified.

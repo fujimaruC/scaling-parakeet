@@ -34,11 +34,11 @@ async function prepareExport(db: D1Database, options: ExportOptions) {
     initial = await db.batch<any>([
       db.prepare(revisionSQL),
       db.prepare(
-        selected
-          .map(
-            (t) => "SELECT '" + t + '\' AS name,count(*) AS n FROM "' + t + '"',
-          )
-          .join(' UNION ALL '),
+        'SELECT (' +
+          selected
+            .map((t) => '(SELECT count(*) FROM "' + t + '")')
+            .join(' + ') +
+          ') AS total',
       ),
       ...selected.map((t) => db.prepare('PRAGMA table_info("' + t + '")')),
     ]);
@@ -47,7 +47,7 @@ async function prepareExport(db: D1Database, options: ExportOptions) {
   }
   const revision = initial[0].results[0]?.revision;
   if (typeof revision !== 'string') throw new ExportError('EXPORT_UNAVAILABLE');
-  const total = initial[1].results.reduce((sum, row) => sum + Number(row.n), 0);
+  const total = Number(initial[1].results[0]?.total ?? 0);
   if (!Number.isSafeInteger(total) || total > max)
     throw new ExportError('EXPORT_TOO_LARGE', 413, max);
   const info = initial.slice(2);

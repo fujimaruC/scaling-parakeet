@@ -868,3 +868,21 @@ descriptions; no year is guessed from collection time. Staged LMS projections st
 require explicit queue confirmation and separate canonical approval. Row ceilings
 are application guardrails, not byte/CPU/account limits. See VERIFICATION-LOG §29,
 ADR-029 and [owner verification](next-scope/OWNER-VERIFY.md).
+
+## Independent verification of complete local implementation — 2026-11-10
+
+`Academic-OS-System-52815ea.zip` applied to `a0106e9` reproduces declared tree
+`7c92dd01…` byte-for-byte. Verified on local machine: 70 Vitest (12 files), 115 Python
+tests, 21 Playwright e2e, 1 production PWA, Gradle `assembleDebug lint testDebugUnitTest`
+green in 3m34s (8 native policy, 6 queue privacy), `check_gate_claims.py` (5 claims),
+and 60 mutation faults across 4 suites with 0 survivors.
+
+One defect in delivered package was found and fixed: `apps/worker/src/export.ts`
+used an 11-term compound `UNION ALL` SELECT to sum row counts, which tripped D1's
+compound SELECT limit (5 terms) with `D1_ERROR: too many terms in compound SELECT`,
+failing all full exports with 503 `EXPORT_UNAVAILABLE`. Fixed to use a scalar
+subquery sum.
+
+Exact record: [VERIFICATION-LOG §30](VERIFICATION-LOG.md#30-independent-verification-of-52815ea-on-the-owner-machine--2026-11-10).
+
+Android source remains byte-identical. Positive capture on hardware remains unverified.
