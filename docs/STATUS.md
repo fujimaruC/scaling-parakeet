@@ -829,3 +829,17 @@ execution are verified working.
 
 Android source remains byte-identical; phone stayed on `0.2-native-preview`, crash count 1,
 listener connected, mapping enabled, pairing sealed. Positive capture remains unverified.
+
+## In-place verification of current Android build — CPH2015/API 28, 2026-11-10
+
+Owner phone returned over USB. Preflight accepted current APK
+`e482a5aa…` with exact package and signing identity match. Installed once in
+place: launch/reopen succeeded, crash count stayed at **1 before / 1 after**,
+listener connected, queue remained 0, pairing and synthetic mapping survived.
+A fresh crash window was complete and clean (`fatal=false`, coverage complete).
+
+This closes current-build install/update and clean-launch evidence. It does not
+close positive capture: 9 individual WhatsApp notifications existed, 0 self-chat
+signals existed, and no real conversation was mapped. Private network transport,
+receipt delivery and account/provider/push observations remain unverified.
+Exact record: [VERIFICATION-LOG §28](VERIFICATION-LOG.md#28-in-place-install-of-build-e482a5aa-and-clean-crash-window-on-cph2015--2026-11-10).

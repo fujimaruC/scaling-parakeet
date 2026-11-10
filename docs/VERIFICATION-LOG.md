@@ -2086,3 +2086,53 @@ node --import tsx scripts/report_browser_margins.ts
 Android source remains byte-identical; phone stayed on `0.2-native-preview` (`lastUpdateTime`
 2026-11-09 09:11:05), crash count 1, listener connected, mapping enabled, pairing sealed.
 No milestone complete. No remote deployment or cloud accounts used.
+
+## 28. In-place install of build `e482a5aa` and clean crash window on CPH2015 — 2026-11-10
+
+The owner reconnected the OPPO CPH2015 (`W4BI7L6SHQW879SG`, Android 9/API 28,
+`CPH2015EX_11_A.67`). `adb reverse tcp:8765 tcp:8765` was re-registered and the
+local TLS receiver was still running.
+
+The rebuilt APK from current `main` was checked before install:
+
+```text
+apk_sha256: e482a5aa79986c8208e393274d5574fffd9688915fc45c8646a17c0126754f7e
+certificate: f45696913edb824a924976ad5c3e2628ed1b35293dce3ab956fb76ea59bd03c9
+owner_device_run.py --preflight
+allowed: true   candidate_package_ok: true   signature_match: true
+```
+
+The APK was installed once in place. `firstInstallTime` remained
+`2026-11-06 15:42:03`; the existing installed version was
+`0.2-native-preview`, so no uninstall or data reset ran. After install:
+
+```text
+device_evidence.py --apk app-debug.apk --sdk $ANDROID_HOME
+install_ok: true          version: 0.2-native-preview
+android_api: 28          device_model: CPH2015
+launch_stays_open: true  reopen_ok: true
+queue_count: 0            repair_required: false
+notification_access: true crash_coverage_complete: false
+```
+
+The install interval reported incomplete crash coverage because replacing the
+process disrupts the live log window. A fresh subsequent smoke window reported:
+
+```text
+fatal_exception_observed: false
+crash_coverage_complete: true
+crash_window_started: true  crash_window_ended: true
+launch_stays_open: true     reopen_ok: true
+```
+
+The crash buffer count for `id.academicos.companion` stayed at **1 before and 1
+after**. No new native fatal occurred. `health.xml` reports `listener=connected`,
+`capture.xml` retains the synthetic mapping with `enabled=true`, and
+`private-pairing.xml` retains one sealed `config`. Notification access remained
+granted. This is in-place update evidence for current build `e482a5aa`, not positive
+capture evidence.
+
+At this point 9 individual WhatsApp notifications were present and no self-chat
+signal was found. No real conversation was mapped. Positive capture, queue
+population, receiver receipt and physical private-network transfer remain
+unverified. No data reset, uninstall, deployment or account action occurred.
