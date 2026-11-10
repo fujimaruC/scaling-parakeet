@@ -18,30 +18,31 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ---
 
-## Part 1 — Where the project stands (2026-11-09)
+## Part 1 — Where the project stands (2026-11-10)
 
-Current as of `3b84d17`. The round-4 package landed as `9841fec` (10k-task
-measurement, bounded job retries, multi-source operations, gate-claims guard) and
-its independent verification as `3b84d17`.
+Current as of `8ae37cb`. Round 5 delivered streaming CSV with migration 0009 epoch
+tracking, fixed browser seeds, 340-rule structural accessibility checks, and legacy
+job one-shot execution (`ad7afc9`). Rebuilt APK `e482a5aa` was installed on the
+CPH2015 phone in place, verified clean with zero new crashes.
 
-**Measured on this machine at `3b84d17`:**
+**Measured on this machine at `8ae37cb`:**
 
 | Check | Result |
 |---|---|
-| `vitest run` | 9 files, 58 tests passed |
-| Python discovery | 98 tests OK |
-| `playwright test` | 16 passed (one at 19.6s of a 30s default when run alone) |
+| `vitest run` | 10 files, 62 tests passed |
+| Python discovery | 102 tests OK |
+| `playwright test` | 21 passed across 3 consecutive runs |
 | `npm run test:pwa` | 1 passed — offline reload, logout wipe |
-| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 12m36s; 8 native-policy, 6 queue-privacy; lint 0 errors |
-| `check_contract_mutations.py` | 14 intended failures / 14 restored / 0 survivors |
-| `check_release_mutations.py` | 16 intended failures / 16 restored / 0 survivors |
-| `check_round4_mutations.py` | 18 intended failures / 18 restored / 0 survivors |
+| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 4m4s; 8 native-policy, 6 queue-privacy; lint 0 errors |
+| all mutation suites | 14 contract + 16 release + 18 round-4 + 12 round-5 = 60 faults, 0 survivors |
+| structural accessibility | 340 rule checks passed or N/A across 17 scopes |
 | `check_gate_claims.py` | PASS — 2 gate claims, fails closed on drift |
-| `measure_resources.ts` | 14 bundles, 24 profiles, 100/1200/10000 tasks |
-| planning / placeholders | PASS — 153 links, 30 features, 34 test IDs |
+| `measure_resources.ts` | 14 public assets, 24 profiles, 100/1200/10000 tasks |
+| planning / placeholders | PASS — 166 links, 30 features, 34 test IDs |
+| Hardware install on CPH2015 (API 28) | APK `e482a5aa` in place; crash count stayed 1; clean window (`fatal=false`) |
 
-Earlier figures at `f36c410` were 36 Vitest / 12 Playwright / 70 Python / 114
-links; they are superseded by the table above.
+Earlier figures at `3b84d17` were 58 Vitest / 98 Python / 16 Playwright / 153 links;
+they are superseded by the table above.
 
 **Measured on the phone:** install in place with no data loss, launch, reopen, a
 complete clean crash window, listener connected and self-recovering, sealed
