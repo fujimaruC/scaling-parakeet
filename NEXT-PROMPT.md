@@ -1,12 +1,11 @@
-# ChatGPT Web — build prompt, round 6
+# ChatGPT Web — complete build prompt (all remaining implementation in one go)
 
 **How to use**
 
 1. This file is on `main`. The agent fetches the repo itself.
 2. Paste **Part 2** into ChatGPT Web (the whole fenced block).
-3. The agent returns one zip; it is verified locally against the sha in `APPLY.md`.
-4. **Phone and account testing stay deferred** — the cloud agent has neither and
-   must not claim them.
+3. The agent implements all remaining local/synthetic build scope in one go, runs checks, and returns one zip.
+4. That zip comes back here and is verified locally. **Phone and account testing stay deferred** — the cloud agent has neither and must not claim them.
 
 ---
 
@@ -14,24 +13,12 @@
 
 **Base:** `main` at the commit that introduced this file.
 
-Round 5 added streaming CSV export with epoch verification (migration 0009),
-fixed browser test seed fixtures, 340-rule structural accessibility checks, and
-legacy manual-only job execution (`ad7afc9`), independently verified locally in
-VERIFICATION-LOG §27 and §28.
-
-| Check | Result |
-|---|---|
-| `npm run check` | 10 files / 62 Vitest, typecheck, lint, web+worker build |
-| Python discovery | 102 passed |
-| `playwright test` | 21 passed across 3 consecutive runs |
-| `npm run test:pwa` | 1 passed |
-| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 4m4s; 8 native-policy, 6 queue-privacy |
-| all mutation suites | 14 contract + 16 release + 18 round-4 + 12 round-5 = 60 faults, zero survivors |
-| planning / placeholders / gate claims | PASS — 166 links, 2 gate claims |
-| Hardware install on CPH2015 (API 28) | APK `e482a5aa` installed in place; 0 new crashes (count stayed 1); clean window |
-
-**Phone status:** In-place install verified on hardware; listener connected; queue 0;
-positive capture remains open waiting for an incoming self-chat WhatsApp message.
+Previous deliveries established:
+- React/TS PWA with 8 surfaces, theme persistence, offline snapshot, and 340 structural a11y checks.
+- TS Worker with 9 D1 migrations, streaming CSV export, Web Push adapter, durable request accounting, and paged global history.
+- Python collector with encrypted local evidence, multi-source operations, bounded job retries, and gate-claims guard.
+- Kotlin companion with 8 surfaces, verified on hardware (CPH2015 / API 28) with 0 crashes, listener connected, pairing sealed.
+- Passing local test suite: 62 Vitest, 102 Python, 21 Playwright, 1 production PWA, 14 JVM policy cases, 60 mutation faults across 4 suites with 0 survivors.
 
 ---
 
@@ -41,7 +28,7 @@ positive capture remains open waiting for an incoming self-chat WhatsApp message
 You are the implementation agent for a private, single-owner academic and
 organizational memory system. One user. No teams, no registration, no public
 data endpoints. You work in a fresh clone, run the checks yourself, and return
-one zip.
+one complete zip.
 
 REPOSITORY
   https://github.com/fujimaruC/scaling-parakeet
@@ -50,15 +37,20 @@ REPOSITORY
         that exact sha in APPLY.md. Do not check out an older commit.
   Sanity: NEXT-PROMPT.md must exist in the tree.
 
+DO NOT STOP HALF-WAY OR BUILD IN PIECES.
+Build and complete ALL remaining local/synthetic implementation scope across the
+entire codebase in this single run. Do not leave placeholder functions, stubs, or
+"left for next round" comments.
+
 You are the BUILDER. A separate verifier runs your output on the owner's real
 Android 9 phone and against the real Cloudflare account. You have neither.
 Never claim a device, account, network, push, provider or deployment result.
 
 READ FIRST, in this order
   AGENTS.md, docs/STATUS.md, docs/VERIFICATION-LOG.md (§17-28 are newest),
-  docs/RESOURCE-BUDGETS.md and docs/RESOURCE-MEASUREMENTS.json,
   docs/17-WORK-PACKAGES.md (W30, W42, W50), docs/11-TEST-STRATEGY.md,
-  docs/10-API-CONTRACTS.md, docs/07-SECURITY-PRIVACY.md, docs/03-ITK-COLLECTOR.md
+  docs/10-API-CONTRACTS.md, docs/07-SECURITY-PRIVACY.md, docs/03-ITK-COLLECTOR.md,
+  docs/RESOURCE-BUDGETS.md and docs/RESOURCE-MEASUREMENTS.json
 
 WHAT EXISTS — do not rewrite it
 React/TS PWA, TS Worker with 9 D1 migrations, Python collector with encrypted
@@ -74,75 +66,65 @@ protects, consider more than one approach, choose one, and justify it in a line
 or two. Prefer the smallest design that fully solves it. Correctness on the edge
 case beats elegance on the happy path.
 
-FOUR SLICES, in this order. Stop and report when done.
+COMPLETE ALL OF THE FOLLOWING IN THIS SINGLE RUN:
 
-1. DISPOSABLE D1 CANONICAL RESTORE VERIFICATION (W42 / F23 / Gate 8)
+1. DISPOSABLE D1 CANONICAL RESTORE (W42 / F23 / Gate 8)
+   `docs/STATUS.md` Gate 8 requires restoring encrypted canonical data into
+   disposable D1.
+   - Build a complete TypeScript/Node restore tool and integration test
+     (`tests/integration/d1-restore.test.ts`) against disposable Miniflare D1
+     with all migrations (0001–0009).
+   - Decrypt the canonical export, insert all 11 allowlisted tables from
+     `packages/contracts/canonical-tables.json`, and verify foreign key integrity.
+   - Verify exact row-count and digest parity against the export.
+   - Verify disallowed tables (credentials, push_subscriptions, nonces, etc.)
+     and past delivery intents are NOT restored.
+   - Enqueue future reminders for active tasks into `reminder_rebuilds`.
+   - Preserve restored source tombstones.
+   - Test fail-closed on corrupt key, tampered archive, or invalid schema version.
 
-   `docs/STATUS.md` Gate 8 states:
-   "Restore encrypted canonical data into disposable D1, verify future reminders,
-   restored tombstones and revoked source reconciliation before sync. Current
-   automated restore uses disposable SQLite."
+2. ITK MOODLE LMS FULL INTEGRATION & LOCAL UI (W50 / F26)
+   Connect `collectors/local/src/academic_os/itk.py` into the local UI (`server.py`
+   and `/operations`):
+   - Provide local UI controls to supply Moodle session cookies or profile path.
+   - Run course discovery and assignment/quiz extraction locally without cloud calls.
+   - Display structured preview (courses, pending tasks, deadlines, status).
+   - Enroll as source kind `itk_lms`, track generations, and project into the sync
+     envelope for projection review.
+   - Handle session expiry, changed HTML markup, and ambiguous dates cleanly with
+     localized messages.
+   - Add comprehensive unit and integration tests with synthetic fixtures in
+     `collectors/local/tests/test_itk.py`.
 
-   Currently `collectors/local/src/academic_os/backup.py` only implements restore
-   into SQLite.
-   - Build a TypeScript/Node tool or integration test (`tests/integration/d1-restore.test.ts`)
-     that tests restoring an encrypted canonical backup into a disposable Miniflare D1
-     database with all migrations (0001–0009).
-   - Verify:
-     - All 11 allowlisted tables from `packages/contracts/canonical-tables.json` are
-       restored with row-count and digest parity against the export.
-     - Foreign key integrity passes on D1.
-     - Disallowed tables (credentials, push_subscriptions, nonces, etc.) are NOT restored.
-     - Future reminders are re-enqueued for active tasks into `reminder_rebuilds`.
-     - Restored source tombstones are preserved.
-     - Delivery intents are NOT restored (no old reminder storm).
-   - Test fail-closed on corrupt key, tampered archive, or mismatched schema version.
-
-2. ITK MOODLE LMS LOCAL UI INTEGRATION AND PREVIEW (W50 / F26)
-
-   `collectors/local/src/academic_os/itk.py` contains core parser logic, but it has no
-   UI affordance in `server.py` or `/operations`.
-   - Add an ITK Moodle LMS preview and import flow in the local server/operations UI:
-     - Owner can provide session cookies or profile directory to trigger local preview.
-     - Returns structured preview (discovered courses, pending assignments, quizzes,
-       deadlines, submission status) without making cloud requests.
-     - Enrolls as source with kind `itk_lms`, tracks generations, and creates synthetic
-       envelope for projection review.
-     - Fail closed on session expiry, changed HTML markup, or ambiguous dates with
-       clear localized messages.
-   - Add unit/integration tests with synthetic HTML fixtures in `test_itk.py`.
-
-3. SYNTHETIC 9ROUTER MOCK & END-TO-END JOB RETRY TEST (W30 / F12 / Gate 3)
-
-   `docs/STATUS.md` Gate 3 requires verifying named 9Router route/provider behavior
-   with synthetic input, positive consent and prompt-injection tests.
-   - Build a synthetic local 9Router mock server (`tests/helpers/mock-9router.ts` or
-     python helper) simulating:
-     - Valid chat completions responses matching `ai-extraction.schema.json`.
-     - Malformed/hallucinated JSON outputs that trigger extraction validation failures.
-     - Rate limiting (429) that exercises the exponential backoff in `jobs.py`.
-     - 5xx gateway errors that leave jobs in `unknown` without automatic replay.
-     - Provider policy version mismatch that refuses extraction.
-   - Write an integration test proving the full lifecycle:
-     consent -> `run` -> `_extract_job` (with retry on 429) -> projection review ->
+3. SYNTHETIC 9ROUTER MOCK & FULL RETRY PIPELINE (W30 / F12 / Gate 3)
+   Gate 3 requires verifying provider/route/policy behavior with synthetic inputs.
+   - Build a synthetic local 9Router mock server (`scripts/mock_9router.py` or test
+     harness) simulating:
+     - Valid chat completions matching `ai-extraction.schema.json`.
+     - Malformed JSON triggering validation failure.
+     - Rate-limiting (429) that exercises exponential backoff in `jobs.py`.
+     - Upstream 5xx errors that leave jobs in `unknown` without automatic replay.
+     - Policy/version mismatch refusing extraction.
+   - Write end-to-end integration tests proving the entire flow:
+     consent -> `run` -> `_extract_job` (retry on 429) -> projection review ->
      `queue` -> `_send_job` -> sync commit.
 
-4. SELECTIVE EXPORT AND MASSIVE LEDGER MEMORY GUARD (W42 / F23 follow-up)
-
-   Following up on the 10,000-task 23.4 MB measurement in `docs/RESOURCE-BUDGETS.md`:
-   - Support table-selective export: `/export?format=csv&table=tasks` or
-     `/export?format=json&table=tasks` allowing export of specific tables.
-   - Add an explicit configurable safety ceiling (e.g. max row limit per export returning
-     clean 413 `EXPORT_TOO_LARGE` with a helpful error message rather than exceeding
-     Worker memory limits on unbounded tables).
-   - Keep CSV formula neutralization and RFC 4180 quoting intact.
+4. SELECTIVE EXPORT & SAFETY BOUNDS (W42 / F23 follow-up)
+   Follow up on the 10,000-task 23.4 MB measurement in `docs/RESOURCE-BUDGETS.md`:
+   - Support table-selective export: `/export?format=csv&table=tasks` and
+     `/export?format=json&table=tasks` for all allowlisted tables.
+   - Add a configurable safety limit (e.g. max rows per export returning clean 413
+     `EXPORT_TOO_LARGE` with helpful error instead of exceeding memory limits).
+   - Ensure formula neutralization and RFC 4180 quoting remain strictly enforced.
    - Test table-selective export and limit refusal.
 
-If you finish all four, stop and report. Do not start work that needs a device,
-an account, a provider or a deployment.
+5. TRACEABILITY & VERIFICATION COMPLETION
+   - Complete the traceability table in `docs/11-TEST-STRATEGY.md` for all
+     remaining acceptance IDs (T01–T34).
+   - Update `docs/STATUS.md` and `docs/VERIFICATION-LOG.md` with a new numbered section.
+   - Update `scripts/check_gate_claims.py` to cover Gate 8 and Gate 3 claims.
 
 HARD LIMITS — not negotiable
-
   No raw chat text, quotations, exports, message bodies or raw-content hashes
   may leave Android/Linux for the cloud, logs, assets, crash reports or backups.
   Every AI-derived task needs explicit owner approval; nothing auto-accepts.
@@ -156,18 +138,7 @@ HARD LIMITS — not negotiable
   signing configuration.
   Do not convert an unverified field into a verified one by assertion.
 
-THINGS THAT WILL BITE YOU
-  Five defects here passed every automated check and only failed on the phone.
-  Assume the same blindness.
-  API 28 is the runtime floor; verifyApi28 compiles all Kotlin against android-28
-  with -no-jdk. Dates have four precisions and must never collapse.
-  The export allowlist and the local backup allowlist are one shared file,
-  `packages/contracts/canonical-tables.json`. Change it once, not twice.
-  `check_gate_claims.py` fails closed: it runs the named test and rejects a
-  contradictory STATUS sentence. Keep that property if you touch it.
-  `docs/RESOURCE-BUDGETS.md` ceilings are engineering thresholds, not billing.
-
-ACCEPTANCE — run and paste real output
+ACCEPTANCE — run all of these and paste real output
   npm ci
   npm run check
   npm run test:e2e
@@ -192,12 +163,6 @@ REPORTING
   is unverified. Say BLOCKED and name the missing observation. Explain design
   choices in a line or two. Report existing defects rather than working around
   them.
-
-UPDATE
-  docs/STATUS.md, docs/VERIFICATION-LOG.md (new numbered section),
-  docs/RESOURCE-BUDGETS.md if ceilings change,
-  docs/11-TEST-STRATEGY.md if gate claims change.
-  Do not mark any milestone complete.
 
 DELIVERABLE — one zip
   Academic-OS-System-<short sha>.zip containing source/ (full working tree),
