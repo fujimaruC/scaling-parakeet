@@ -814,3 +814,18 @@ private transport, account configuration, migration/restore/CPU/D1 row costs,
 provider/push behavior and owner acceptance remain unverified. Android source,
 signing, capture selectors, Origin and privacy/approval rules are unchanged.
 See VERIFICATION-LOG §26 and OWNER-VERIFY-ROUND5.md for the owner handoff.
+
+## Independent verification of round-5 package — 2026-11-10
+
+`Academic-OS-System-ad7afc9.zip` applied to `03a32ca` reproduces declared tree
+`06896848…` exactly. Verified on local machine: 62 Vitest, 102 Python, 21 Playwright e2e,
+1 production PWA, Gradle `assembleDebug lint testDebugUnitTest` green in 4m4s (8 native policy,
+6 queue privacy), `check_gate_claims.py` passing, 340 structural accessibility checks passing,
+and all 4 mutation suites (14 contract + 16 release + 18 round-4 + 12 round-5 = 60 faults)
+passing with zero survivors. Exact record: [VERIFICATION-LOG §27](VERIFICATION-LOG.md#27-independent-verification-of-ad7afc9-on-the-owner-machine--2026-11-10).
+
+Streaming CSV, fixed browser seeds, structural accessibility rules, and legacy job one-shot
+execution are verified working.
+
+Android source remains byte-identical; phone stayed on `0.2-native-preview`, crash count 1,
+listener connected, mapping enabled, pairing sealed. Positive capture remains unverified.

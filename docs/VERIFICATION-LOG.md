@@ -2036,3 +2036,53 @@ structured projection upload keeps the existing source/evidence/receipt boundary
 Full owner sequence: [OWNER-VERIFY-ROUND5](OWNER-VERIFY-ROUND5.md).
 Historical resource numbers remain labeled historical; fresh values are null in
 RESOURCE-MEASUREMENTS.json. No release gate or milestone was marked complete.
+
+## 27. Independent verification of `ad7afc9` on the owner machine — 2026-11-10
+
+Received `Academic-OS-System-ad7afc9.zip` (declared base `03a32ca`, commit
+`ad7afc9`, tree `06896848074e54dbff5a44dae505ea887fa31ac8`). Applied with
+`git am --3way` on branch `build/recovered-four-slices` from `03a32ca`; the resulting
+tree hash matched the declared one byte-for-byte.
+
+Every figure below was executed and measured on this machine:
+
+```text
+npm ci                                     added 170 packages
+npm run check                              exit 0, 10 files / 62 tests passed
+.venv/bin/python -m unittest discover      102 tests OK
+npm run test:pwa                           exit 0, 1 passed (15.3s)
+./gradlew assembleDebug lint testDebugUnitTest
+                                           BUILD SUCCESSFUL in 4m 4s
+                                           native policy 8, queue privacy 6
+scripts/validate_planning.py               PASS, 164 links, 30 features, 34 IDs
+scripts/check_gate_claims.py               PASS 2 gate claims
+scripts/check_placeholders.py              PASS
+scripts/check_contract_mutations.py        PASS 14 intended / 14 restored / 0 survivors
+scripts/check_release_mutations.py         PASS 16 intended / 16 restored / 0 survivors
+scripts/check_round4_mutations.py          PASS 18 intended / 18 restored / 0 survivors
+scripts/check_round5_mutations.py          PASS 12 intended / 12 restored / 0 survivors
+node --import tsx scripts/measure_resources.ts
+                                           MEASURED: 14 public assets, 24 profiles
+npx playwright test                        exit 0, 21 passed (3 runs clean)
+node --import tsx scripts/report_accessibility.ts
+                                           Observed 340 rule records; expected 340 (all PASS / NA)
+node --import tsx scripts/report_browser_margins.ts
+                                           All 21 tests passed across 3 runs with ample margin
+```
+
+### Verified findings
+
+1. **Streaming CSV**: byte parity against the buffered reference test passes across
+   all 11 canonical tables, including empty tables and jumbo UTF-8. Monotonic epoch triggers
+   (migration 0009) detect concurrent modifications and refuse mixed snapshots.
+2. **Fixed Browser Seeds**: `tests/fixtures/browser-seeds.ts` replaced the 101 sequential
+   HTTP loop with named synthetic fixtures. Test duration dropped from ~20s to 2.4s. All 21
+   Playwright e2e tests passed across 3 consecutive runs with 0 unexpected failures.
+3. **Structural Accessibility**: 340 rule records across 17 scopes × 4 theme/locale pairs
+   evaluated by `report_accessibility.ts`; all passed or reported N/A for formless views.
+4. **Legacy Jobs in Operations**: `test_legacy_jobs.py` passes 4 tests proving one-shot
+   durable execution, source isolation, and prevention of replay without reconfirmation.
+
+Android source remains byte-identical; phone stayed on `0.2-native-preview` (`lastUpdateTime`
+2026-11-09 09:11:05), crash count 1, listener connected, mapping enabled, pairing sealed.
+No milestone complete. No remote deployment or cloud accounts used.
