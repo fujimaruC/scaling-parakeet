@@ -1,3 +1,4 @@
+import CANONICAL_TABLES from '../../../packages/contracts/canonical-tables.json';
 import OperationalStatus from './features/OperationalStatus';
 import { PushSettings, disableLocalPush } from './features/PushSettings';
 import History from './features/History';
@@ -162,7 +163,11 @@ async function api(
     headers: { 'Content-Type': 'application/json', ...headers },
     body: value === undefined ? undefined : JSON.stringify(value),
   });
-  if (path === '/export?format=csv' && r.ok) {
+  if (
+    path.startsWith('/export?') &&
+    new URLSearchParams(path.split('?')[1]).get('format') === 'csv' &&
+    r.ok
+  ) {
     if (r.redirected)
       throw Object.assign(new Error('AUTH_REQUIRED'), { status: 401 });
     if (!r.headers.get('Content-Type')?.startsWith('text/csv'))
@@ -273,6 +278,11 @@ function App() {
     localStorage.setItem('locale', locale);
   }, [locale]);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
+  const [exportTable, setExportTable] = useState('');
+  const exportPath =
+    '/export?format=' +
+    exportFormat +
+    (exportTable ? '&table=' + encodeURIComponent(exportTable) : '');
   const [sourceAlias, setSourceAlias] = useState('');
   const [sourceKind, setSourceKind] = useState('whatsapp_export');
   const [briefing, setBriefing] = useState<any>(null);
@@ -1137,6 +1147,32 @@ function App() {
                     <option value="json">JSON</option>
                     <option value="csv">CSV</option>
                   </select>
+                  <label htmlFor="canonical-export-table">
+                    {locale === 'en' ? 'Export table' : 'Tabel ekspor'}
+                  </label>
+                  <select
+                    id="canonical-export-table"
+                    value={exportTable}
+                    onChange={(e) => setExportTable(e.target.value)}
+                  >
+                    <option value="">
+                      {locale === 'en'
+                        ? 'All canonical data (backup)'
+                        : 'Semua data kanonis (cadangan)'}
+                    </option>
+                    {CANONICAL_TABLES.map((table) => (
+                      <option key={table} value={table}>
+                        {table}
+                      </option>
+                    ))}
+                  </select>
+                  {exportTable && (
+                    <p role="status">
+                      {locale === 'en'
+                        ? 'Selected table only. This file is not a complete restore backup.'
+                        : 'Hanya tabel terpilih. Berkas ini bukan cadangan pemulihan lengkap.'}
+                    </p>
+                  )}
                   <p>
                     {locale === 'en'
                       ? 'Use JSON for encrypted restore; CSV is a spreadsheet view.'
@@ -1145,7 +1181,7 @@ function App() {
                   <button
                     disabled={offline}
                     onClick={() =>
-                      void sessionApi('/export?format=' + exportFormat)
+                      void sessionApi(exportPath)
                         .then((v) => {
                           const a = document.createElement('a');
                           a.href = URL.createObjectURL(
@@ -1163,7 +1199,11 @@ function App() {
                               },
                             ),
                           );
-                          a.download = 'academic-os-export.' + exportFormat;
+                          a.download =
+                            'academic-os-export' +
+                            (exportTable ? '-' + exportTable : '') +
+                            '.' +
+                            exportFormat;
                           a.click();
                           URL.revokeObjectURL(a.href);
                         })

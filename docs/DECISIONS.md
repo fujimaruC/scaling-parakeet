@@ -382,3 +382,32 @@ Reject silent conversion into the retry table. Even uncertainty/refusal consumes
 the shot; no automatic replay or provider/canonical approval can follow it. Preserve
 source/generation/credential/evidence/review/receipt boundaries. Unfinished journal
 entries mean unknown, never success. No privacy, signing, Origin or API28 change.
+
+## ADR-029 — Disposable D1, local Moodle review, real synthetic sync and selected exports
+
+2026-11-10. Basea0106e9. Implemented source; tests/builds NOT RUN at owner's request.
+
+Use Node standard crypto for the existing Fernet format and existing Miniflare
+for a fresh disposable database; add no dependency. Authenticate before decrypt,
+require all eleven canonical tables/columns, preserve audit rows by suspending
+then restoring triggers, compare row counts/digests/FKs and enqueue only future
+active-task rebuilds. Reject account/existing-database targeting and old delivery
+or credential restoration. Production restore reconciliation remains unverified.
+
+Use deterministic local Moodle parsing, explicit cookie/profile selection and
+per-source generations. Prefer strict portal origin/labelled HTML cells/unknown
+dates over forwarding a cookie on redirects, guessed columns or guessed years.
+Store source status locally; strip session queries from projected activity URLs.
+Encrypted staged jobs and existing source-scoped sync retain both projection
+review and canonical approval. Reject automatic freshly collected uploads.
+
+Test the provider lifecycle with a loopback TLS mock and signed requests to the
+real shared Worker/Miniflare receiver, not a mocked uploader callback. 429 has
+existing bounded retry; 5xx/uncertain processing stays unknown. Synthetic results
+cannot prove real provider policies or deployed-account routing.
+
+Count selected export rows before headers with the transactional epoch. Bind JSON
+reads to that epoch; preserve CSV page/coherence guards. Default100000 configurable
+rows is an application guardrail, not a heap/CPU/billing promise. Selected-table
+JSON is explicitly partial and cannot be restored. Do not infer backup parity
+from a tasks-only CSV. No new dependency/migration/approval/auth/signing change.

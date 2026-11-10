@@ -1,6 +1,9 @@
 """Automatic ITK Moodle LMS collection and structured extraction."""
 import ctypes, glob, hashlib, hmac, json, os, re, sqlite3, struct, tempfile, urllib.request, uuid
 from datetime import datetime, timezone
+from html import unescape
+from html.parser import HTMLParser
+from urllib.parse import urljoin,urlsplit,parse_qs,urlencode
 from zoneinfo import ZoneInfo
 from .core import Invalid
 from .contracts import validate_extraction
@@ -18,7 +21,7 @@ def parse_itk_date(date_str, tz_name='Asia/Makassar', default_year=None):
         return {'precision': 'unknown', 'local_date': None, 'local_datetime': None, 'timezone': None}
     clean = re.sub(r'^[A-Za-z]+,\s*', '', date_str.strip())
     # Format: 22 Oktober 2026, 11:00
-    m = re.match(r'(\d{1,2})\s+([A-Za-z]+)\s+(\d{4}),?\s+(\d{1,2}):(\d{2})', clean)
+    m = re.fullmatch(r'(\d{1,2})\s+([A-Za-z]+)\s+(\d{4}),?\s+(\d{1,2}):(\d{2})', clean)
     if m:
         day, mon_str, year, hh, mm = m.groups()
         mon = MONTHS.get(mon_str.lower())
@@ -28,16 +31,24 @@ def parse_itk_date(date_str, tz_name='Asia/Makassar', default_year=None):
                 return {'precision': 'datetime', 'local_date': None, 'local_datetime': dt.strftime('%Y-%m-%dT%H:%M:%S'), 'timezone': tz_name}
             except (ValueError, KeyError): pass
     # Format: 22 Okt, 11:00
-    m2 = re.match(r'(\d{1,2})\s+([A-Za-z]+),?\s+(\d{1,2}):(\d{2})', clean)
+    m2 = re.fullmatch(r'(\d{1,2})\s+([A-Za-z]+),?\s+(\d{1,2}):(\d{2})', clean)
     if m2:
         day, mon_str, hh, mm = m2.groups()
         mon = MONTHS.get(mon_str.lower())
-        year = default_year or datetime.now(ZoneInfo(tz_name)).year
+        # A year missing from source data must not become today's year.
+        if default_year is None:return {'precision':'unknown','local_date':None,'local_datetime':None,'timezone':None}
+        year = default_year
         if mon:
             try:
                 dt = datetime(year, mon, int(day), int(hh), int(mm), tzinfo=ZoneInfo(tz_name))
                 return {'precision': 'datetime', 'local_date': None, 'local_datetime': dt.strftime('%Y-%m-%dT%H:%M:%S'), 'timezone': tz_name}
             except (ValueError, KeyError): pass
+    m3=re.fullmatch(r'(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})',clean)
+    if m3 and MONTHS.get(m3[2].lower()):
+        try:
+            local=datetime(int(m3[3]),MONTHS[m3[2].lower()],int(m3[1]))
+            return {'precision':'date_only','local_date':local.strftime('%Y-%m-%d'),'local_datetime':None,'timezone':tz_name}
+        except ValueError:pass
     return {'precision': 'unknown', 'local_date': None, 'local_datetime': None, 'timezone': None}
 
 def find_session(profile_dir=None):
@@ -67,12 +78,13 @@ def find_session(profile_dir=None):
                 with open(fpath, 'rb') as f:
                     if f.read(8) != b'mozLz40\0': continue
                     size = struct.unpack('<I', f.read(4))[0]
+                    if not 0<size<=16*1024*1024:continue
                     raw = f.read()
                     buf = ctypes.create_string_buffer(size)
                     res = liblz4.LZ4_decompress_safe(raw, buf, len(raw), size)
                     if res == size:
                         js = json.loads(buf.raw[:size].decode('utf-8', 'replace'))
-                        cookies = {c['name']: c['value'] for c in js.get('cookies', []) if 'kuliah.itk.ac.id' in c.get('host', '')}
+                        cookies = {c['name']: c['value'] for c in js.get('cookies', []) if c.get('host','').lstrip('.')=='kuliah.itk.ac.id' and c.get('name') in ('MoodleSession','HASH_MoodleSession')}
                         if 'MoodleSession' in cookies:
                             return cookies
             except Exception: pass
@@ -90,7 +102,7 @@ def find_session(profile_dir=None):
                         with open(wal, 'rb') as wf, open(os.path.join(td, 'c.sqlite-wal'), 'wb') as dwf: dwf.write(wf.read())
                     conn = sqlite3.connect(dst)
                     cur = conn.cursor()
-                    cur.execute("SELECT name, value FROM moz_cookies WHERE host LIKE '%kuliah.itk.ac.id%'")
+                    cur.execute("SELECT name, value FROM moz_cookies WHERE host IN ('kuliah.itk.ac.id','.kuliah.itk.ac.id') AND name IN ('MoodleSession','HASH_MoodleSession')")
                     c_dict = dict(cur.fetchall())
                     conn.close()
                     if 'MoodleSession' in c_dict: return c_dict
@@ -98,19 +110,112 @@ def find_session(profile_dir=None):
 
     raise Invalid('SESSION_NOT_FOUND')
 
-def fetch_itk(path_or_url, cookies, base_url='https://kuliah.itk.ac.id', timeout=15):
-    url = path_or_url if path_or_url.startswith('https://') else f"{base_url.rstrip('/')}/{path_or_url.lstrip('/')}"
-    cookie_str = '; '.join(f"{k}={v}" for k, v in cookies.items())
-    req = urllib.request.Request(url, headers={'Cookie': cookie_str, 'User-Agent': 'Mozilla/5.0 (AcademicOS-Collector)'})
+PORTAL='https://kuliah.itk.ac.id'
+def portal_url(path,base_url=PORTAL):
+    base=urlsplit(base_url)
+    if base.scheme!='https' or base.hostname!='kuliah.itk.ac.id' or base.port not in (None,443) or base.username or base.password:raise Invalid('ITK_ORIGIN_INVALID')
+    value=urlsplit(urljoin(PORTAL+'/',path))
+    if value.scheme!='https' or value.hostname!='kuliah.itk.ac.id' or value.port not in (None,443) or value.username or value.password:raise Invalid('ITK_ORIGIN_INVALID')
+    return value.geturl()
+class PortalRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self,req,fp,code,msg,headers,newurl):
+        portal_url(newurl)
+        return super().redirect_request(req,fp,code,msg,headers,newurl)
+def _open_portal(request,timeout):
+    return urllib.request.build_opener(PortalRedirect()).open(request,timeout=timeout)
+def normalise_cookies(value):
+    if not isinstance(value,dict) or not value.get('MoodleSession') or set(value)-{'MoodleSession','HASH_MoodleSession'}:raise Invalid('ITK_COOKIE_INVALID')
+    if any(not isinstance(v,str) or not 1<=len(v)<=4096 or re.search(r'[\s;\x00-\x1f\x7f]',v) for v in value.values()):raise Invalid('ITK_COOKIE_INVALID')
+    return value
+
+def fetch_itk(path_or_url,cookies,base_url=PORTAL,timeout=15):
+    url=portal_url(path_or_url,base_url);cookies=normalise_cookies(cookies)
+    request=urllib.request.Request(url,headers={'Cookie':'; '.join(k+'='+v for k,v in cookies.items()),'User-Agent':'AcademicOS-Local-Collector'})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            text = resp.read().decode('utf-8', 'replace')
-            if 'login/index.php' in resp.geturl() or '<title>Masuk' in text or 'id="login"' in text:
-                raise Invalid('SESSION_EXPIRED')
+        with _open_portal(request,timeout) as response:
+            final=portal_url(response.geturl())
+            raw=response.read(4*1024*1024+1)
+            if len(raw)>4*1024*1024:raise Invalid('ITK_RESPONSE_TOO_LARGE')
+            text=raw.decode('utf-8','replace')
+            if '/login/' in final or re.search(r'id=[\"\']login[\"\']|<title>\s*(Masuk|Log in)',text,re.I):raise Invalid('SESSION_EXPIRED')
             return text
-    except urllib.error.HTTPError as e:
-        if e.code in (401, 403): raise Invalid('SESSION_EXPIRED')
-        raise Invalid(f"HTTP_{e.code}")
+    except urllib.error.HTTPError as error:
+        if error.code in (401,403):raise Invalid('SESSION_EXPIRED') from None
+        raise Invalid('HTTP_'+str(error.code)) from None
+    except (urllib.error.URLError,TimeoutError,OSError):raise Invalid('ITK_UNAVAILABLE') from None
+
+class PortalHTML(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True);self.links=[];self.rows=[];self.cells=None;self.cell=None;self.anchor=None;self.table=False;self.overview=False
+    def handle_starttag(self,tag,attrs):
+        a=dict(attrs)
+        if a.get('data-block') in ('semester_sortierung','myoverview'):self.overview=True
+        if tag=='table':self.table=True
+        if tag=='tr':self.cells=[]
+        if tag in ('td','th') and self.cells is not None:self.cell={'text':'','links':[]}
+        if tag=='a':self.anchor={'url':a.get('href',''),'text':''}
+    def handle_data(self,text):
+        if self.cell is not None:self.cell['text']+=text+' '
+        if self.anchor is not None:self.anchor['text']+=text
+    def handle_endtag(self,tag):
+        if tag=='a' and self.anchor is not None:
+            self.links.append(self.anchor)
+            if self.cell is not None:self.cell['links'].append(self.anchor)
+            self.anchor=None
+        if tag in ('td','th') and self.cell is not None:
+            self.cell['text']=' '.join(self.cell['text'].split())
+            if self.cells is None:raise Invalid('ITK_MARKUP_CHANGED')
+            self.cells.append(self.cell);self.cell=None
+        if tag=='tr' and self.cells is not None:self.rows.append(self.cells);self.cells=None
+
+def discover_courses(cookies,base_url=PORTAL):
+    page=PortalHTML();page.feed(fetch_itk('/my/',cookies,base_url=base_url));courses=[];seen=set()
+    for link in page.links:
+        try:url=portal_url(link['url'],base_url)
+        except Invalid:continue
+        parsed=urlsplit(url);ident=parse_qs(parsed.query).get('id',[''])[0]
+        if parsed.path!='/course/view.php' or not ident.isdigit() or ident in seen:continue
+        name=' '.join(link['text'].split())
+        if not name:continue
+        seen.add(ident);courses.append({'id':ident,'name':name,'short':short_course_name(name),'url':PORTAL+'/course/view.php?id='+ident})
+    if not courses and not page.overview:raise Invalid('ITK_MARKUP_CHANGED')
+    return courses
+
+def fetch_course_items(course,cookies,base_url=PORTAL):
+    if not str(course.get('id','')).isdigit():raise Invalid('ITK_COURSE_INVALID')
+    result=[]
+    for module in ('assign','quiz'):
+        try:html=fetch_itk('/mod/'+module+'/index.php?id='+str(course['id']),cookies,base_url=base_url)
+        except Invalid as error:
+            if str(error)=='HTTP_404':raise Invalid('ITK_MODULE_UNAVAILABLE') from None
+            raise
+        page=PortalHTML();page.feed(html)
+        if not page.table:raise Invalid('ITK_MARKUP_CHANGED')
+        due_index=status_index=None
+        for cells in page.rows:
+            names=[c['text'].lower() for c in cells]
+            for i,name in enumerate(names):
+                if name in ('jatuh tempo','due date','due','quiz closes','close date','waktu tutup'):due_index=i
+                if name in (('pengajuan','submission','submission status','status') if module=='assign' else ('grade','nilai')):status_index=i
+            for cell in cells:
+                for link in cell['links']:
+                    try:url=portal_url(link['url'],base_url)
+                    except Invalid:
+                        if '/mod/'+module+'/view.php' in link['url']:raise Invalid('ITK_MARKUP_CHANGED') from None
+                        continue
+                    parsed=urlsplit(url);ident=parse_qs(parsed.query).get('id',[''])[0]
+                    if parsed.path!='/mod/'+module+'/view.php':continue
+                    if not ident.isdigit() or due_index is None or due_index>=len(cells):raise Invalid('ITK_MARKUP_CHANGED')
+                    title=' '.join(link['text'].split())
+                    if not title:raise Invalid('ITK_MARKUP_CHANGED')
+                    due_raw=cells[due_index]['text'];status=cells[status_index]['text'] if status_index is not None and status_index<len(cells) else ''
+                    due=parse_itk_date(due_raw)
+                    # Completion is only a source observation/filter, never a
+                    # canonical task mutation or inference of owner approval.
+                    done=('terkirim' in status.lower() or 'sudah diajukan' in status.lower()) if module=='assign' else bool(status and status!='-')
+                    result.append({'id':'itk-'+module+'-'+ident,'raw_id':ident,'kind':'exam' if module=='quiz' and ('midterm' in title.lower() or 'quiz 1' in title.lower()) else 'assignment','activity_type':module,'title':title,'course_id':str(course['id']),'course_name':course['name'],'course_short':course['short'],'url':PORTAL+'/mod/'+module+'/view.php?id='+ident,'due_raw':due_raw,'due':due,'submission_status':('Nilai: '+status if module=='quiz' and status else status),'is_done':done,'date_ambiguous':due['precision']=='unknown' and due_raw.strip() not in ('','-','No close date','Tidak ada batas waktu')})
+        if not any(name in ('jatuh tempo','due date','due','quiz closes','close date','waktu tutup') for row in page.rows for name in [c['text'].lower() for c in row]):raise Invalid('ITK_MARKUP_CHANGED')
+    return result
 
 def short_course_name(name):
     clean = re.sub(r'\s*-\s*[A-Za-z0-9]+$', '', name).strip()
@@ -122,85 +227,6 @@ def short_course_name(name):
     words = clean.split()
     if len(words) <= 3: return clean
     return ' '.join(words[:2])
-
-def discover_courses(cookies, base_url='https://kuliah.itk.ac.id'):
-    html = fetch_itk('/my/', cookies, base_url=base_url)
-    courses = []
-    seen = set()
-    # 1. Course overview in block_semester_sortierung
-    m_sem = re.search(r'data-block="semester_sortierung"[^>]*>(.*?)</section>', html, re.S)
-    scope = m_sem.group(1) if m_sem else html
-    for url, cid, cname in re.findall(r'href="(https://kuliah\.itk\.ac\.id/course/view\.php\?id=(\d+))"[^>]*>(.*?)</a>', scope, re.S):
-        clean = re.sub(r'<[^>]+>', '', cname).strip()
-        if clean and cid not in seen:
-            seen.add(cid)
-            courses.append({'id': cid, 'name': clean, 'short': short_course_name(clean), 'url': url})
-    return courses
-
-def fetch_course_items(course, cookies, base_url='https://kuliah.itk.ac.id'):
-    cid = course['id']
-    items = []
-
-    # 1. Assignments (/mod/assign/index.php?id=<cid>)
-    try:
-        html_assign = fetch_itk(f"/mod/assign/index.php?id={cid}", cookies, base_url=base_url)
-        for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', html_assign, re.S):
-            cells = [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', td)).strip() for td in re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', tr, re.S)]
-            link_m = re.search(r'href="([^"]*mod/assign/view\.php\?id=(\d+))"', tr)
-            if link_m and cells:
-                aurl, aid = link_m.groups()
-                title = cells[1] if len(cells) > 1 else cells[0]
-                due_raw = cells[2] if len(cells) > 2 else ''
-                status = cells[3] if len(cells) > 3 else ''
-                due = parse_itk_date(due_raw)
-                items.append({
-                    'id': f"itk-assign-{aid}",
-                    'raw_id': aid,
-                    'kind': 'assignment',
-                    'title': title,
-                    'course_id': cid,
-                    'course_name': course['name'],
-                    'course_short': course['short'],
-                    'url': aurl,
-                    'due_raw': due_raw,
-                    'due': due,
-                    'submission_status': status,
-                    'is_done': 'Terkirim' in status or 'Sudah diajukan' in status
-                })
-    except Invalid as e:
-        if str(e) not in ('HTTP_404', 'HTTP_403'): raise
-
-    # 2. Quizzes (/mod/quiz/index.php?id=<cid>)
-    try:
-        html_quiz = fetch_itk(f"/mod/quiz/index.php?id={cid}", cookies, base_url=base_url)
-        for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', html_quiz, re.S):
-            cells = [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', td)).strip() for td in re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', tr, re.S)]
-            link_m = re.search(r'href="([^"]*mod/quiz/view\.php\?id=(\d+))"', tr)
-            if link_m and cells:
-                qurl, qid = link_m.groups()
-                title = cells[1] if len(cells) > 1 else cells[0]
-                close_raw = cells[2] if len(cells) > 2 else ''
-                grade = cells[3] if len(cells) > 3 else ''
-                due = parse_itk_date(close_raw)
-                is_done = bool(grade and grade != '-')
-                items.append({
-                    'id': f"itk-quiz-{qid}",
-                    'raw_id': qid,
-                    'kind': 'exam' if ('midterm' in title.lower() or 'quiz 1' in title.lower()) else 'assignment',
-                    'title': title,
-                    'course_id': cid,
-                    'course_name': course['name'],
-                    'course_short': course['short'],
-                    'url': qurl,
-                    'due_raw': close_raw,
-                    'due': due,
-                    'submission_status': f"Nilai: {grade}" if grade else "Belum dikerjakan",
-                    'is_done': is_done
-                })
-    except Invalid as e:
-        if str(e) not in ('HTTP_404', 'HTTP_403'): raise
-
-    return items
 
 def collect_itk(cookies=None, profile_dir=None, base_url='https://kuliah.itk.ac.id', pending_only=False):
     c = cookies or find_session(profile_dir)
@@ -216,80 +242,33 @@ def collect_itk(cookies=None, profile_dir=None, base_url='https://kuliah.itk.ac.
                     all_items.append(it)
     return {'courses': courses, 'items': all_items}
 
-def import_itk(store, source_id, generation=1, cookies=None, profile_dir=None, pending_only=False):
-    """Stores ITK LMS items into Store evidence and generates valid sync candidates."""
-    store.allowed(source_id, generation)
-    collected = collect_itk(cookies=cookies, profile_dir=profile_dir, pending_only=pending_only)
-    candidates = []
-    evidence_dict = {}
-
-    batch_id = str(uuid.uuid4())
-    now_iso = datetime.now(timezone.utc).isoformat()
-
-    for item in collected['items']:
-        evidence_id = str(uuid.uuid4())
-        # Concise description: URL + submission status
-        desc = f"Tugas ITK ({item['url']})"
-        if item['submission_status']:
-            desc += f" · {item['submission_status']}"
-        desc = desc[:500]
-
-        title = f"[{item['course_short']}] {item['title']}"[:240]
-
-        record = {
-            'text': f"{title}\n{desc}",
-            'source_message_at': now_iso,
-            'source_type': 'itk_lms',
-            'course_id': item['course_id'],
-            'course_name': item['course_name'],
-            'activity_id': item['raw_id'],
-            'activity_type': item['kind'],
-            'url': item['url'],
-            'submission_status': item['submission_status']
-        }
-
-        fp = store.fingerprint(['itk_lms', item['id'], item['title'], item['due_raw']])
-        store.insert(source_id, generation, fp, record)
-        ev_row = store.db.execute('SELECT id FROM evidence WHERE source_id=? AND generation=? AND fingerprint=?', (source_id, generation, fp)).fetchone()
-        evidence_id = ev_row[0]
-        evidence_dict[evidence_id] = {'id': evidence_id, 'source_id': source_id, 'payload': record}
-
-        candidates.append({
-            'draft_id': item['id'],
-            'evidence_ids': [evidence_id],
-            'confidence': 'high',
-            'source_decision_state': 'confirmed_in_source',
-            'needs_review': True,
-            'issue_codes': [],
-            'fields': {
-                'kind': item['kind'],
-                'title': title,
-                'description': desc,
-                'context_id': None,
-                'context_type': 'academic',
-                'assignee_scope': 'owner',
-                'priority': 'normal',
-                'due': item['due']
-            }
-        })
-
-    # ai-extraction schema enforces maxItems: 50 candidates per batch.
-    batches = []
-    chunk_size = 40
-    for i in range(0, len(candidates), chunk_size):
-        chunk = candidates[i:i + chunk_size]
-        sub_eids = {eid: evidence_dict[eid] for c in chunk for eid in c['evidence_ids']}
-        batch_output = {
-            'schema_version': '2.0',
-            'batch_id': str(uuid.uuid4()),
-            'candidates': chunk
-        }
-        validate_extraction(batch_output, sub_eids)
-        batches.append(batch_output)
-
-    if not batches:
-        empty_batch = {'schema_version': '2.0', 'batch_id': str(uuid.uuid4()), 'candidates': []}
-        validate_extraction(empty_batch, {})
-        batches.append(empty_batch)
-
-    return batches, {'courses': len(collected['courses']), 'tasks': len(candidates), 'batches': len(batches)}
+def import_itk(store,source_id,generation=1,cookies=None,profile_dir=None,pending_only=False,collected=None):
+    """Persist local evidence atomically; generate only structured review proposals."""
+    store.allowed(source_id,generation)
+    observed=collect_itk(cookies=cookies,profile_dir=profile_dir,pending_only=pending_only) if collected is None else collected
+    if not isinstance(observed,dict) or not isinstance(observed.get('items'),list):raise Invalid('ITK_PREVIEW_INVALID')
+    candidates=[];evidence={};now=datetime.now(timezone.utc).isoformat()
+    with store.db:
+        store.db.execute('BEGIN IMMEDIATE');store.allowed(source_id,generation)
+        for item in observed['items']:
+            title=('['+item['course_short']+'] '+item['title'])[:240]
+            url=portal_url(item['url']);parsed=urlsplit(url);ident=parse_qs(parsed.query).get('id',[''])[0]
+            if not ident.isdigit() or parsed.path not in ('/mod/assign/view.php','/mod/quiz/view.php'):raise Invalid('ITK_PREVIEW_INVALID')
+            url=PORTAL+parsed.path+'?id='+ident
+            # Status/grades stay in the local preview/evidence; cloud description is only the canonical activity URL.
+            desc=('Tugas ITK ('+url+')')[:500]
+            record={'text':title+'\n'+desc,'source_message_at':None,'source_type':'itk_lms','course_id':item['course_id'],'course_name':item['course_name'],'activity_id':ident,'activity_type':item['kind'],'url':url,'submission_status':item['submission_status']}
+            fp=store.fingerprint(['itk_lms',item['id'],item['title'],item['due'],item['submission_status']]);store.insert(source_id,generation,fp,record)
+            eid=store.db.execute('SELECT id FROM evidence WHERE source_id=? AND generation=? AND fingerprint=?',(source_id,generation,fp)).fetchone()[0]
+            evidence[eid]=record
+            candidates.append({'draft_id':item['id'],'evidence_ids':[eid],'confidence':'unknown' if item.get('date_ambiguous') else 'high','source_decision_state':'unclear' if item.get('date_ambiguous') else 'confirmed_in_source','needs_review':True,'issue_codes':['ambiguous_date'] if item.get('date_ambiguous') else [],'fields':{'kind':item['kind'],'title':title,'description':desc,'context_id':None,'context_type':'academic','assignee_scope':'owner','priority':'normal','due':item['due']}})
+        store.db.execute('UPDATE source_operations SET last_import_at=? WHERE source_id=?',(now,source_id))
+    batches=[];chunk=[];size=0
+    for candidate in candidates:
+        cost=len(evidence[candidate['evidence_ids'][0]]['text'])
+        if chunk and (len(chunk)>=40 or size+cost>9000):
+            batches.append({'schema_version':'2.0','batch_id':str(uuid.uuid4()),'candidates':chunk});chunk=[];size=0
+        chunk.append(candidate);size+=cost
+    if chunk or not batches:batches.append({'schema_version':'2.0','batch_id':str(uuid.uuid4()),'candidates':chunk})
+    for batch in batches:validate_extraction(batch,evidence)
+    return batches,{'courses':len(observed['courses']),'tasks':len(candidates),'batches':len(batches),'ambiguous_dates':sum(bool(i.get('date_ambiguous')) for i in observed['items'])}

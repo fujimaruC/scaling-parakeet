@@ -164,3 +164,17 @@ an automatic budget increase.
 
 No milestone is complete. Proposed ceilings are engineering review thresholds,
 not an owner spending decision, an SLA, or authorization to provision anything.
+
+## Selected export guardrail — 2026-11-10 implementation, not measurement
+
+EXPORT_MAX_ROWS now defaults to100000 total rows in selected canonical tables;
+owner-configurable1–1000000. Over-limit preflight returns413 before body creation.
+Choose a single allowlisted table to reduce transfer work. Partial JSON is not a
+restore backup. Counts/epoch/column preflight and epoch-conditioned JSON reads
+protect snapshot/cap coherence. CSV keeps256-row pages,8-page batch cap and16KiB
+chunks. No index was added and no old measurement was replaced.
+
+These are source settings, not measured memory or throughput. JSON and browser
+Blob buffering, arbitrary large rows, OFFSET scans and real D1/Worker limits remain
+risks. New bundle/export/query/CPU observations are NOT RUN/null by owner request.
+Re-run measure_resources.ts before claiming an improvement or raising review ceilings.

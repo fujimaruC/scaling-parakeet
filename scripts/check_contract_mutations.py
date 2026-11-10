@@ -4,7 +4,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 CASES=[
  ('csv-formula','apps/worker/src/export.ts','if (/^[=+\\-@\\t\\r]/.test(s))','if (false)','csv','CSV escapes'),
  ('csv-quotes','apps/worker/src/export.ts',"s.replaceAll('\"', '\"\"')","s",'csv','CSV escapes'),
- ('client-format','apps/web/src/main.tsx',"sessionApi('/export?format=' + exportFormat)","sessionApi('/export?format=json')",'browser','owner chooses CSV'),
+ ('client-format','apps/web/src/main.tsx',"sessionApi(exportPath)","sessionApi('/export?format=json')",'browser','owner chooses CSV'),
  ('csv-format','apps/worker/src/index.ts',"if (format === 'json')","if (true)",'csv','CSV and JSON export'),
  ('export-allowlist','packages/contracts/canonical-tables.json','"task_evidence"]','"task_evidence","collector_credentials"]','restore','test_all_eleven_tables_restore'),
  ('secret-redaction','collectors/local/src/academic_os/ai.py','text=redact_secrets(text)','text=text','python','test_secret_shaped_source_values'),

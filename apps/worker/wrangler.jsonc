@@ -3,5 +3,5 @@
  "assets":{"directory":"../web/dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":["/api/*","/owner-devices"]},
  "d1_databases":[{"binding":"DB","database_name":"academic-os","database_id":"00000000-0000-0000-0000-000000000000","migrations_dir":"migrations"}],
  "triggers":{"crons":["*/15 * * * *"]},
- "vars":{"OWNER_SUB":"UNCONFIGURED","ACCESS_TEAM":"UNCONFIGURED","ACCESS_AUD":"UNCONFIGURED"}
+ "vars":{"EXPORT_MAX_ROWS":"100000","OWNER_SUB":"UNCONFIGURED","ACCESS_TEAM":"UNCONFIGURED","ACCESS_AUD":"UNCONFIGURED"}
 }

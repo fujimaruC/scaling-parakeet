@@ -4,6 +4,7 @@ export type CanonicalSnapshot = {
   schema_version: string;
   exported_at: string;
   tables: Record<string, Record<string, unknown>[]>;
+  partial?: true;
 };
 // Quoting does not disable spreadsheet formulas. Neutralise before RFC 4180 escaping.
 export function csvCell(value: unknown) {
@@ -11,30 +12,95 @@ export function csvCell(value: unknown) {
   if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return '"' + s.replaceAll('"', '""') + '"';
 }
-export async function readCanonical(db: D1Database, at: string) {
-  // Schema metadata comes only from the fixed allowlist, never query parameters.
-  const info = await db.batch<any>(
-    tables.map((t) => db.prepare('PRAGMA table_info("' + t + '")')),
-  );
+export type ExportOptions = { table?: string; maxRows?: number };
+export const DEFAULT_EXPORT_MAX_ROWS = 100000;
+export function configuredExportLimit(value?: string) {
+  if (value === undefined) return DEFAULT_EXPORT_MAX_ROWS;
+  if (!/^[1-9][0-9]{0,6}$/.test(value) || Number(value) > 1000000)
+    throw new ExportError('EXPORT_LIMIT_INVALID');
+  return Number(value);
+}
+async function prepareExport(db: D1Database, options: ExportOptions) {
+  const selected =
+    options.table === undefined
+      ? [...tables]
+      : tables.filter((t) => t === options.table);
+  if (!selected.length) throw new ExportError('INVALID_EXPORT_TABLE', 422);
+  const max = options.maxRows ?? DEFAULT_EXPORT_MAX_ROWS;
+  if (!Number.isSafeInteger(max) || max < 1 || max > 1000000)
+    throw new ExportError('EXPORT_LIMIT_INVALID');
+  let initial: D1Result<any>[];
+  try {
+    initial = await db.batch<any>([
+      db.prepare(revisionSQL),
+      db.prepare(
+        selected
+          .map(
+            (t) => "SELECT '" + t + '\' AS name,count(*) AS n FROM "' + t + '"',
+          )
+          .join(' UNION ALL '),
+      ),
+      ...selected.map((t) => db.prepare('PRAGMA table_info("' + t + '")')),
+    ]);
+  } catch {
+    throw new ExportError('EXPORT_UNAVAILABLE');
+  }
+  const revision = initial[0].results[0]?.revision;
+  if (typeof revision !== 'string') throw new ExportError('EXPORT_UNAVAILABLE');
+  const total = initial[1].results.reduce((sum, row) => sum + Number(row.n), 0);
+  if (!Number.isSafeInteger(total) || total > max)
+    throw new ExportError('EXPORT_TOO_LARGE', 413, max);
+  const info = initial.slice(2);
   const columns = Object.fromEntries(
-    tables.map((t, i) => [t, info[i].results.map((c) => c.name as string)]),
+    selected.map((t, i) => [t, info[i].results.map((c) => c.name as string)]),
   );
-  const rows = await db.batch<any>(
-    tables.map((t, i) => {
-      const primary = info[i].results
-        .filter((c) => c.pk)
-        .sort((a, b) => a.pk - b.pk)
-        .map((c) => c.name);
-      const order = (primary.length ? primary : columns[t])
-        .map((c: string) => '"' + c.replaceAll('"', '""') + '"')
-        .join(',');
-      return db.prepare('SELECT * FROM "' + t + '" ORDER BY ' + order);
-    }),
+  if (selected.some((t) => !columns[t].length))
+    throw new ExportError('EXPORT_UNAVAILABLE');
+  const orders = selected.map((t, i) => {
+    const primary = info[i].results
+      .filter((c) => c.pk)
+      .sort((a, b) => a.pk - b.pk)
+      .map((c) => c.name);
+    return (primary.length ? primary : columns[t])
+      .map((c: string) => '"' + c.replaceAll('"', '""') + '"')
+      .join(',');
+  });
+  return { selected, revision, columns, orders };
+}
+export async function readCanonical(
+  db: D1Database,
+  at: string,
+  options: ExportOptions = {},
+) {
+  const { selected, revision, columns, orders } = await prepareExport(
+    db,
+    options,
   );
+  let rows: D1Result<any>[];
+  try {
+    rows = await db.batch<any>([
+      ...selected.map((t, i) =>
+        db
+          .prepare(
+            'SELECT * FROM "' +
+              t +
+              '" WHERE (SELECT CAST(revision AS TEXT) FROM canonical_export_revision WHERE id=1)=? ORDER BY ' +
+              orders[i],
+          )
+          .bind(revision),
+      ),
+      db.prepare(revisionSQL),
+    ]);
+  } catch {
+    throw new ExportError('EXPORT_UNAVAILABLE');
+  }
+  if (rows[rows.length - 1].results[0]?.revision !== revision)
+    throw new ExportError('EXPORT_SNAPSHOT_CHANGED', 409);
   const snapshot: CanonicalSnapshot = {
     schema_version: '2.0',
     exported_at: at,
-    tables: Object.fromEntries(tables.map((t, i) => [t, rows[i].results])),
+    tables: Object.fromEntries(selected.map((t, i) => [t, rows[i].results])),
+    ...(options.table === undefined ? {} : { partial: true }),
   };
   return { snapshot, columns };
 }
@@ -43,42 +109,26 @@ export const CSV_PAGE_ROWS = 256;
 export const CSV_PREFETCH_PAGES = 8;
 export const CSV_CHUNK_BYTES = 16 * 1024;
 export class ExportError extends Error {
-  constructor(readonly code: string) {
+  constructor(
+    readonly code: string,
+    readonly status = 503,
+    readonly limit?: number,
+  ) {
     super(code);
   }
 }
 const revisionSQL =
   'SELECT CAST(revision AS TEXT) revision FROM canonical_export_revision WHERE id=1';
-export async function streamCanonicalCSV(db: D1Database, at: string) {
-  let initial: D1Result<any>[];
-  try {
-    initial = await db.batch<any>([
-      db.prepare(revisionSQL),
-      ...tables.map((t) => db.prepare('PRAGMA table_info("' + t + '")')),
-    ]);
-  } catch {
-    throw new ExportError('EXPORT_UNAVAILABLE');
-  }
-  const revision = initial[0].results[0]?.revision;
-  if (typeof revision !== 'string') throw new ExportError('EXPORT_UNAVAILABLE');
-  const columns = Object.fromEntries(
-    tables.map((t, i) => [
-      t,
-      initial[i + 1].results.map((c) => c.name as string),
-    ]),
+export async function streamCanonicalCSV(
+  db: D1Database,
+  at: string,
+  options: ExportOptions = {},
+) {
+  const { selected, revision, columns, orders } = await prepareExport(
+    db,
+    options,
   );
-  if (tables.some((t) => !columns[t].length))
-    throw new ExportError('EXPORT_UNAVAILABLE');
-  const orders = tables.map((t, i) => {
-    const primary = initial[i + 1].results
-      .filter((c) => c.pk)
-      .sort((a, b) => a.pk - b.pk)
-      .map((c) => c.name);
-    return (primary.length ? primary : columns[t])
-      .map((c: string) => '"' + c.replaceAll('"', '""') + '"')
-      .join(',');
-  });
-  const fields = tables.flatMap((table) =>
+  const fields = selected.flatMap((table) =>
     columns[table].map((column) => ({ table, column })),
   );
   const encoder = new TextEncoder();
@@ -101,8 +151,8 @@ export async function streamCanonicalCSV(db: D1Database, at: string) {
         .map(csvCell)
         .join(',') + '\r\n',
     );
-    for (let i = 0; i < tables.length; i++) {
-      const table = tables[i];
+    for (let i = 0; i < selected.length; i++) {
+      const table = selected[i];
       let offset = 0,
         pageCount = 1;
       while (!cancelled) {

@@ -1,13 +1,19 @@
 # ITK Moodle LMS Collector Specification & Architecture
 
 **Target:** `https://kuliah.itk.ac.id` (ITK Moodle-based portal, Moodle 4.x with Moove theme and Tiles course format).
-**Status:** Implemented. 40 collector unit tests pass, all against mocked HTML and a patched `urlopen`; no test contacts `kuliah.itk.ac.id` and no real session has been exercised by an agent. Structured item metadata only (course, title, due, URL, submission status) enters the sync envelope; the session cookie is read from Firefox and never persisted. Real-portal behaviour, cookie handoff on the owner's actual Firefox profile, and Moodle theme drift remain unverified.
+**Status:** Local collector and explicit /operations -> /itk UI implemented;
+latest changes and new tests **NOT RUN** by owner instruction. Earlier mocked
+parser test results are historical, not execution evidence for this source.
+Real Moodle/session/profile behavior remains unverified. Cookies/profile paths,
+HTML, source submission/grade status remain local. Structured task metadata and
+opaque evidence references are staged for explicit projection review and separate
+canonical owner approval. See [current owner procedure](next-scope/OWNER-VERIFY.md).
 
 ---
 
-## 1. Zero-Config Browser Session Handoff
+## 1. Explicit local session handoff
 
-No extension, token copy-pasting, or browser automation runtime is required.
+The UI requires either a pasted session cookie or one explicit Firefox profile directory. It never scans all profiles automatically. No browser automation runtime or extension is added.
 
 - On Linux (Arch / system default), Firefox stores active session cookies in:
   `~/.config/mozilla/firefox/*.default-release/sessionstore-backups/recovery.jsonlz4`
@@ -110,3 +116,37 @@ export COLLECTOR_KEY_ID="your-key-id"
 export COLLECTOR_HMAC_SECRET="your-secret"
 .venv/bin/python scripts/itk_sync.py --upload --source-id "<source-uuid>"
 ```
+
+## Current local integration contract — 2026-11-10
+
+Enroll an explicit source UUID/generation as itk_lms before preview. Existing
+untyped sources are not silently relabelled. Source kind is stored in a local
+metadata table and must match the separately enrolled Worker source. Preview
+performs authorized Moodle GETs only; it does not call AI or Academic OS cloud.
+Cookie/profile inputs are never echoed or stored in jobs. Exact HTTPS portal
+origin and redirects are checked before session forwarding; activity URLs retain
+only numeric id, never sesskey. Sessionstore decompression and page sizes are capped.
+
+Known overview tables are parsed by labelled deadline/status columns. Unsupported
+markup/module absence is unavailable, not an empty successful collection. Ambiguous
+yearless dates remain unknown instead of guessing a collection-time year. Source
+completion status filters local preview only; it cannot mark a canonical task done.
+Status/grades stay local and do not enter projected descriptions.
+
+Evidence and proposals are encrypted locally. Unchanged repeated previews reuse
+a staged job. Source+generation and evidence are checked again before review/
+queue/send. A separate projection confirmation is mandatory; canonical approval
+is still required in the task UI. No auto-upload collection mode remains in the
+CLI. Current commands replace any historical --upload examples below/above:
+
+```sh
+.venv/bin/python scripts/itk_sync.py enroll --data-dir /private/aos --source-id SOURCE_UUID --generation 1
+.venv/bin/python scripts/itk_sync.py preview --data-dir /private/aos --source-id SOURCE_UUID --generation 1 --profile /private/firefox-profile
+.venv/bin/python scripts/itk_sync.py queue --data-dir /private/aos --source-id SOURCE_UUID --generation 1 --job JOB_UUID --confirm-projection
+.venv/bin/python scripts/itk_sync.py send --data-dir /private/aos --source-id SOURCE_UUID --generation 1 --job JOB_UUID
+```
+
+Use --cookie-prompt instead of --profile to avoid cookies in shell history.
+All synthetic UI/session/origin/markup/date/generation/projection cases are in
+collectors/local/tests/test_itk.py; new cases are NOT RUN. Real portal variants,
+Firefox permissions/locale and repeated live collection remain owner gates.

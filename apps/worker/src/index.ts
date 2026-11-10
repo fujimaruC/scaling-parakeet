@@ -1,4 +1,10 @@
-import { readCanonical, streamCanonicalCSV, ExportError } from './export';
+import {
+  readCanonical,
+  streamCanonicalCSV,
+  ExportError,
+  configuredExportLimit,
+  EXPORT_TABLES,
+} from './export';
 import { listHistory } from './history';
 import { account, operationalHealth, BudgetError } from './operations';
 import { dispatchPush, pushConfig, subscribe, type PushEnv } from './push';
@@ -24,6 +30,7 @@ import {
 } from '../../../packages/contracts/src/index';
 export interface Env extends AuthEnv, PushEnv {
   DB: D1Database;
+  EXPORT_MAX_ROWS?: string;
   ASSETS?: Fetcher;
 }
 class Http extends Error {
@@ -1948,20 +1955,50 @@ export function createApp(authorize: typeof owner = owner) {
           const format = url.searchParams.get('format') ?? 'json';
           if (!['json', 'csv'].includes(format))
             throw new Http(422, 'INVALID_EXPORT_FORMAT');
+          if (url.searchParams.getAll('table').length > 1)
+            throw new Http(422, 'INVALID_EXPORT_TABLE');
+          const options = {
+            table: url.searchParams.get('table') ?? undefined,
+            maxRows: configuredExportLimit(env.EXPORT_MAX_ROWS),
+          };
+          if (
+            options.table !== undefined &&
+            !EXPORT_TABLES.includes(options.table)
+          )
+            throw new Http(422, 'INVALID_EXPORT_TABLE');
           if (format === 'json')
-            return result((await readCanonical(db, now())).snapshot);
+            return result((await readCanonical(db, now(), options)).snapshot);
           const headers = result({}).headers;
           headers.set('Content-Type', 'text/csv; charset=utf-8');
+          headers.set(
+            'X-Academic-OS-Export-Scope',
+            options.table ? 'table:' + options.table : 'canonical-full',
+          );
           headers.set(
             'Content-Disposition',
             'attachment; filename="academic-os-export.csv"',
           );
-          return new Response(await streamCanonicalCSV(db, now()), { headers });
+          return new Response(await streamCanonicalCSV(db, now(), options), {
+            headers,
+          });
         }
         throw new Http(404, 'NOT_FOUND');
       } catch (e) {
         if (e instanceof ExportError)
-          return result({ error: { code: e.code } }, 503);
+          return result(
+            {
+              error: {
+                code: e.code,
+                ...(e.limit
+                  ? {
+                      limit: e.limit,
+                      hint: 'Select one table or review the owner-configured export row limit.',
+                    }
+                  : {}),
+              },
+            },
+            e.status,
+          );
         if (e instanceof BudgetError)
           return result(
             { error: { code: e.code } },

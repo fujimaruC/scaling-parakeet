@@ -101,6 +101,9 @@ test edits. Reviewers must keep the assertion meaningful.
 |---|---:|---|---|---|
 | backup-tombstones-sqlite | 6 | test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials | locally_verified | Backup tombstone generations survive disposable SQLite restore (locally verified). |
 | production-d1-restore | 6 | none | unverified | Production D1 restore remains unverified. |
+| disposable-d1-local | 8 | none | unverified | Disposable D1 canonical restore execution remains unverified. |
+| synthetic-router-local | 3 | none | unverified | Synthetic router end-to-end execution remains unverified. |
+| actual-provider-route | 3 | none | unverified | Real provider/route behavior remains unverified. |
 <!-- gate-claims:end -->
 
 Run `.venv/bin/python scripts/check_gate_claims.py`; CI runs it after installing
@@ -133,3 +136,58 @@ inherited fault suites. Controls remain a separate process from AI jobs.
 negative/restored proofs, including an unlabeled icon and undersized brand. No
 mutation was executed in this handoff. Existing14/16/18 suites remain historical,
 not rerun evidence. No completion gate or milestone is closed.
+
+## Complete acceptance traceability — local scopes and external gaps
+
+This table maps assertions, not execution claims. All new/changed tests in this
+slice are **NOT RUN by owner instruction**. Earlier execution records remain
+historical. No acceptance ID or milestone is closed merely because code exists.
+
+| ID | Executable source / scenario | Remaining external or semantic gate |
+|---|---|---|
+| T01 | native-owner.test.ts: `missing or forged native authority fails closed, including production administration`; auth tests in ledger.test.ts | Actual Access production/preview policy and owner account. |
+| T02 | native-owner.test.ts: `device scope never includes device administration, collectors or source ingestion`; ledger signed-source tests | Real device/account scoped credentials and revoked routes. |
+| T03 | ledger.test.ts context/status filtering; app.spec.ts organization task editing | Owner acceptance for both academic and Himpunan duties. |
+| T04 | native policy JVM precision cases; s2.spec.ts precision rendering; ledger date tests | Real native rendering/reminder behavior. |
+| T05 | test_pipeline.py redaction/source-message timestamps; test_injection.py conflicting deadlines; test_itk.py ambiguous-year case | General-language relative-date grounding remains unverified; source timestamp absence must stay ambiguous. |
+| T06 | contracts date validation in ledger.test.ts; native JVM policy; test_itk.py strict invalid/ambiguous dates | Arbitrary real source timezone/DST interpretation. |
+| T07 | ledger.test.ts `a losing deadline edit cannot schedule its reminders`; native-owner.test.ts CAS/idempotency | Account concurrency and network interruptions. |
+| T08 | scripts/device_evidence.py and DEVICE-SMOKE.md owner matrix | Entire remaining real-phone lifecycle/power/background matrix; no synthetic substitute. |
+| T09 | native JVM capture-selector cases; test_control.py evidence projection | Real notification metadata and actual positive/negative capture. |
+| T10 | Kotlin queue privacy policy mains; test_core.py durable receipt tests; owner device matrix | Android process death, disk/key/backup behavior on hardware. |
+| T11 | test_transport.py synthetic pinned HTTPS receiver; source-bound control tests | Actual private network/mobile data/laptop-off transport. |
+| T12 | test_core.py `test_receipt_retry_and_purge_prevents_resurrection`, `test_invalid_batch_rolls_back_all_events`; test_pairing.py | Physical interrupted acknowledgment and phone erase sequencing. |
+| T13 | test_core.py `test_multiline_repeat_and_encryption`; export parser fixtures | Real selected WhatsApp export locale/format drift. |
+| T14 | test_core.py repeated imports; test_itk.py unchanged-preview job reuse | Real overlapping multi-method capture/backfill and uncertain matches. |
+| T15 | ledger.test.ts `signed ingestion remains proposal-only and explicit approval is idempotent`; native-owner.test.ts review/Undo | Real repeated owner actions under uncertain connectivity. |
+| T16 | test_core.py projection/raw rejection; test_injection.py secret redaction; export-contract.test.ts allowlist; d1-restore.test.ts disallowed tables | Full production logging/backups/privacy sink review; semantic task-text leakage cannot be universally detected by schema. |
+| T17 | test_pipeline.py placeholders/revocation/provider changes; test_router_pipeline.py absent/changed policy | Real configured provider policy/retention behavior. |
+| T18 | test_injection.py adversarial corpus; test_router_pipeline.py malformed/schema-invalid/429/5xx | Actual model behavior/semantic grounding; no prompt can certify it. |
+| T19 | review-boundary.test.ts reject/clarify/edited acceptance; test_router_pipeline.py zero canonical writes after sync | Native owner usability and real account review. |
+| T20 | review-boundary.test.ts explicit two-source deadline choice; test_injection.py conflicting deadlines | Real LMS/source authority and human conflict resolution. |
+| T21 | s2.spec.ts four date groups/Tanpa tanggal; release-gaps.test.ts year calendar paging | Large native ledger behavior and owner visual review. |
+| T22 | release-gaps.test.ts wildcard escaping/cursor scope; export-selection.test.ts allowlisted table selector | Production D1 scan/CPU cost; bounded returned rows are not bounded scans. |
+| T23 | s2.spec.ts real Worker briefing; deterministic /briefing tests | Owner's actual saved ledger with Linux/AI off. |
+| T24 | ledger.test.ts scheduler/intents; release-gaps.test.ts cron failure | Production cron and laptop-off account scheduling. |
+| T25 | ledger.test.ts losing edit, revisions, snooze, quiet hours, future rebuilds; d1-restore.test.ts future-only restore staging | Real scheduler/push interruption and catch-up. |
+| T26 | release-gaps.test.ts mocked push; tests/unit/push-worker.test.ts; owner browser/phone matrix | All physical delivery/permissions/reboot/battery cases. Provider acceptance is not delivery. |
+| T27 | tests/production/offline.spec.ts built PWA reload/logout; app.spec.ts offline/identity behavior | Actual browser storage/device behavior and native offline acceptance. |
+| T28 | test_operations.py unknown observations and multi-source state; test_control.py phases | Actual disconnected/silent sources; never invent missed counts. |
+| T29 | accessibility.spec.ts ID/EN × themes; structural-a11y.ts; s2.spec.ts contrast/text/keyboard | Real screen reader, perceived contrast, clipping, native UI/200% acceptance. |
+| T30 | d1-restore.test.ts Python-encrypted Fernet -> disposable D1 parity/FKs/tombstones/no dispatch; test_restore_contract.py; export-stream.test.ts | Production D1 restore/account/row/CPU and future delivery observations. |
+| T31 | ledger.test.ts source purge; test_operations.py pending acknowledgments; d1-restore.test.ts tombstones | Real multi-device inventories, offline wipe and revoked-source reconciliation. |
+| T32 | test_retry.py, test_router_pipeline.py 429 exhaustion/5xx unknown; export-selection.test.ts clean row ceiling; queue privacy tests | Actual quota/disk-full/key-loss/hardware/provider outages. |
+| T33 | scripts/measure_resources.ts, report_browser_margins.ts; persistent accounting tests | New measurements NOT RUN; production CPU/D1 billing rows/mobile/owner budget review unmeasured. |
+| T34 | test_itk.py parser, exact-origin/session, explicit local UI, generation and review staging; test_core.py ICS fixtures | Authorized ITK account, live Moodle markup/session/profile and real repeated/changed calendar events. |
+
+The router integration uses a local TLS mock plus the real shared Worker/D1
+handler in `scripts/synthetic_sync_worker.ts`. It does not fake an upload callback
+as evidence of D1 commit. The harness never forwards to a provider or real cloud.
+The restore integration encrypts via the existing Python backup implementation;
+Node verifies/decrypts the standard Fernet format before touching a fresh database.
+
+Gate3/Gate8 are declared unverified until the owner explicitly changes their
+claim and runs the exact named proof. `check_gate_claims.py` recognizes the D1
+Vitest target and router unittest target, rejects missing/deleted gate rows,
+wrong-scope proofs and stale contradictory claims. A passed local mock never
+closes `actual-provider-route` or production restore/account gates.

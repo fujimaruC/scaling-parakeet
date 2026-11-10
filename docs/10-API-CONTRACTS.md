@@ -232,3 +232,29 @@ bounded additional row memory for fewer binding calls. A D1 batch is transaction
 separate batches are not one snapshot, hence the epoch. Binding-call/CPU/row/heap
 and account limits need measurement; no free-account or arbitrary-size guarantee.
 The same owner authentication, private device route and export budget apply.
+
+## Selected canonical export and row safety ceiling — 2026-11-10
+
+GET `/export?format=json|csv[&table=<allowlisted name>]` remains owner-only and
+inside durable export accounting in both authenticated namespaces. Without table,
+all eleven shared canonical tables are exported. With table, exactly one shared
+allowlisted table is exported. Unknown or repeated table selectors return422
+INVALID_EXPORT_TABLE. A selected JSON result adds `partial: true`; it is not a
+full canonical backup and both restore implementations reject it. Selected CSV
+retains the union-header shape, limited to that table's deterministic columns;
+X-Academic-OS-Export-Scope identifies the selection. RFC4180/formula handling is
+unchanged. CSV is presentation, not lossless restore input.
+
+Worker configuration `EXPORT_MAX_ROWS` defaults to100000 total selected rows,
+accepts integer strings1–1000000, and cannot be overridden by a request. Invalid
+configuration refuses503 EXPORT_LIMIT_INVALID. One transactional count/epoch/
+column preflight precedes body creation. Above the cap returns413
+EXPORT_TOO_LARGE with limit and a selection/configuration hint; nothing truncates.
+JSON's row reads are conditioned on that epoch and a final transactional epoch
+check, preventing a changed ledger from being accepted between preflight and read.
+CSV retains bounded pages and aborts body consumption if its epoch changes.
+An HTTP200 header does not prove CSV completed; clients must consume the body.
+
+The ceiling bounds row count, not bytes per row, scan work, Worker CPU or D1
+account limits. JSON still materializes its selected rows. Re-measure on owner
+hardware/account before setting operational ceilings for real ledger contents.

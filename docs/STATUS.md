@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-10 · Recovered four-slice code delivery; tests/builds/benchmarks NOT RUN by owner instruction. Fresh main base03a32ca. No milestone complete.**
+**2026-11-10 · Five-scope local implementation delivery. Fresh main base a0106e9ca00d09970b2f27cbf1b11a84700e60b1. All acceptance checks, tests, builds, mutation proofs and measurements NOT RUN by the owner’s latest explicit instruction. No milestone complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -61,12 +61,12 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 
 1. Latest real owner observations are VERIFICATION-LOG §17–19: in-place native install/launch/reopen and a complete clean crash window; notification access granted, listener connected/recovered, local TLS pairing over USB loopback, negative filter replay with queue zero. Those are historical owner observations, not checks performed by this builder. No positive capture has ever occurred. Complete positive capture, full lifecycle/metadata/filter/queue/restart/retention/interrupted-ack matrix, actual private networking and power/background tests. Do not widen the selector or automate permission grants from this brief. Preserve the existing signing identity.
 2. Configure the owner's private network/receiver locally. No VPN/vendor/account choice or real peer pairing is claimed. Native task UI, localized resources, launcher icon and themes are implemented; signed update continuity, visual acceptance, real 200% layout, TalkBack and release packaging still require owner observations. Do not uninstall a signature-mismatched APK and lose a queue; rebuild with the existing local signing identity.
-3. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. A separate source-bound Linux job process now schedules bounded safe retries and exposes terminal/unknown outcomes. Server-rendered multi-source operations show consent, pause, generations and observations. Real route/refusal behavior, long-running process operation and source-specific production credentials remain unverified; no shared credential or implicit source is introduced.
+3. Synthetic router end-to-end execution remains unverified. Real provider/route behavior remains unverified. A loopback-only router harness and real shared Worker/D1 sync integration are implemented with consent, schema, retry and projection boundaries. Verify actual named 9Router provider/route/privacy policy with synthetic input, positive consent and prompt-injection tests. A separate source-bound Linux job process now schedules bounded safe retries and exposes terminal/unknown outcomes. Server-rendered multi-source operations show consent, pause, generations and observations. Real route/refusal behavior, long-running process operation and source-specific production credentials remain unverified; no shared credential or implicit source is introduced.
 4. Browser push subscription/revocation, empty-body VAPID dispatch and generic service-worker notification are implemented locally with synthetic tests. Real keys, browser/provider support, physical delivery, permission behavior, scheduler quotas and production D1 catch-up remain unverified. Durable inbox is independent and authoritative; provider acceptance is not device delivery. See RELEASE-GAPS.
 5. Native Today, Tasks, detail, Review, Calendar, Settings, full editor and quick/date/proposal panels now use the real shared Worker handlers. Completion/add/edit/delete, explicit review/Undo, immutable online-request recovery, encrypted observations/drafts, source status and export are implemented. Local API/policy/compiler/browser results are in NATIVE-CHECKS and VERIFICATION-LOG §13. Native behavior, large-ledger performance, accessibility and owner acceptance remain unverified. Keep the PWA until native parity and owner acceptance; a passing browser suite is not a native UI test.
 6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust and multi-source/manual-retain remain unverified release gates. Backup tombstone generations survive disposable SQLite restore (locally verified). Production D1 restore remains unverified. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
 7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, application request budgets, Worker CPU and D1 limits in the actual account. Durable request accounting and last-reported health exist locally; they are not billing/CPU/account-quota enforcement. All production bindings remain placeholders; private APIs deny access when unconfigured.
-8. Restore encrypted canonical data into disposable D1, verify future reminders, restored tombstones and revoked source reconciliation before sync. Current automated restore uses disposable SQLite.
+8. Disposable D1 canonical restore execution remains unverified. A Node/TypeScript Fernet-compatible local tool now restores into ephemeral Miniflare D1 with all migrations, exact table/count/digest parity, foreign-key checks, tombstones and future-only rebuild staging. Its regression suite is written but NOT RUN in this delivery. Real account restore and revoked source reconciliation before production sync remain unverified.
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
 Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.
@@ -843,3 +843,28 @@ close positive capture: 9 individual WhatsApp notifications existed, 0 self-chat
 signals existed, and no real conversation was mapped. Private network transport,
 receipt delivery and account/provider/push observations remain unverified.
 Exact record: [VERIFICATION-LOG §28](VERIFICATION-LOG.md#28-in-place-install-of-build-e482a5aa-and-clean-crash-window-on-cph2015--2026-11-10).
+
+## Five-scope builder delivery — 2026-11-10
+
+Read this current entry before historical implementation summaries above. Source
+now includes encrypted canonical -> disposable Miniflare D1 restore, all eleven
+table count/digest/FK/tombstone checks, future-only rebuild staging, local ITK
+Moodle preview/enrollment/projection controls, loopback synthetic router -> real
+Worker/D1 lifecycle fixtures, selected-table JSON/CSV and configurable export row
+ceilings, full T01–T34 mapping and Gate3/Gate8 scoped claim checks.
+
+Implementation is **unverified**. New tests are written, not executed. No new
+passing count is claimed. The only dependency operation was `npm ci --ignore-scripts`
+for existing formatting tools; it is not acceptance `npm ci`. Prettier formatting
+and Python source syntax inspection are editing operations, not behavior evidence.
+No dependency or migration was added. Android/signing/capture configuration is
+unchanged. Existing device evidence remains historical, with its stated limits.
+
+Do not silently reverse these choices: full eleven-table JSON alone is a restore
+input; partial selections are not backups. Restore cannot target a real/existing
+D1 database or restore credentials/dispatch. Session cookies/profiles are explicit
+local inputs, never job payloads. LMS source status/grades stay local, not proposal
+descriptions; no year is guessed from collection time. Staged LMS projections still
+require explicit queue confirmation and separate canonical approval. Row ceilings
+are application guardrails, not byte/CPU/account limits. See VERIFICATION-LOG §29,
+ADR-029 and [owner verification](next-scope/OWNER-VERIFY.md).

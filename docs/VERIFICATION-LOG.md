@@ -2136,3 +2136,115 @@ At this point 9 individual WhatsApp notifications were present and no self-chat
 signal was found. No real conversation was mapped. Positive capture, queue
 population, receiver receipt and physical private-network transfer remain
 unverified. No data reset, uninstall, deployment or account action occurred.
+
+## 29. Five local scopes built; execution deferred by owner — 2026-11-10
+
+Fresh clone base: `a0106e9ca00d09970b2f27cbf1b11a84700e60b1` on main;
+working branch `build/restore-itk-router-export`. NEXT-PROMPT Part2 was read.
+The latest direct user instruction says “dont run test on your workspace”. It
+supersedes the embedded run-all-acceptance instruction for this delivery. All
+new application behavior, acceptance, regression and fault-proof execution is
+**NOT RUN / unverified**. Historical §27–28 evidence is not a current result.
+No milestone is complete and no account/device/provider/deployment claim is made.
+
+### Source delivered and decisions
+
+1. `scripts/restore_d1.ts` and `scripts/lib/d1-restore.ts`: standard-library Node
+   Fernet HMAC-before-AES decryption compatible with the existing Python backup;
+   fresh disposable Miniflare only, migrations0001–0009, exact table/column schema,
+   eleven-table count/digest/FK parity, tombstones, forbidden-table-zero check and
+   future-only rebuild staging. Audit triggers are temporarily removed during
+   historical insertion and recreated verbatim before returning the handle.
+   Existing trigger-generated history must not duplicate restored audit events.
+   Reject partial/CSV archives and malformed keys/authentication/schema/references.
+   Prefer disposable-only machinery over a production upload/restore endpoint:
+   it cannot overwrite owner state or redispatch old reminders.
+2. ITK local UI linked from /operations: explicit cookie OR Firefox profile,
+   session/markup/date errors, structured observed-page preview, source kind and
+   generation, encrypted idempotent job staging and explicit projection queueing.
+   Real portal/account remains unverified. Static source inspection found three
+   hazards in the old collector: ambiguous yearless dates acquired today's year,
+   off-origin redirects could forward a session cookie, and ambiguous HTML columns
+   could be mistaken for a deadline. Dates now remain unknown without a supplied
+   year, requests/redirects enforce exact origin before forwarding cookies, and
+   known header cells determine deadline/status columns. Unsupported markup fails
+   closed. Submission/grade status stays local; projection URLs strip session
+   parameters. Prefer deterministic local metadata parsing over sending portal
+   HTML to AI or silently uploading freshly collected proposals.
+3. Loopback-only synthetic 9Router and TLS lifecycle suite: valid/malformed/schema
+   invalid/429/5xx responses, policy/version refusal, bounded retry, explicit
+   projection confirmation, real signed sync/status -> shared Worker -> Miniflare
+   D1 commit assertions. Canonical tasks must stay zero. Prefer this over mocking
+   the uploader's return value, which cannot demonstrate a database commit.
+4. JSON/CSV table selection and Worker-configured EXPORT_MAX_ROWS default100000,
+   range1–1000000. Preflight counts/epoch/schema before headers; excess gets clean
+   413 EXPORT_TOO_LARGE, not truncation. JSON row SELECTs also bind the preflight
+   epoch, so a changed snapshot is rejected without loading concurrent new rows.
+   Unknown/duplicate table selectors reject422; partial JSON has partial:true and
+   cannot be restored. Existing CSV formulas/quoting/coherence remain. This is a
+   row bound, not a memory byte, scanned-row, billing or account-CPU guarantee.
+5. Full T01–T34 assertion/gap mapping plus required scoped Gate3/Gate8 rows.
+   Claim guard supports exact one-case Vitest and unittest proofs. A missing row,
+   wrong test target, stale unverified sentence or skipped proof cannot promote
+   the corresponding local claim. Synthetic and actual-provider scopes stay separate.
+
+### Actual preparation output, not acceptance evidence
+
+`npm ci --ignore-scripts` (exit0; no dependency changes):
+
+```text
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+added 170 packages in 12s
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+```
+
+Formatting was applied to the changed TypeScript/TSX files using existing Prettier.
+Python source was inspected for syntax without importing or running application
+modules. These observations must never be described as passing application tests.
+
+### Acceptance ledger
+
+| Requested command | Current result |
+|---|---|
+| npm ci | NOT RUN; only --ignore-scripts preparation above |
+| npm run check | NOT RUN by owner instruction |
+| npm run test:e2e | NOT RUN by owner instruction |
+| npm run test:pwa | NOT RUN by owner instruction |
+| .venv/bin/python scripts/validate_planning.py | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_gate_claims.py | NOT RUN by owner instruction; locally_verified rows can execute named tests |
+| .venv/bin/python -m unittest discover -s collectors/local/tests -v | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_contract_mutations.py --output-dir <outside repo> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_release_mutations.py --output-dir <outside repo> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_round4_mutations.py --output-dir <outside repo> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_round5_mutations.py --output-dir <outside repo> | NOT RUN by owner instruction |
+| node --import tsx scripts/measure_resources.ts <outside repo>/resources.json | NOT RUN; new measurements null |
+| cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest --no-daemon | NOT RUN; Android source unchanged |
+| New fix-removed failure / restored pass proofs | NOT RUN; no failure/pass output exists to paste |
+
+These are deferred by explicit instruction, not environment failures labelled
+BLOCKED. External phone/account/provider/push/production restore and live Moodle
+observations remain unverified. Owner commands and expected negative assertions
+are in [OWNER-VERIFY](next-scope/OWNER-VERIFY.md). Preserve signing identity and
+never uninstall/reset to make an update work. No push/deployment/provisioning ran.
+
+Preparation environment (version commands only):
+
+```text
+$ node --version
+v24.22.1
+$ python --version
+Python 3.12.14
+$ git --version
+git version 2.52.0
+```
+
+Final source syntax inspection output (not an application test):
+
+```text
+STATIC SYNTAX ONLY: parsed 12 Python source files; no module imported or executed.
+```

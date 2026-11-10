@@ -1275,5 +1275,20 @@
       "production_d1_rows_read": null,
       "production_d1_rows_written": null
     }
+  },
+  "selected_export_followup": {
+    "status": "NOT_RUN",
+    "reason": "Owner requested no builder tests, builds or benchmarks",
+    "base": "a0106e9ca00d09970b2f27cbf1b11a84700e60b1",
+    "configured_max_rows": 100000,
+    "configurable_range": [
+      1,
+      1000000
+    ],
+    "selected_json_bytes": null,
+    "selected_csv_bytes": null,
+    "peak_rss_bytes": null,
+    "worker_cpu_ms": null,
+    "production_d1_rows_read": null
   }
 }

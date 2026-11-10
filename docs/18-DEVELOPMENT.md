@@ -267,3 +267,25 @@ The synthetic seed and interrupted-transfer endpoints exist only in the loopback
 The production Worker gains no seed/auth/budget bypass. Generic streaming clients
 must keep temporary output and rename only after successful body consumption.
 JSON remains the lossless encrypted backup input; CSV remains a spreadsheet view.
+
+## Five-scope local delivery verification
+
+See [complete owner sequence](next-scope/OWNER-VERIFY.md). Install the existing
+Python requirements into .venv before npm integration tests: the D1 restore
+fixture invokes the actual Python backup encryptor. AOS_TEST_PYTHON can select
+another executable. The router Python suite also requires installed existing npm
+dependencies and starts a loopback-only shared Worker/Miniflare child process.
+
+Local disposable restore (never an account/existing-database target):
+`node --import tsx scripts/restore_d1.ts --archive /private/canonical.fernet --key /private/backup.key`.
+Optional --report uses exclusive private-file creation; --now fixes an explicit
+reference time for future-reminder checks. Do not put archives/keys in the repo.
+Standalone synthetic router: `.venv/bin/python scripts/mock_9router.py --port 9191 --scenarios 429,valid`.
+It binds loopback, does not call upstream providers, and stores only counters.
+Use only synthetic messages. The lifecycle test creates its own temporary TLS
+certificate and isolated real Worker receiver; it does not require live secrets.
+Current ITK CLI review steps are documented in03-ITK-COLLECTOR and OWNER-VERIFY.
+
+All new application tests/builds/benchmarks are NOT RUN in the builder delivery
+at the owner's request. Run sequentially and attach actual output before promoting
+claims. Preserve all external device/account/provider/production gates.
