@@ -18,27 +18,28 @@ defect blocks the verification itself; report first, then fix with a regression.
 
 ---
 
-## Part 1 — Where the project stands (2026-11-10)
+## Part 1 — Where the project stands (2026-11-11)
 
-Current as of `8ae37cb`. Round 5 delivered streaming CSV with migration 0009 epoch
-tracking, fixed browser seeds, 340-rule structural accessibility checks, and legacy
-job one-shot execution (`ad7afc9`). Rebuilt APK `e482a5aa` was installed on the
-CPH2015 phone in place, verified clean with zero new crashes.
+Current as of `c8a3b69`. Round 6 delivered disposable D1 restore, local ITK Moodle
+preview/enrollment, a synthetic router harness, table-selective export with a 413
+row ceiling and full T01–T34 traceability (`04e772f`). Independent verification
+fixed a real defect (`c8a3b69`): the export counted rows with an 11-term
+`UNION ALL`, exceeding D1's compound-SELECT limit and returning 503 on every full
+export.
 
-**Measured on this machine at `8ae37cb`:**
+**Measured on this machine at `c8a3b69`:**
 
 | Check | Result |
 |---|---|
-| `vitest run` | 10 files, 62 tests passed |
-| Python discovery | 102 tests OK |
-| `playwright test` | 21 passed across 3 consecutive runs |
+| `vitest run` | 12 files, 70 tests passed |
+| Python discovery | 115 tests OK |
+| `playwright test` | 21 passed |
 | `npm run test:pwa` | 1 passed — offline reload, logout wipe |
-| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 4m4s; 8 native-policy, 6 queue-privacy; lint 0 errors |
-| all mutation suites | 14 contract + 16 release + 18 round-4 + 12 round-5 = 60 faults, 0 survivors |
-| structural accessibility | 340 rule checks passed or N/A across 17 scopes |
-| `check_gate_claims.py` | PASS — 2 gate claims, fails closed on drift |
+| Gradle `assembleDebug lint testDebugUnitTest` | BUILD SUCCESSFUL 3m34s; 8 native-policy, 6 queue-privacy; lint 0 errors |
+| fault suites named in OWNER-VERIFY | 14 contract + 16 release + 18 round-4 + 12 round-5 = 60 faults, 0 survivors |
+| `check_gate_claims.py` | PASS — 5 claims; gates 3 and 8 still `unverified` |
 | `measure_resources.ts` | 14 public assets, 24 profiles, 100/1200/10000 tasks |
-| planning / placeholders | PASS — 166 links, 30 features, 34 test IDs |
+| planning / placeholders | PASS — 171 links, 30 features, 34 test IDs |
 | Hardware install on CPH2015 (API 28) | APK `e482a5aa` in place; crash count stayed 1; clean window (`fatal=false`) |
 
 Earlier figures at `3b84d17` were 58 Vitest / 98 Python / 16 Playwright / 153 links;
