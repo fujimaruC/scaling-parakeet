@@ -2493,8 +2493,8 @@ is a real path.
 | foundation | 4 | 4 killed, 0 survivors | 149 s |
 | owner-safety | 7 | 7 killed, 0 survivors | 12 s |
 | round6 | 15 | 15 killed, 0 survivors | 615 s |
-| android | 6 | 3 killed; 3 further cases attempted | > 1200 s |
-| native | 10 | 6 killed, then `COMMAND_TIMEOUT` at case 7 restored | aborted at 1500 s |
+| android | 6 | 6 killed, 0 survivors (split across four runs after the suite budget expired) | ~2200 s total |
+| native | 10 | 10 killed, 0 survivors (6 in one run, then 1 + 3 separately after `COMMAND_TIMEOUT`) | ~1800 s total |
 
 Supporting suites run in the same session: `npm run check` **12 files / 70
 Vitest passed**; `npm run test:pwa` **1 passed** (12.6 s); `npx playwright test`

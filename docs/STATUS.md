@@ -937,8 +937,12 @@ Executed this session: contract 14/14, release 16/16, round4 18/18, round5
 12/12, ack 6/6, s2 22/22, evidence 10/10, foundation 4/4, owner-safety 7/7,
 round6 15/15 — all zero survivors. Supporting: `npm run check` 12 files / 70
 Vitest, Python 121, Playwright 21, PWA 1, planning 175 links, placeholders PASS.
-Android and native did not complete their full suites; both aborted on their own
-declared ceilings, and both are recorded as ceiling defects rather than passes.
+Android completed all six cases and native all ten, but not in one run: android's
+single-suite budget expired after four cases and native's after seven, so the
+remainder ran as explicit `--case` subsets. Every case killed its intended
+failure and passed when restored, and no subset is claimed as a full-suite pass.
+The measured per-command and per-suite costs are the evidence for the two ceiling
+defects in VERIFICATION-LOG §32.
 See VERIFICATION-LOG §32 for the per-suite table and the measurements.
 
 Gates 3 and 8 change only if `scripts/promote_local_gates.py` completed its

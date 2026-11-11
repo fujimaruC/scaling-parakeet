@@ -46,8 +46,8 @@ and found two real defects in what round 7 delivered:
 | foundation | 4 | 4 killed, 0 survivors | 149 s |
 | owner-safety | 7 | 7 killed, 0 survivors | 12 s |
 | round6 | 15 | 15 killed, 0 survivors | 615 s |
-| android | 6 | 1 case proven (`legacy-migration-bypass`, 209/130/81 s); full suite not completed | > 1200 s |
-| native | 10 | 6 killed and restored, then `COMMAND_TIMEOUT` at case 7 restored | aborted at 1500 s |
+| android | 6 | 6 killed, 0 survivors (split across four runs) | ~2200 s total |
+| native | 10 | 10 killed, 0 survivors (6, then 1 + 3 separately) | ~1800 s total |
 
 Supporting suites: `npm run check` **12 files / 70 Vitest**, Python discovery
 **121 passed**, Playwright **21 passed**, PWA **1 passed**, Gradle
