@@ -39,7 +39,16 @@ class FaultHarnessTests(unittest.TestCase):
         self.result.write_text(json.dumps({'testResults':[{'assertionResults':[failed]}]}))
         with self.assertRaisesRegex(RuntimeError,'SURVIVOR_OR_WRONG_FAILURE'):assert_result(case,1,'',self.result,True)
         failed['failureMessages']=['AssertionError: intended row-count difference']
-        self.result.write_text(json.dumps({'testResults':[{'assertionResults':[failed]}]}));assert_result(case,1,'',self.result,True)
+        # Vitest reports expect(p).rejects/resolves failures as a plain Error,
+        # not AssertionError; that is still a real assertion failure.
+        for message in ('Error: promise resolved "[]" instead of rejecting',
+                        'Error: promise resolved "{}" instead of resolving'):
+            failed['failureMessages']=[message]
+            self.result.write_text(json.dumps({'testResults':[{'assertionResults':[failed]}]}))
+            assert_result(case,1,'',self.result,True)
+        failed['failureMessages']=['Error: fixture database is unavailable']
+        self.result.write_text(json.dumps({'testResults':[{'assertionResults':[failed]}]}))
+        with self.assertRaisesRegex(RuntimeError,'SURVIVOR_OR_WRONG_FAILURE'):assert_result(case,1,'',self.result,True)
         with self.assertRaisesRegex(RuntimeError,'HARNESS_OR_IMPORT_FAILURE'):assert_result(case,1,'Transform failed',self.result,True)
     def test_python_zero_cases_skips_and_import_errors_are_not_proof(self):
         case=Case('synthetic','unused','','','python','test_fixture.py','case')

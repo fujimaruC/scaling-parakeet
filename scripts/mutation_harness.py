@@ -118,7 +118,10 @@ def assert_result(case, code, output, result, broken):
         if not selected:
             raise RuntimeError('ZERO_NAMED_ASSERTIONS ' + case.name)
         if broken:
-            failed = [a for a in selected if a.get('status') == 'failed' and 'AssertionError' in '\n'.join(a.get('failureMessages', []))]
+            # Vitest reports expect(p).rejects/resolves failures as plain
+            # Error('promise ... instead of rejecting/resolving'), not AssertionError.
+            shape = r'AssertionError|instead of rejecting|instead of resolving'
+            failed = [a for a in selected if a.get('status') == 'failed' and re.search(shape, '\n'.join(a.get('failureMessages', [])))]
             if not code or not failed:
                 raise RuntimeError('SURVIVOR_OR_WRONG_FAILURE ' + case.name)
         elif code or any(a.get('status') != 'passed' for a in selected) or report.get('numFailedTests'):
