@@ -2446,3 +2446,88 @@ Final source syntax inspection (not an application/acceptance result):
 ```text
 STATIC SYNTAX ONLY: parsed 17 Python files; no module import, test or application execution.
 ```
+
+## 32. Independent verification of round 7 on the owner machine — 2026-11-11
+
+Base `365fda0`, tree `3fa8b1addd1d6af40750d4edf75c72cea0d55c17`. Branch
+`verify/round7`. Unlike §31, this section records tests that were actually run:
+the owner lifted the builder no-test instruction for verification. Every number
+below comes from a report or log retained in `~/aos-scratch/`, outside the
+repository. All data is synthetic. No account, device, provider, push or
+deployment observation is claimed.
+
+### Two real defects found in the round-7 delivery
+
+1. **`scripts/mutation_harness.py` rejected genuine Vitest failures.** It
+   accepted only `AssertionError`, but Vitest reports `expect(p).rejects`
+   failures as `Error: promise resolved "..." instead of rejecting`. That made
+   `check_ack_mutations.py` case `stale-generation` a false survivor. Fixed by
+   widening the accepted failure shape; the suite then passed 6/6.
+2. **`check_s2_mutations.py` case `exact-time-format` was a dead proof.** It
+   mutates `dueLabel`'s `hourCycle: 'h23'` but selected the test
+   "grouping uses owner calendar boundaries…", which calls `when()`, not
+   `dueLabel()`. The mutation was unobservable, so the case could never kill.
+   `dueLabel` is called by exactly one test — "calendar grouping keeps four
+   precisions…" — and the selector now points at it. Proven in a full run:
+   broken produced `AssertionError: expected 'Nov 6, 2026, 11:59 PM ·
+   Asia/Makassar' to contain '23:59'`, restored produced 1 passed / 0 failed.
+
+Both fixes are commit `2ef765a`. A static reachability audit of every `vitest`
+case across all twelve runners found no other case whose selector cannot reach
+the file it mutates. `check_round6_mutations.py` case `restore-excluded-credential`
+was flagged by that audit only because the audit did not follow `.json` imports;
+`d1-restore.test.ts` -> `scripts/lib/d1-restore.ts` -> `canonical-tables.json`
+is a real path.
+
+### Fault suites actually executed
+
+| Suite | Declared | Outcome | Wall clock |
+|---|---:|---|---:|
+| contract | 14 | 14 killed, 0 survivors | 292 s |
+| release | 16 | 16 killed, 0 survivors | 493 s |
+| round4 | 18 | 18 killed, 0 survivors | 46 s |
+| round5 | 12 | 12 killed, 0 survivors (one CPU-contention rerun) | ~360 s |
+| ack | 6 | 6 killed, 0 survivors (after defect 1) | 73 s |
+| s2 | 22 | 22 killed, 0 survivors (after defect 2) | 834 s |
+| evidence | 10 | 10 killed, 0 survivors | 17 s |
+| foundation | 4 | 4 killed, 0 survivors | 149 s |
+| owner-safety | 7 | 7 killed, 0 survivors | 12 s |
+| round6 | 15 | 15 killed, 0 survivors | 615 s |
+| android | 6 | 3 killed; 3 further cases attempted | > 1200 s |
+| native | 10 | 6 killed, then `COMMAND_TIMEOUT` at case 7 restored | aborted at 1500 s |
+
+Supporting suites run in the same session: `npm run check` **12 files / 70
+Vitest passed**; `npm run test:pwa` **1 passed** (12.6 s); `npx playwright test`
+**21 passed** (2.9 min); Python discovery **121 tests OK**;
+`scripts/validate_planning.py` **PASS — 175 links, 30 features, 34 test IDs**;
+`scripts/check_placeholders.py` **PASS**.
+
+### Ceiling defects observed, not predicted
+
+- **Android, per-command.** `check_android_mutations.py` allows 300 s per Gradle
+  command. Measured: `testQueuePrivacy` baseline 209 s, and `legacy-migration-bypass`
+  took 209 / 130 / 81 s. A loaded machine pushes a build past 300 s and the case
+  aborts as `COMMAND_TIMEOUT`, which is indistinguishable from a product failure.
+- **Native, suite budget.** `BUDGET_SECONDS = 1500`. Six Gradle cases completed
+  in 240, 253, 286, 237, 158 and 149 s. The suite then died on case 7's restored
+  phase with `COMMAND_TIMEOUT` because `run_suite` passes
+  `min(command_limit, remaining)` to the child: an exhausted budget silently
+  shortens the last command instead of raising `SUITE_TIMEOUT`. The three vitest
+  cases at the end never ran at all. A budget below the sum of its own cases is
+  a guaranteed failure, not a bound.
+
+Neither ceiling was raised by the verifier. Both are recorded for the builder
+because changing a budget is a policy decision that needs its own measurement.
+
+### Not verified
+
+Positive notification capture on the owner's CPH2015 has still never been
+observed: no genuine WhatsApp self-chat message exists in the active
+notifications, so no exact-word match is possible. Private-network transport,
+account enrollment and Access policy, the real provider route, physical push
+delivery, production D1 restore, the seven-day pilot, and gate 9 all remain
+unverified. Gate 3 and gate 8 local rows were promoted only by the
+`promote_local_gates.py` transaction, and only if it completed; see the
+promotion report for the actual outcome.
+
+No milestone is complete.

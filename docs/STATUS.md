@@ -914,3 +914,34 @@ not claims that a run completed. Android production/signing/API28 code is unchan
 No tests, acceptance commands, builds, mutation proofs or measurements were run
 by the builder. No gate/milestone/device/account/provider/CI result is promoted.
 See VERIFICATION-LOG §31 for actual preparation and the complete NOT RUN ledger.
+
+## Independent verification of round 7 — 2026-11-11
+
+Base `365fda0`, branch `verify/round7`. The builder's no-test instruction was
+lifted for verification, so unlike the round-7 delivery section above, this
+section records commands that actually ran. All data synthetic. No account,
+device, provider, push or deployment observation is claimed.
+
+Two real defects were found in what round 7 shipped and fixed in `2ef765a`:
+
+- `scripts/mutation_harness.py` accepted only `AssertionError` as a Vitest
+  failure, so `expect(p).rejects` failures were misread as survivors and
+  `check_ack_mutations.py` case `stale-generation` never passed. Widening the
+  accepted shape made the suite 6/6.
+- `check_s2_mutations.py` case `exact-time-format` mutated `dueLabel` but
+  selected a test that calls `when()`, so the mutation was unobservable and the
+  case could never kill. The selector now names the only test that calls
+  `dueLabel`, and the full suite passes 22/22.
+
+Executed this session: contract 14/14, release 16/16, round4 18/18, round5
+12/12, ack 6/6, s2 22/22, evidence 10/10, foundation 4/4, owner-safety 7/7,
+round6 15/15 — all zero survivors. Supporting: `npm run check` 12 files / 70
+Vitest, Python 121, Playwright 21, PWA 1, planning 175 links, placeholders PASS.
+Android and native did not complete their full suites; both aborted on their own
+declared ceilings, and both are recorded as ceiling defects rather than passes.
+See VERIFICATION-LOG §32 for the per-suite table and the measurements.
+
+Gates 3 and 8 change only if `scripts/promote_local_gates.py` completed its
+transaction. External provider route, production D1 restore, the seven-day
+pilot and every device/account observation remain unverified. No milestone is
+complete.
