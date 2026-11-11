@@ -1,5 +1,7 @@
 """Private-copy fault proofs for ledger population, retries, sources and gate claims."""
 import argparse
+import os
+import sys
 from pathlib import Path
 import shutil
 import subprocess
@@ -35,7 +37,7 @@ def main():
   for folder in ['apps','packages','tests','schemas','collectors','examples','scripts','docs']:
    shutil.copytree(ROOT/folder,fixture/folder,ignore=shutil.ignore_patterns('node_modules','dist','build','.gradle','.wrangler','__pycache__','*-checks'))
   (fixture/'node_modules').symlink_to(ROOT/'node_modules',target_is_directory=True)
-  for name in ['package.json','package-lock.json']:shutil.copy2(ROOT/name,fixture/name)
+  for name in ['package.json','package-lock.json','vitest.config.ts','tsconfig.json']:shutil.copy2(ROOT/name,fixture/name)
   # Fault harness uses the same invariant at a cheap population. The required
   # full measurement, outside this fault harness, still runs 100/1200/10000.
   measure=fixture/'scripts/measure_resources.ts'
@@ -46,7 +48,7 @@ def main():
    if kind=='measure':command=['node','--import','tsx','scripts/measure_resources.ts',str(out/(name+'.json'))]
    elif kind=='gate':command=[str(ROOT/'.venv/bin/python'),'scripts/check_gate_claims.py']
    else:command=[str(ROOT/'.venv/bin/python'),'-m','unittest','discover','-s','collectors/local/tests','-p','test_'+kind+'.py','-k',pattern,'-v']
-   r=subprocess.run(command,cwd=fixture,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
+   r=subprocess.run(command,cwd=fixture,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180,env={**os.environ,'AOS_TEST_PYTHON':sys.executable})
    (out/(name+'.txt')).write_text('COMMAND: '+' '.join(command)+'\n'+r.stdout+'\nEXIT: '+str(r.returncode)+'\n');return r
   for name,file,old,new,kind,pattern in CASES:
    path=fixture/file;original=path.read_text();assert original.count(old)==1,(name,original.count(old))

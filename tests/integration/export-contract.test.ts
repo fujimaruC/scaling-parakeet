@@ -134,7 +134,12 @@ it('CSV and JSON export exactly the same eleven tables with per-table parity and
       )
       .bind(at),
   ]);
-  const json = (await (await call('?format=json')).json()) as any;
+  const jsonResponse = await call('?format=json');
+  expect(
+    jsonResponse.status,
+    'full eleven-table JSON export must succeed',
+  ).toBe(200);
+  const json = (await jsonResponse.json()) as any;
   expect(Object.keys(json.data.tables)).toEqual(EXPORT_TABLES);
   const response = await call('?format=csv');
   expect(response.status).toBe(200);

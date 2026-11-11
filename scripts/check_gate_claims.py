@@ -15,6 +15,7 @@ KNOWN_SCOPES={
 }
 REQUIRED_KEYS={'backup-tombstones-sqlite','production-d1-restore','disposable-d1-local','synthetic-router-local','actual-provider-route'}
 def run_named_proof(root,test,key):
+    print('PROOF '+key+' START',flush=True)
     if test.startswith('vitest:'):
         target,separator,title=test[len('vitest:'):].partition('::')
         if not separator or not title or target!='tests/integration/d1-restore.test.ts':raise ValueError('GATE_TEST_UNAVAILABLE '+key)
@@ -35,6 +36,7 @@ def run_named_proof(root,test,key):
         output=io.StringIO();result=unittest.TextTestRunner(stream=output,verbosity=2).run(suite)
         print(output.getvalue(),end='')
         if not result.wasSuccessful() or result.skipped:raise ValueError('GATE_TEST_FAILED '+key)
+    print('PROOF '+key+' PASS',flush=True)
 
 
 def check(root=ROOT):
@@ -48,7 +50,11 @@ def check(root=ROOT):
     if len(keys)!=len(set(keys)) or not REQUIRED_KEYS<=set(keys):raise ValueError('GATE_TABLE_INCOMPLETE')
     sys.path.insert(0,str(root/'collectors/local/tests'))
     sys.path.insert(0,str(root/'collectors/local/src'))
+    # Validate every claim before any expensive proof. A later corrupt claim
+    # must not be masked by an unrelated earlier test/environment failure.
+    verified=[]
     for row in rows:
+        if len(row)!=5:raise ValueError('GATE_TABLE_INVALID')
         key,number,test,claim,sentence=[v.strip() for v in row]
         if sentence not in gates.get(number,''):raise ValueError('GATE_CLAIM_DRIFT '+key)
         if key in {'actual-provider-route','production-d1-restore'} and claim!='unverified':raise ValueError('GATE_EXTERNAL_OBSERVATION_REQUIRED '+key)
@@ -58,10 +64,14 @@ def check(root=ROOT):
                 expected,contradiction=KNOWN_SCOPES[key]
                 if test!=expected:raise ValueError('GATE_EVIDENCE_SCOPE '+key)
                 if contradiction in gates.get(number,''):raise ValueError('GATE_CLAIM_CONTRADICTION '+key)
-            run_named_proof(root,test,key)
+            verified.append((key,test))
         elif claim=='unverified':
             if test!='none' or 'unverified' not in sentence:raise ValueError('GATE_CLAIM_CONTRADICTION '+key)
         else:raise ValueError('GATE_CLAIM_UNKNOWN '+key)
+    # No claim is announced as PASS until all required proofs actually return.
+    for key,test in verified:run_named_proof(root,test,key)
+    for row in rows:
+        key,number,test,claim,sentence=[v.strip() for v in row]
         print('PASS gate '+key+': '+claim)
     return len(rows)
 

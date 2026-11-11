@@ -3,13 +3,19 @@ import importlib.util,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[3]
-import sys; sys.path.insert(0, str(ROOT/'collectors/local/tests'))
+import sys; sys.path.insert(0, str(ROOT/'collectors/local/tests'));sys.path.insert(0,str(ROOT/'scripts'))
+from gate_promotion import PROMOTIONS
 spec=importlib.util.spec_from_file_location('aos_gate_claims',ROOT/'scripts/check_gate_claims.py')
 guard=importlib.util.module_from_spec(spec);spec.loader.exec_module(guard)
 class GateScopeTests(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name);(self.root/'docs').mkdir()
-  for name in ('STATUS.md','11-TEST-STRATEGY.md'):(self.root/'docs'/name).write_text((ROOT/'docs'/name).read_text())
+  for name in ('STATUS.md','11-TEST-STRATEGY.md'):(self.root/'docs'/name).write_text(self.unpromoted(name))
+ def unpromoted(self,name):
+  text=(ROOT/'docs'/name).read_text()
+  for key,(number,target,old,sentence) in PROMOTIONS.items():
+   text=text.replace('| '+key+' | '+number+' | '+target+' | locally_verified | '+sentence+' |','| '+key+' | '+number+' | none | unverified | '+old+' |') if name=='11-TEST-STRATEGY.md' else text.replace(sentence,old)
+  return text
  def tearDown(self):self.tmp.cleanup()
  def replace(self,name,before,after):
   p=self.root/'docs'/name;s=p.read_text();self.assertIn(before,s);p.write_text(s.replace(before,after,1))
@@ -20,7 +26,7 @@ class GateScopeTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'GATE_TABLE_INCOMPLETE'):guard.check(self.root)
  def test_exact_proof_required_and_stale_gate_sentence_blocks_promotion(self):
   for key,(target,sentence) in guard.KNOWN_SCOPES.items():
-   for name in ('STATUS.md','11-TEST-STRATEGY.md'):(self.root/'docs'/name).write_text((ROOT/'docs'/name).read_text())
+   for name in ('STATUS.md','11-TEST-STRATEGY.md'):(self.root/'docs'/name).write_text(self.unpromoted(name))
    strategy=self.root/'docs/11-TEST-STRATEGY.md';lines=strategy.read_text().splitlines()
    new='This scoped implementation is locally verified.'
    strategy.write_text('\n'.join(('| '+key+' | '+('8' if key=='disposable-d1-local' else '3')+' | '+target+' | locally_verified | '+new+' |') if line.startswith('| '+key+' |') else line for line in lines))

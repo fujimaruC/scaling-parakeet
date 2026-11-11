@@ -12,13 +12,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install -r collectors/local/requirements.lock
       - run: npm ci
       - run: npm run check
-      - run: pip install -r collectors/local/requirements.lock
-      - run: python scripts/validate_planning.py
-      - run: python scripts/check_placeholders.py
-      - run: python scripts/check_gate_claims.py
-      - run: python -m unittest discover -s collectors/local/tests -v
+      - run: .venv/bin/python scripts/validate_planning.py
+      - run: .venv/bin/python scripts/check_placeholders.py
+      - run: .venv/bin/python scripts/check_gate_claims.py
+      - run: .venv/bin/python -m unittest discover -s collectors/local/tests -v
       - run: npx playwright install --with-deps chromium --only-shell
       - run: npm run test:e2e
       - run: npm run test:pwa
@@ -34,3 +35,40 @@ jobs:
       - run: sdkmanager 'platforms;android-28' 'platforms;android-35' 'build-tools;35.0.0'
       - run: ./gradlew assembleDebug lint testDebugUnitTest --no-daemon
         working-directory: apps/android-companion
+
+  fault-suites:
+    # Isolated runner, one manifest, no matrix: browser cases own port4173
+    # sequentially. This job does not deploy or contact an owner account.
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-28' 'platforms;android-35' 'build-tools;35.0.0'
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install -r collectors/local/requirements.lock
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium --only-shell
+      # Round4 inventories actual built assets; do not manufacture that input.
+      - run: npm run build
+      - name: Run every registered fault suite sequentially
+        run: .venv/bin/python scripts/run_fault_suites.py --output-dir "$RUNNER_TEMP/academic-os-faults"
+      - name: Retain synthetic proof outputs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-fault-evidence
+          path: ${{ runner.temp }}/academic-os-faults
+          if-no-files-found: error
+          retention-days: 7

@@ -411,3 +411,29 @@ reads to that epoch; preserve CSV page/coherence guards. Default100000 configura
 rows is an application guardrail, not a heap/CPU/billing promise. Selected-table
 JSON is explicitly partial and cannot be restored. Do not infer backup parity
 from a tasks-only CSV. No new dependency/migration/approval/auth/signing change.
+
+## ADR-030 — Proof-gated promotion and one bounded fault inventory
+
+2026-11-11. Base22577a9. Owner explicitly forbids builder-run tests; source only.
+
+Preserve unverified gate rows until actual named proofs pass. Use an owner-run
+promotion command that stages exact claims in private fixtures, proves six
+negative guard failures, reruns both named tests, checks source immutability and
+then writes matching status/table documents. Reject a string-only promotion or
+reusing historical results for a changed proof path. External halves remain open.
+Validate all declarations before executing proofs so bad metadata cannot be
+masked by an earlier test-environment failure. Emit no PASS until evidence exists.
+
+Keep all seven orphan runners because their acknowledgment, API28, evidence and
+UI invariants are not superseded by CSV/job faults. Fix private-copy isolation,
+focused targets, JDK choice and hard process/suite bounds with standard-library
+code. Reject timeouts/import failures/zero tests/survivors as proof. Preserve the
+four independently verified definitions and bound them with the same sequential
+master. One registry must match files and owner docs; CI runs all, not a subset.
+Hard ceilings are unmeasured policy until the owner captures durations.
+
+Round6 reproduces the actual D1 compound-SELECT regression and complementary
+export/restore/approval controls. An HTTP200 assertion before parsing export JSON
+turns that regression into its intended assertion rather than an incidental
+TypeError. No production privacy, approval, API28, Origin or signing rule changes.
+No application dependency is added; CI's artifact action retains synthetic logs.

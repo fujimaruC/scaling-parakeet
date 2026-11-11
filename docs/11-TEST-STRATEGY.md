@@ -191,3 +191,37 @@ claim and runs the exact named proof. `check_gate_claims.py` recognizes the D1
 Vitest target and router unittest target, rejects missing/deleted gate rows,
 wrong-scope proofs and stale contradictory claims. A passed local mock never
 closes `actual-provider-route` or production restore/account gates.
+
+## Round7 proof paths and fault traceability — execution deferred
+
+At the initial builder handoff, the two local Gate3/Gate8 rows were left
+none/unverified. Owner §30 passing named tests are historical. This round's
+explicit no-tests instruction prevented refreshing or promoting them here. Use the
+[proof-driven owner procedure](next-scope/OWNER-VERIFY.md); it changes these rows
+and matching STATUS sentences only after both named tests and six negative guard
+cases actually pass. Every promoted local sentence retains its external half as
+unverified. External rows cannot be promoted by the local guard.
+
+The guard now validates all claims before running any proof, preventing an earlier
+unrelated missing dependency from masking a later wrong proof/stale sentence.
+It announces PROOF START/PASS for actual named execution and emits no gate PASS
+until every required proof returns. Wrong scope, missing sentence and stale
+contradiction retain their fail-closed codes. No proof bypass is added.
+
+| Acceptance IDs / invariant | Fault evidence source | Execution here |
+|---|---|---|
+| T30 full11-table JSON/CSV parity, D1 compound query compatibility | round6 export-eleven-table-parity and export-compound-select-regression -> export-contract.test.ts | NOT RUN |
+| T30/T32 selected export413 and repeated selector | round6 export-row-ceiling/export-duplicate-selector -> export-selection.test.ts | NOT RUN |
+| T16/T30 restored credentials excluded, independent digest | round6 restore-excluded-credential/restore-digest-parity -> d1-restore.test.ts | NOT RUN |
+| T19 no canonical write on sync | round6 review-no-canonical-without-approval -> review-boundary.test.ts; existing contract case also retained | NOT RUN |
+| T19/T34 explicit ITK projection confirmation | round6 itk-explicit-projection-review -> test_itk.py | NOT RUN |
+| T17/T18/T19 synthetic extraction stays awaiting review | round6 router-no-implicit-queue -> test_router_pipeline.py | NOT RUN |
+| Gate3/Gate8 proof path and negative claim controls | round6 gate3/gate8 wrong-proof, missing-sentence, stale-contradiction; real guard baseline/restored proofs | NOT RUN |
+| Controller cannot accept no test, setup error or survivor; runner list cannot drift | test_fault_harness.py; existing test_gate_scopes.py normalized to work before/after owner promotion | NOT RUN |
+
+All remaining runners and declared cases are reproducibly inventoried by
+scripts/run_fault_suites.py --list; this nonexecution command uses source syntax,
+not module imports, to count declarations. It validates the exact owner table and
+registry against files. CI executes the full registry once sequentially. See
+[FAULT-TRIAGE](next-scope/FAULT-TRIAGE.md) for the seven decisions and constraints.
+No table entry asserts current success or exhaustive mutation coverage.

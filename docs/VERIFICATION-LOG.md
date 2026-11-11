@@ -2311,3 +2311,138 @@ cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest
 
 Android companion source is byte-identical. Hardware install of `e482a5aa` was verified in §28.
 Positive notification capture on hardware, production deployment, and account validation remain unverified.
+
+## 31. Round7 guard paths, fault inventory and CI — 2026-11-11
+
+Fresh clone main HEAD: `22577a96c23eb3c780cb2b00e6989cfc7450aeaa`.
+Branch `build/gate-fault-ci`. NEXT-PROMPT.md Part2 and its requested code/docs
+were read. This is a source-only builder handoff. The owner's final instruction
+explicitly says **Do NOT run ANY test in your workspace**. No test, build, CI run,
+acceptance validator, mutation suite, benchmark or promotion command was executed.
+Section30 records independent historical owner results for an earlier tree;
+those results are not substituted for this round's execution.
+
+### Slice outcomes and deliberate decisions
+
+1. **Promotion BLOCKED by the no-test execution constraint.** Missing observation:
+   current guard-path baseline/broken/restored output and both actual named-test
+   passes. Gate3/Gate8 local rows remain none/unverified. This avoids changing a
+   factual claim without its required new proof. Implemented an explicit owner
+   command, `promote_local_gates.py --output-dir <outside>`, that exercises six
+   negative guard cases in private proposed trees, runs both real named proofs,
+   refuses source changes during proof, and only then writes the two matching
+   document updates. External provider/production D1 remain unverified in the
+   same promoted local sentences. Failures leave docs unchanged. A two-file
+   interruption cannot fake success: mismatched documents fail the ordinary guard.
+2. **CI source implemented, CI execution unverified.** Dedicated fault-suites job
+   installs existing Node/Python/Chromium/JDK17/API28+35/build-tools35.0.0, builds
+   round4's required real assets and runs one full sequential inventory. Every
+   remaining runner is included, outside-checkout output paths and no browser
+   overlap. Synthetic artifacts are retained even on failure. The existing main
+   job now installs Python requirements in .venv before npm checks, because D1
+   tests invoke Python encryption. No CI or account result is claimed.
+3. **Seven runners fixed and wired, none deleted.** Ack uses a focused ledger
+   case instead of full npm test; its old applied anchor actually occurred twice,
+   so the new source anchor is specifically the progress field. S2 retains its
+   declared invariants with focused installed tools instead of npx, private
+   copies and bounded execution. Android/native already had source-path anchors
+   (the brief's contrary diagnosis was not supported by this source); fixed
+   isolation/JDK selection/timeouts and focused Worker tests instead of inventing
+   an anchor defect. Evidence/foundation/owner-safety retain unique safeguards,
+   use focused targets and cannot edit the checkout. Decisions and budgets are
+   in next-scope/FAULT-TRIAGE.md. All revised durations remain unmeasured.
+4. **Round6 faults written, NOT RUN.** Full11-table export parity, exact compound
+   SELECT regression, selected export413/repeated selector, restored credential
+   exclusion, independent digest, no canonical mutation on sync, explicit ITK
+   projection review, router awaiting-review state, and six promoted-claim guard
+   cases. Export-contract now checks JSON HTTP200 before dereferencing data; the
+   compound-query regression therefore causes its intended assertion, rather than
+   a secondary TypeError. The brief overstated the old coverage gap: the existing
+   contract runner already targets export-contract/review-boundary. The new cases
+   add concrete missing counterexamples and deliberate approval overlap.
+
+Use one standard-library controller for the revised/new runners rather than
+copying eight subtly different subprocess loops. It preflights unique anchors,
+uses private fixtures, runs baseline -> broken -> restored, restores exact bytes
+in finally, and rejects missing/skipped/zero assertions, import/setup failures,
+survivors and timeouts. Only explicit API28 cases accept their intended compiler
+failure. Per-command/suite ceilings terminate process groups and preserve
+incomplete reports; they are not measurements or green results. The master also
+bounds all four inherited suites without rewriting their proven definitions.
+Round4 fixtures also retain the existing TS/Vitest configuration and explicitly
+pass the invoking Python interpreter for Fernet proofs after owner promotion.
+
+The registry, owner table and on-disk runner list must match exactly. Counts
+come from CASES syntax, never guessed test totals. A new/unlisted/deleted runner
+fails inventory validation before test execution. No subset is used in CI.
+
+Guard change: validate all table metadata first, then execute proofs, then print
+PASS claims. This prevents an unrelated earlier dependency/test failure from
+masking a corrupt later claim, and prevents partial output from implying all
+claims passed. Exact named proof checks and external refusal remain enforced.
+No bypass, new credential trust or looser privacy/approval rule was added.
+
+### Actual commands and output available
+
+Read-only clone/branch/version preparation only:
+
+```text
+$ git clone --branch main https://github.com/fujimaruC/scaling-parakeet.git academic-os-gates
+Cloning into 'academic-os-gates'...
+$ git log --oneline -1
+22577a9 docs: brief round 7 and refresh the verifier snapshot
+$ git rev-parse HEAD
+22577a96c23eb3c780cb2b00e6989cfc7450aeaa
+$ git switch -c build/gate-fault-ci
+Switched to a new branch 'build/gate-fault-ci'
+$ node --version
+v24.22.1
+$ python --version
+Python 3.12.14
+$ git --version
+git version 2.52.0
+```
+
+Source was edited and inspected without importing/executing application modules.
+Python AST syntax inspection is recorded below, separately from behavior evidence.
+No dependency install or Android SDK/JDK install was attempted this round.
+No production source behavior, schema/migration, Android signing, capture selector,
+Origin, API28 compiler configuration or privacy boundary was changed. No npm,
+Python or Android dependency was added. The new CI upload-artifact action retains
+synthetic fault output for independent review; it is not an app dependency.
+
+### Requested acceptance ledger
+
+| Command | Current outcome |
+|---|---|
+| npm ci | NOT RUN; no dependency install attempted |
+| npm run check | NOT RUN by owner instruction |
+| npm run test:e2e | NOT RUN by owner instruction |
+| npm run test:pwa | NOT RUN by owner instruction |
+| .venv/bin/python scripts/validate_planning.py | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_gate_claims.py | NOT RUN; it executes named tests |
+| .venv/bin/python -m unittest discover -s collectors/local/tests -v | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_contract_mutations.py --output-dir <outside> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_release_mutations.py --output-dir <outside> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_round4_mutations.py --output-dir <outside> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_round5_mutations.py --output-dir <outside> | NOT RUN by owner instruction |
+| .venv/bin/python scripts/check_round6_mutations.py --output-dir <outside> | NOT RUN by owner instruction |
+| All seven revised orphan runners | NOT RUN; runtime/completion budgets unverified |
+| .venv/bin/python scripts/run_fault_suites.py --output-dir <outside> | NOT RUN; CI definition is source, not a CI result |
+| .venv/bin/python scripts/promote_local_gates.py --output-dir <outside> | NOT RUN; gate promotion pending |
+| node --import tsx scripts/measure_resources.ts <outside>/resources.json | NOT RUN; no new measurements |
+| cd apps/android-companion && ./gradlew assembleDebug lint testDebugUnitTest --no-daemon | NOT RUN; Android source unchanged |
+| Fault injected failure / restored pass stdout | NOT RUN; no current output exists to paste |
+
+The no-test instruction prevents the requested real proof/promotion, measured
+runtimes and actual CI negative/positive outcomes in this environment. These are
+explicit open observations, not silently passed gates or missing-credential
+excuses. Owner procedure includes every remaining runner and the acceptance
+sequence. No milestone is complete. Device, account, provider, real network,
+push, deployment and live LMS observations remain unverified by this builder.
+
+Final source syntax inspection (not an application/acceptance result):
+
+```text
+STATIC SYNTAX ONLY: parsed 17 Python files; no module import, test or application execution.
+```

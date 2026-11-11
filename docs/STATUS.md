@@ -1,6 +1,6 @@
 # Project status — evidence and remaining work
 
-**2026-11-10 · Five-scope local implementation delivery. Fresh main base a0106e9ca00d09970b2f27cbf1b11a84700e60b1. All acceptance checks, tests, builds, mutation proofs and measurements NOT RUN by the owner’s latest explicit instruction. No milestone complete.**
+**2026-11-11 · Round7 guard/fault-CI implementation from fresh main22577a96c23eb3c780cb2b00e6989cfc7450aeaa. Owner forbids builder tests; all new execution and gate promotion NOT RUN. No milestone complete.**
 
 Historical whole-system baseline: `58f00ed4770f16ae5bf73e205cad8c293bfea608` (GitHub main fetched at session start). Working branch: `build/academic-os-system`; prior implementation checkpoint `43c6ecd`. Owner authorizes all milestones with placeholder credentials in shared materials. No remote push, deployment, real chat import, real AI request or paid provisioning performed.
 
@@ -66,7 +66,7 @@ M0 remains **PARTIAL/BLOCKED**. Android 9 hardware, install, launch and low-RAM/
 5. Native Today, Tasks, detail, Review, Calendar, Settings, full editor and quick/date/proposal panels now use the real shared Worker handlers. Completion/add/edit/delete, explicit review/Undo, immutable online-request recovery, encrypted observations/drafts, source status and export are implemented. Local API/policy/compiler/browser results are in NATIVE-CHECKS and VERIFICATION-LOG §13. Native behavior, large-ledger performance, accessibility and owner acceptance remain unverified. Keep the PWA until native parity and owner acceptance; a passing browser suite is not a native UI test.
 6. Implemented independent Linux control polling, durable phone phase journals, cloud per-device purge/receipt actions, PWA status polling/pagination and native source/action status pages. Queued/delivered/applied remain distinct; expiry/retirement never confirm. Known inventory remains explicitly incomplete. Actual phone interruption/reconnect, laptop-off recovery, relay trust and multi-source/manual-retain remain unverified release gates. Backup tombstone generations survive disposable SQLite restore (locally verified). Production D1 restore remains unverified. Run the control loop separately from AI jobs as documented in 15-PRIVATE-TRANSPORT.
 7. Verify the new native path isolation and enrollment/activation/revoke/expiry on the actual account, plus owner-only production/preview Access policies, valid/invalid JWT paths, source revocation, application request budgets, Worker CPU and D1 limits in the actual account. Durable request accounting and last-reported health exist locally; they are not billing/CPU/account-quota enforcement. All production bindings remain placeholders; private APIs deny access when unconfigured.
-8. Disposable D1 canonical restore execution remains unverified. A Node/TypeScript Fernet-compatible local tool now restores into ephemeral Miniflare D1 with all migrations, exact table/count/digest parity, foreign-key checks, tombstones and future-only rebuild staging. Its regression suite is written but NOT RUN in this delivery. Real account restore and revoked source reconciliation before production sync remain unverified.
+8. Disposable D1 canonical restore execution remains unverified. A Node/TypeScript Fernet-compatible local tool now restores into ephemeral Miniflare D1 with all migrations, exact table/count/digest parity, foreign-key checks, tombstones and future-only rebuild staging. Historical owner verification is recorded in VERIFICATION-LOG §30. Use the proof-driven owner command to refresh the guard path before promotion; source presence alone is not evidence. Real account restore and revoked source reconciliation before production sync remain unverified.
 9. Evaluate authorized ITK source access, finish cost/transport ADR and perform the seven-day owner pilot. Manual export import remains functional when listener collection is unavailable.
 
 Existing tasks, proposals and in-app reminders do not depend on Linux/AI availability. Notification capture never claims complete WhatsApp coverage. No original group history, physical push delivery, production deployment or ITK integration is inferred from these checks.
@@ -886,3 +886,31 @@ subquery sum.
 Exact record: [VERIFICATION-LOG §30](VERIFICATION-LOG.md#30-independent-verification-of-52815ea-on-the-owner-machine--2026-11-10).
 
 Android source remains byte-identical. Positive capture on hardware remains unverified.
+
+## Round7 guard and fault-CI delivery — 2026-11-11
+
+The current clone contains the verifier's scalar-count fix from c8a3b69; it was
+not reverted. Section30 is historical owner evidence for its tree. Gates3/8
+remain unverified here because the latest instruction forbids all workspace
+tests and requires actual named passes before promotion. Gate promotion is
+**pending owner execution**, not completed by editing the table.
+
+Run [OWNER-VERIFY](next-scope/OWNER-VERIFY.md)'s promote_local_gates.py command.
+It exercises proposed claims and six negative guard cases in private fixtures,
+runs both real named tests, rejects a changed source snapshot, and only then
+updates the matching STATUS/table pair. External provider/production D1 remain
+unverified even in each new local claim sentence. It does not push or commit.
+A partial two-file interruption is rejected by the guard, not treated as success.
+
+All seven formerly orphaned fault runners are fixed and registered, not deleted.
+A dedicated CI job executes every remaining runner sequentially. A standard-library
+controller adds private-copy isolation, exact/focused targets, assertion/result
+checks, explicit JDK selection, hard per-command/suite ceilings and retained
+output. Round6 adds export/restore/review/ITK/router and promoted-claim faults.
+The original four suites retain their definitions; the master bounds them too.
+See [triage decisions](next-scope/FAULT-TRIAGE.md). Ceilings are unmeasured policy,
+not claims that a run completed. Android production/signing/API28 code is unchanged.
+
+No tests, acceptance commands, builds, mutation proofs or measurements were run
+by the builder. No gate/milestone/device/account/provider/CI result is promoted.
+See VERIFICATION-LOG §31 for actual preparation and the complete NOT RUN ledger.
