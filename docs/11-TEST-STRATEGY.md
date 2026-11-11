@@ -101,8 +101,8 @@ test edits. Reviewers must keep the assertion meaningful.
 |---|---:|---|---|---|
 | backup-tombstones-sqlite | 6 | test_restore_contract.CanonicalRestoreContractTests.test_all_eleven_tables_restore_counts_hashes_tombstones_without_dispatch_or_credentials | locally_verified | Backup tombstone generations survive disposable SQLite restore (locally verified). |
 | production-d1-restore | 6 | none | unverified | Production D1 restore remains unverified. |
-| disposable-d1-local | 8 | none | unverified | Disposable D1 canonical restore execution remains unverified. |
-| synthetic-router-local | 3 | none | unverified | Synthetic router end-to-end execution remains unverified. |
+| disposable-d1-local | 8 | vitest:tests/integration/d1-restore.test.ts::disposable D1 restores all canonical tables with parity and future-only rebuilds | locally_verified | Disposable D1 canonical restore is locally verified; production D1 restore and revoked-source reconciliation remain unverified. |
+| synthetic-router-local | 3 | test_router_pipeline.RouterPipelineTests.test_consent_retry_projection_queue_and_real_sync_commit | locally_verified | Synthetic loopback router end-to-end execution is locally verified; real provider/route behavior remains unverified. |
 | actual-provider-route | 3 | none | unverified | Real provider/route behavior remains unverified. |
 <!-- gate-claims:end -->
 

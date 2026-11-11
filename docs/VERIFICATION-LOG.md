@@ -2526,8 +2526,15 @@ observed: no genuine WhatsApp self-chat message exists in the active
 notifications, so no exact-word match is possible. Private-network transport,
 account enrollment and Access policy, the real provider route, physical push
 delivery, production D1 restore, the seven-day pilot, and gate 9 all remain
-unverified. Gate 3 and gate 8 local rows were promoted only by the
-`promote_local_gates.py` transaction, and only if it completed; see the
-promotion report for the actual outcome.
+unverified.
+
+Gate 3 and gate 8 were promoted, and only by the `promote_local_gates.py`
+transaction actually running: six guard faults (wrong proof, missing sentence
+and stale contradiction for each scope) each killed and restored in 199 s, then
+both named proofs passed in a fresh proposed-document tree, then the source
+fingerprint was re-checked before the two files were replaced. The report
+records `status: locally_verified`, `external_provider: unverified` and
+`production_d1: unverified`. The external rows were never promotable and the
+guard still refuses them.
 
 No milestone is complete.
